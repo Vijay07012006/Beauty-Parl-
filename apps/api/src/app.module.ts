@@ -15,6 +15,8 @@ import { RedisModule } from './modules/redis/redis.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { EmailModule } from './modules/email/email.module';
 import { Product } from './modules/products/product.entity';
+import { User } from './modules/auth/user.entity';
+import { Order } from './modules/orders/order.entity';
 import configuration from './config/configuration';
 
 @Module({
@@ -32,10 +34,11 @@ import configuration from './config/configuration';
         username: config.get('database.username'),
         password: config.get('database.password'),
         database: config.get('database.database'),
-        entities: [Product],
+        entities: [Product, User, Order],
         autoLoadEntities: true,
-        synchronize: process.env.NODE_ENV !== 'production',
-        logging: false,
+        synchronize: process.env.NODE_ENV !== 'production', // ✅ Production me false
+        logging: process.env.NODE_ENV === 'development',
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
       }),
       inject: [ConfigService],
     }),
@@ -64,4 +67,4 @@ import configuration from './config/configuration';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

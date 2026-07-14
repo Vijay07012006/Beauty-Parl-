@@ -24,7 +24,7 @@ export class OtpService {
     let redisSaved = false;
     if (this.redisService) {
       try {
-        await this.redisService.set(`otp:${email}`, { otp, expiresAt }, 300);
+        await this.redisService.set(`otp:${email}`, JSON.stringify({ otp, expiresAt }), 300);
         redisSaved = true;
       } catch (err) {
         console.warn('Redis OTP save failed, falling back to memory:', err);

@@ -1,21 +1,37 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Redis } from 'ioredis';
 
 @Injectable()
 export class RedisService {
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  private client: Redis;
+  private readonly prefix = 'beauty:'; // 👈 Add this!
 
-  async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
-    const ttl = ttlSeconds ? ttlSeconds * 1000 : undefined;
-    await this.cacheManager.set(key, value, ttl);
+  constructor(private config: ConfigService) {
+    const url = this.config.get('redis.url');
+    this.client = new Redis(url);
   }
 
-  async get(key: string): Promise<any> {
-    return this.cacheManager.get(key);
+  async set(key: string, value: string, ttl?: number): Promise<void> {
+    const prefixedKey = `${this.prefix}${key}`; // 👈 Prefix added!
+    if (ttl) {
+      await this.client.setex(prefixedKey, ttl, value);
+    } else {
+      await this.client.set(prefixedKey, value);
+    }
+  }
+
+  async get(key: string): Promise<string | null> {
+    const prefixedKey = `${this.prefix}${key}`; // 👈 Prefix added!
+    return this.client.get(prefixedKey);
   }
 
   async del(key: string): Promise<void> {
-    await this.cacheManager.del(key);
+    const prefixedKey = `${this.prefix}${key}`; // 👈 Prefix added!
+    await this.client.del(prefixedKey);
+  }
+
+  async onModuleDestroy() {
+    await this.client.quit();
   }
 }

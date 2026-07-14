@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "turbo dev",
     "build": "turbo build",
-    "lint": "turbo lint"
+    "start:prod": "node apps/api/dist/main",
+    "migration:run": "pnpm run --filter api migration:run",
+    "migration:generate": "pnpm run --filter api migration:generate"
   },
   "keywords": [],
   "author": "",

@@ -1,10 +1,35 @@
-node_modules
-.next
-dist
-.turbo
+# Environment files
+.env
 .env.local
-out
-.DS_Store
+.env.production
+.env.*.local
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+.turbo
+
+# Logs
+logs/
 *.log
+npm-debug.log*
+pnpm-debug.log*
 pnpm-lock.yaml.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+docker-compose.override.yml

@@ -8,12 +8,12 @@ export class EmailService {
 
   constructor(private config: ConfigService) {
     this.transporter = nodemailer.createTransport({
-      host: this.config.get('email.host'),
-      port: this.config.get('email.port'),
-      secure: false, // false for port 587
+      host: this.config.get('EMAIL_HOST'),
+      port: this.config.get('EMAIL_PORT'),
+      secure: this.config.get('EMAIL_PORT') == 465, // true for 465, false for 587
       auth: {
-        user: this.config.get('email.user'),
-        pass: this.config.get('email.pass'),
+        user: this.config.get('EMAIL_USER'),
+        pass: this.config.get('EMAIL_PASS'),
       },
     });
   }
@@ -67,7 +67,7 @@ export class EmailService {
   }
 
   async sendOrderConfirmation(to: string, orderId: number, total: number, items: any[]) {
-    const itemsHtml = items.map(i => 
+    const itemsHtml = items.map(i =>
       `<tr><td style="padding: 8px 0; border-bottom: 1px solid #FDF0F0;">${i.name}</td><td style="padding: 8px 0; text-align: center;">${i.quantity}</td><td style="padding: 8px 0; text-align: right;">$${Number(i.price).toFixed(2)}</td></tr>`
     ).join('');
 

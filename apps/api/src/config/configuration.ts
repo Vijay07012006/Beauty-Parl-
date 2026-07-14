@@ -7,35 +7,44 @@ const getEnv = (key: string): string => {
 };
 
 export default () => ({
-  port: parseInt(getEnv('PORT'), 10),
+  port: parseInt(process.env.PORT || '3001', 10),
+
   database: {
-    host: getEnv('DB_HOST'),
-    port: parseInt(getEnv('DB_PORT'), 10),
-    username: getEnv('DB_USERNAME'),
-    password: getEnv('DB_PASSWORD'),
-    database: getEnv('DB_NAME'),
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5433', 10),
+    username: process.env.DB_USERNAME || 'beauty',
+    password: process.env.DB_PASSWORD || 'beauty123',
+    database: process.env.DB_NAME || 'beauty',
   },
+
+  // ========== ✅ YAHAN REDIS CONFIG ADD KARO ==========
   redis: {
-    url: getEnv('REDIS_URL'),
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
   },
+  // ====================================================
+
   jwt: {
-    secret: getEnv('JWT_SECRET'),
+    secret: process.env.JWT_SECRET,
     expiresIn: '7d',
   },
-  razorpay: {
-    keyId: getEnv('RAZORPAY_KEY_ID'),
-    keySecret: getEnv('RAZORPAY_KEY_SECRET'),
-  },
-  stripe: {
-    secretKey: getEnv('STRIPE_SECRET_KEY'),
-    webhookSecret: getEnv('STRIPE_WEBHOOK_SECRET'),
-  },
+
   email: {
-    host: getEnv('EMAIL_HOST'),
-    port: parseInt(getEnv('EMAIL_PORT'), 10),
-    user: getEnv('EMAIL_USER'),
-    pass: getEnv('EMAIL_PASS'),
-    from: getEnv('EMAIL_FROM'),
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT || '587', 10),
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+    from: process.env.EMAIL_FROM || 'Beauty Parlé <noreply@beautyparle.com>',
   },
-  frontendUrl: getEnv('FRONTEND_URL'),
+
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID,
+    keySecret: process.env.RAZORPAY_KEY_SECRET,
+  },
+
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  },
+
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 });
