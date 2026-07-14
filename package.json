@@ -20,6 +20,9 @@
     }
   },
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "turbo": "^2.10.4",
