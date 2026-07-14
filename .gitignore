@@ -6,3 +6,5 @@ dist
 out
 .DS_Store
 *.log
+pnpm-lock.yaml.*
+.vscode/

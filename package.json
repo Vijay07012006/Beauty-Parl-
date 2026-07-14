@@ -20,8 +20,8 @@
   },
   "type": "module",
   "devDependencies": {
-    "@types/node": "^26.1.1",
+    "@types/node": "^20.11.0",
     "turbo": "^2.10.4",
-    "typescript": "^7.0.2"
+    "typescript": "^5.4.2"
   }
 }

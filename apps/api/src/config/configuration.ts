@@ -1,21 +1,41 @@
+const getEnv = (key: string): string => {
+  const val = process.env[key];
+  if (!val) {
+    throw new Error(`Missing env var: ${key}`);
+  }
+  return val;
+};
+
 export default () => ({
-  port: parseInt(process.env.PORT || '3001', 10),
+  port: parseInt(getEnv('PORT'), 10),
   database: {
-    url: process.env.DATABASE_URL,
+    host: getEnv('DB_HOST'),
+    port: parseInt(getEnv('DB_PORT'), 10),
+    username: getEnv('DB_USERNAME'),
+    password: getEnv('DB_PASSWORD'),
+    database: getEnv('DB_NAME'),
   },
   redis: {
-    url: process.env.REDIS_URL,
+    url: getEnv('REDIS_URL'),
   },
   jwt: {
-    secret: process.env.JWT_SECRET,
+    secret: getEnv('JWT_SECRET'),
     expiresIn: '7d',
   },
   razorpay: {
-    keyId: process.env.RAZORPAY_KEY_ID,
-    keySecret: process.env.RAZORPAY_KEY_SECRET,
+    keyId: getEnv('RAZORPAY_KEY_ID'),
+    keySecret: getEnv('RAZORPAY_KEY_SECRET'),
   },
   stripe: {
-    secretKey: process.env.STRIPE_SECRET_KEY,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    secretKey: getEnv('STRIPE_SECRET_KEY'),
+    webhookSecret: getEnv('STRIPE_WEBHOOK_SECRET'),
   },
+  email: {
+    host: getEnv('EMAIL_HOST'),
+    port: parseInt(getEnv('EMAIL_PORT'), 10),
+    user: getEnv('EMAIL_USER'),
+    pass: getEnv('EMAIL_PASS'),
+    from: getEnv('EMAIL_FROM'),
+  },
+  frontendUrl: getEnv('FRONTEND_URL'),
 });

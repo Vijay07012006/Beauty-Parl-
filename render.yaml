@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: beauty-parle-api
+    runtime: node
+    repo: https://github.com/211710072/Beauty-Parl
+    buildCommand: pnpm install && pnpm run build
+    startCommand: pnpm run start:prod
+    region: frankfurt
+    autoDeploy: true
+    autoDetectBuild: true 
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
