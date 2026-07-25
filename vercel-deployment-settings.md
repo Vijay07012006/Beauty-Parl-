@@ -45,9 +45,9 @@ Frontend ko production server aur APIs se connect karne ke liye, **Environment V
 3. **`NODE_ENV`**
    - **Value**: `production`
 
-4. **`ENABLE_COREPACK`**
+4. **`ENABLE_EXPERIMENTAL_COREPACK`**
    - **Value**: `1`
-   - **Description**: **[CRITICAL]** Yeh Vercel me Corepack ko activate karega, taaki Vercel automatic `pnpm@11.13.0` download karke resolve kar sake (otherwise Vercel purana compatibility package manager use karke crash kar jayega).
+   - **Description**: **[CRITICAL]** Yeh Vercel me Corepack ko activate karega, taaki Vercel automatic `pnpm@11.13.0` download karke resolve kar sake (otherwise Vercel purana package manager v6 use karke crash kar jayega).
 
 ---
 
