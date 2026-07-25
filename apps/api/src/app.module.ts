@@ -37,7 +37,7 @@ import configuration from './config/configuration';
         database: config.get('database.url') ? undefined : config.get('database.database'),
         entities: [Product, User, Order],
         autoLoadEntities: true,
-        synchronize: process.env.NODE_ENV !== 'production', // ✅ Production me false
+        synchronize: process.env.DB_SYNCHRONIZE === 'true' || process.env.NODE_ENV !== 'production', // ✅ Set DB_SYNCHRONIZE=true in production to initialize tables
         logging: process.env.NODE_ENV === 'development',
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
       }),
