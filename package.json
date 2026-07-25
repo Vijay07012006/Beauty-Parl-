@@ -1,6 +1,7 @@
 {
   "name": "Beauty Parlé",
   "version": "1.0.0",
+  "packageManager": "pnpm@11.13.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,13 +13,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.3.0",
-      "onFail": "download"
-    }
-  },
   "type": "module",
   "engines": {
     "node": ">=18.0.0",
