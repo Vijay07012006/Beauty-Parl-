@@ -23,6 +23,8 @@ export default function OrderConfirmationPage() {
     }
   }, [id]);
 
+  const locale = params?.locale || 'en';
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!order) return <div className="min-h-screen flex items-center justify-center">Order not found</div>;
 
@@ -42,7 +44,7 @@ export default function OrderConfirmationPage() {
             Payment Status: {order.status === 'paid' ? 'Paid' : 'Pending (COD)'}
           </p>
           <div className="mt-8 space-x-4">
-            <Link href="/en/products">
+            <Link href={`/${locale}/products`}>
               <button className="px-8 py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition cursor-pointer">
                 Continue Shopping
               </button>

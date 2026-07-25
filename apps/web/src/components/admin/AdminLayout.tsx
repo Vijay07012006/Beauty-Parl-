@@ -27,6 +27,7 @@ const navItems = [
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const locale = pathname?.split('/')[1] || 'en';
   const { user, logout, hydrate } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -36,9 +37,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user && (user.role !== 'admin' && user.role !== 'super_admin')) {
-      router.push('/en');
+      router.push(`/${locale}`);
     }
-  }, [user, router]);
+  }, [user, router, locale]);
 
   if (!user) {
     return (
@@ -79,11 +80,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <nav className="px-3 space-y-1">
             {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+              const hrefWithLocale = item.href.replace(/^\/en\//, `/${locale}/`);
+              const isActive = pathname === hrefWithLocale || pathname?.startsWith(hrefWithLocale + '/');
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={hrefWithLocale}
                   onClick={() => setIsSidebarOpen(false)}
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-xl transition-colors
@@ -103,7 +105,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <button
               onClick={() => {
                 logout();
-                router.push('/en/admin/login');
+                router.push(`/${locale}/auth/login`);
               }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
             >

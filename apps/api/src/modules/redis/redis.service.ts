@@ -10,6 +10,9 @@ export class RedisService {
   constructor(private config: ConfigService) {
     const url = this.config.get('redis.url');
     this.client = new Redis(url);
+    this.client.on('error', (err) => {
+      console.warn('Redis client error:', err.message);
+    });
   }
 
   async set(key: string, value: string, ttl?: number): Promise<void> {

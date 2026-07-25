@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -11,6 +11,8 @@ import { PasswordInput } from '@/components/ui/PasswordInput';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const { register, loading, error, sendOtp } = useAuthStore();
   const [step, setStep] = useState<'register' | 'otp'>('register');
   const [name, setName] = useState('');
@@ -58,7 +60,7 @@ export default function RegisterPage() {
       if (res.data.success) {
         // Auto-login after OTP verification
         await useAuthStore.getState().login(email, password);
-        router.push('/en');
+        router.push(`/${locale}`);
       } else {
         setOtpError('Invalid OTP');
       }
@@ -197,7 +199,7 @@ export default function RegisterPage() {
               {step === 'register' ? (
                 <>
                   Already have an account?{' '}
-                  <Link href="/en/auth/login" className="text-primary hover:underline">
+                  <Link href={`/${locale}/auth/login`} className="text-primary hover:underline">
                     Sign In
                   </Link>
                 </>

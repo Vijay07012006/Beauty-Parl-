@@ -29,11 +29,12 @@ import configuration from './config/configuration';
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.get('database.host'),
-        port: config.get('database.port'),
-        username: config.get('database.username'),
-        password: config.get('database.password'),
-        database: config.get('database.database'),
+        url: config.get('database.url'),
+        host: config.get('database.url') ? undefined : config.get('database.host'),
+        port: config.get('database.url') ? undefined : config.get('database.port'),
+        username: config.get('database.url') ? undefined : config.get('database.username'),
+        password: config.get('database.url') ? undefined : config.get('database.password'),
+        database: config.get('database.url') ? undefined : config.get('database.database'),
         entities: [Product, User, Order],
         autoLoadEntities: true,
         synchronize: process.env.NODE_ENV !== 'production', // ✅ Production me false

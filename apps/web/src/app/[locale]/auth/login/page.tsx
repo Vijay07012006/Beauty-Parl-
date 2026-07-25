@@ -28,12 +28,12 @@ export default function LoginPage() {
     // If user already logged in, redirect based on role
     if (user) {
       if (user.role === 'admin' || user.role === 'super_admin') {
-        router.push('/en/admin/dashboard');
+        router.push(`/${locale}/admin/dashboard`);
       } else {
-        router.push('/en');
+        router.push(`/${locale}`);
       }
     }
-  }, [user, router]);
+  }, [user, router, locale]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,9 +51,9 @@ export default function LoginPage() {
     if (res.success) {
       const currentUser = useAuthStore.getState().user;
       if (currentUser?.role === 'admin' || currentUser?.role === 'super_admin') {
-        router.push('/en/admin/dashboard');
+        router.push(`/${locale}/admin/dashboard`);
       } else {
-        router.push('/en');
+        router.push(`/${locale}`);
       }
     }
     // Error is already set in store state via `error`, displayed in the form
@@ -66,9 +66,9 @@ export default function LoginPage() {
     const currentUser = useAuthStore.getState().user;
     if (currentUser) {
       if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
-        router.push('/en/admin/dashboard');
+        router.push(`/${locale}/admin/dashboard`);
       } else {
-        router.push('/en');
+        router.push(`/${locale}`);
       }
     }
   };
@@ -138,7 +138,7 @@ export default function LoginPage() {
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Don't have an account?{' '}
-              <Link href="/en/auth/register" className="text-primary hover:underline">
+              <Link href={`/${locale}/auth/register`} className="text-primary hover:underline">
                 Sign Up
               </Link>
             </p>

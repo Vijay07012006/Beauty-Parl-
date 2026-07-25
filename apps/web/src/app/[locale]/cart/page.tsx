@@ -8,8 +8,11 @@ import Link from 'next/link';
 import { Trash2, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 
 export default function CartPage() {
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const { items, removeItem, updateQuantity, subtotal, total, clearCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
 
@@ -36,7 +39,7 @@ export default function CartPage() {
         <main className="min-h-[60vh] flex flex-col items-center justify-center py-12">
           <h2 className="text-2xl font-playfair font-bold">Your Cart is Empty</h2>
           <p className="text-muted-foreground mt-2">Browse our products and add your favorites.</p>
-          <Link href="/en/products">
+          <Link href={`/${locale}/products`}>
             <button className="mt-6 px-8 py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition">
               Shop Now
             </button>
@@ -139,7 +142,7 @@ export default function CartPage() {
                     <span>${total().toFixed(2)}</span>
                   </div>
                 </div>
-                <Link href="/en/checkout">
+                <Link href={`/${locale}/checkout`}>
                   <button className="w-full mt-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition font-medium cursor-pointer">
                     Proceed to Checkout
                   </button>

@@ -12,6 +12,7 @@ import {
   Clock
 } from 'lucide-react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 interface Stats {
   users: number;
@@ -22,6 +23,8 @@ interface Stats {
 }
 
 export default function AdminDashboardPage() {
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,11 +36,11 @@ export default function AdminDashboardPage() {
   }, []);
 
   const statCards = stats ? [
-    { icon: Users, label: 'Users', value: stats.users, color: 'bg-blue-500', link: '/en/admin/users' },
-    { icon: Package, label: 'Products', value: stats.products, color: 'bg-green-500', link: '/en/admin/products' },
-    { icon: ShoppingBag, label: 'Orders', value: stats.orders, color: 'bg-purple-500', link: '/en/admin/orders' },
-    { icon: Clock, label: 'Pending Orders', value: stats.pendingOrders, color: 'bg-orange-500', link: '/en/admin/orders' },
-    { icon: DollarSign, label: 'Revenue', value: `$${stats.revenue.toFixed(2)}`, color: 'bg-emerald-500', link: '/en/admin/orders' },
+    { icon: Users, label: 'Users', value: stats.users, color: 'bg-blue-500', link: `/${locale}/admin/users` },
+    { icon: Package, label: 'Products', value: stats.products, color: 'bg-green-500', link: `/${locale}/admin/products` },
+    { icon: ShoppingBag, label: 'Orders', value: stats.orders, color: 'bg-purple-500', link: `/${locale}/admin/orders` },
+    { icon: Clock, label: 'Pending Orders', value: stats.pendingOrders, color: 'bg-orange-500', link: `/${locale}/admin/orders` },
+    { icon: DollarSign, label: 'Revenue', value: `$${stats.revenue.toFixed(2)}`, color: 'bg-emerald-500', link: `/${locale}/admin/orders` },
   ] : [];
 
   return (
@@ -81,13 +84,13 @@ export default function AdminDashboardPage() {
                 <div className="bg-card p-6 rounded-2xl shadow-sm border border-border/50">
                   <h3 className="font-semibold mb-4">Quick Actions</h3>
                   <div className="space-y-2">
-                    <Link href="/en/admin/products" className="block w-full text-left px-4 py-2 bg-secondary/50 rounded-lg hover:bg-secondary transition text-sm">
+                    <Link href={`/${locale}/admin/products`} className="block w-full text-left px-4 py-2 bg-secondary/50 rounded-lg hover:bg-secondary transition text-sm">
                       ➕ Add New Product
                     </Link>
-                    <Link href="/en/admin/orders" className="block w-full text-left px-4 py-2 bg-secondary/50 rounded-lg hover:bg-secondary transition text-sm">
+                    <Link href={`/${locale}/admin/orders`} className="block w-full text-left px-4 py-2 bg-secondary/50 rounded-lg hover:bg-secondary transition text-sm">
                       📦 View Pending Orders
                     </Link>
-                    <Link href="/en/admin/users" className="block w-full text-left px-4 py-2 bg-secondary/50 rounded-lg hover:bg-secondary transition text-sm">
+                    <Link href={`/${locale}/admin/users`} className="block w-full text-left px-4 py-2 bg-secondary/50 rounded-lg hover:bg-secondary transition text-sm">
                       👥 Manage Users
                     </Link>
                   </div>

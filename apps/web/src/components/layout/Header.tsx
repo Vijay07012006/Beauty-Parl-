@@ -25,6 +25,13 @@ export function Header() {
   }, []);
 
  
+  const toggleLocale = () => {
+    const nextLocale = locale === 'en' ? 'hi' : 'en';
+    const pathSegments = pathname.split('/');
+    pathSegments[1] = nextLocale;
+    window.location.href = pathSegments.join('/') || '/';
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -59,8 +66,11 @@ export function Header() {
         {/* Right Actions */}
         <div className="flex items-center gap-4">
           {/* Language Switcher */}
-          <button className="text-sm px-3 py-1 rounded-full border border-border hover:border-primary transition-colors cursor-pointer">
-            🌐 EN
+          <button 
+            onClick={toggleLocale}
+            className="text-sm px-3 py-1 rounded-full border border-border hover:border-primary transition-colors cursor-pointer"
+          >
+            🌐 {locale.toUpperCase()}
           </button>
           
           {/* Cart */}

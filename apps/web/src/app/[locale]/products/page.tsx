@@ -7,11 +7,13 @@ import { Footer } from '@/components/layout/Footer';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation';
 
 function ProductsContent() {
   const { products, loading, fetchProducts } = useProductStore();
   const searchParams = useSearchParams();
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const urlCategory = searchParams?.get('category') || 'all';
   const [category, setCategory] = useState(urlCategory);
 
@@ -75,7 +77,7 @@ function ProductsContent() {
                 whileHover={{ y: -5 }}
                 className="bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow"
               >
-                <Link href={`/en/product/${product.id}`}>
+                <Link href={`/${locale}/product/${product.id}`}>
                   <div className="relative h-56 bg-secondary/20">
                     {product.image ? (
                       <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 25vw" />
