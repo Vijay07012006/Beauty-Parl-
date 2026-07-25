@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm --filter shared-types build && next build",
     "start": "next start",
     "lint": "eslint"
   },
