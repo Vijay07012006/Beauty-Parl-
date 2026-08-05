@@ -26,15 +26,11 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto) {
-    try {
-      const user = await this.authService.validateUser(loginDto.email, loginDto.password);
-      if (!user) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-      return this.authService.login(user);
-    } catch (error: any) {
-      throw new UnauthorizedException(error.message || 'Invalid credentials');
+    const user = await this.authService.validateUser(loginDto.email, loginDto.password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
+    return this.authService.login(user);
   }
 
   @Get('profile')

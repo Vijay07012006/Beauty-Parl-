@@ -5,8 +5,7 @@ interface User {
   id: number;
   email: string;
   name: string;
-  role: string;
-  phone?: string;
+  role: 'user' | 'admin' | 'super_admin';
   isVerified?: boolean;
 }
 
@@ -15,9 +14,8 @@ interface AuthStore {
   token: string | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; requiresOtp?: boolean; email?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresOtp?: boolean; user?: User }>;
   register: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; user?: User }>;
-  sendOtp: (email: string, phone?: string) => Promise<boolean>;
   verifyOtp: (email: string, otp: string) => Promise<{ success: boolean }>;
   logout: () => void;
   hydrate: () => void;
@@ -30,18 +28,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
   error: null,
 
   hydrate: () => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      const user = localStorage.getItem('user');
-      if (token && user) {
-        try {
-          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          set({ token, user: JSON.parse(user) });
-        } catch {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-        }
-      }
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (token && user) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      set({ token, user: JSON.parse(user) });
     }
   },
 
@@ -49,25 +40,22 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({ loading: true, error: null });
     try {
       const response = await api.post('/auth/login', { email, password });
-      const data = response.data;
-
-      // Unverified user — OTP required
-      if (data.requiresOtp) {
+      const { access_token, user, requiresOtp } = response.data;
+      
+      // If user is not verified, return requiresOtp flag without setting session
+      if (requiresOtp) {
         set({ loading: false });
-        return { success: true, requiresOtp: true, email: data.email || email };
+        return { success: true, requiresOtp: true, user };
       }
-
-      // Verified user — set session
-      const { access_token, user } = data;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('user', JSON.stringify(user));
-      }
+      
+      // Verified user: set session
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('user', JSON.stringify(user));
       api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      set({ user, token: access_token, loading: false, error: null });
-      return { success: true };
+      set({ user, token: access_token, loading: false });
+      return { success: true, user };
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Invalid email or password';
+      const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
       set({ error: message, loading: false });
       return { success: false };
     }
@@ -78,35 +66,27 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const response = await api.post('/auth/register', { name, email, password, phone });
       const user = response.data.user || response.data;
-
-      // ✅ Registration successful — DO NOT auto-login
-      // Backend already sent OTP during registration
+      
+      // ✅ Registration successful — return user data, DO NOT auto-login
       set({ loading: false });
       return { success: true, user };
     } catch (error: any) {
-      console.error('❌ Registration error:', error);
       const message = error.response?.data?.message || 'Registration failed. Please try again.';
       set({ error: message, loading: false });
       return { success: false };
     }
   },
 
-  sendOtp: async (email: string, phone?: string) => {
-    try {
-      await api.post('/auth/send-otp', { email, phone });
-      return true;
-    } catch (error: any) {
-      console.error('[sendOtp] Failed:', error.response?.data?.message || error.message);
-      return false;
-    }
-  },
-
   verifyOtp: async (email: string, otp: string) => {
     set({ loading: true, error: null });
     try {
-      const res = await api.post('/auth/verify-otp', { email, otp });
+      await api.post('/auth/verify-otp', { email, otp });
+      
+      // After OTP verification, we need to log in the user
+      // We don't have password here, so we'll redirect to login page
+      // OR we can store password temporarily — let's just redirect to login
       set({ loading: false });
-      return { success: res.data.success };
+      return { success: true };
     } catch (error: any) {
       const message = error.response?.data?.message || 'Invalid OTP. Please try again.';
       set({ error: message, loading: false });
@@ -115,11 +95,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   logout: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     delete api.defaults.headers.common['Authorization'];
-    set({ user: null, token: null, error: null });
+    set({ user: null, token: null });
   },
 }));

@@ -20,14 +20,15 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userRepository.findOne({ where: { email } });
-    if (user && await bcrypt.compare(password, user.password)) {
-      if (!user.isActive) {
-        throw new UnauthorizedException('Account is inactive.');
-      }
-      const { password: _, ...result } = user;
-      return result;
+    if (!user) {
+      return null;
     }
-    return null;
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+    // ✅ Return user with isVerified status
+    return user;
   }
 
   async register(registerDto: any) {
@@ -73,13 +74,30 @@ export class AuthService {
   }
 
   async login(user: any) {
-    if (!user.isVerified) {
-      return { requiresOtp: true, email: user.email };
-    }
     const payload = { sub: user.id, email: user.email, role: user.role };
+    const token = this.jwtService.sign(payload);
+    
+    // ✅ If user is not verified, send requiresOtp flag
+    if (!user.isVerified) {
+      return {
+        requiresOtp: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        }
+      };
+    }
+    
     return {
-      access_token: this.jwtService.sign(payload),
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      access_token: token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      }
     };
   }
 
