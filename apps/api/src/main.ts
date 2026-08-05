@@ -8,13 +8,23 @@ async function bootstrap() {
 
   app.use(helmet());
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://beauty-parle.vercel.app',
-      'https://beauty-parl-api.onrender.com',
-      process.env.FRONTEND_URL,
-    ].filter(Boolean) as string[],
+    origin: (origin: string | undefined, callback: (err: Error | null, origin?: boolean) => void) => {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'https://beauty-parle.vercel.app',
+        'https://beauty-parl-api.onrender.com',
+        process.env.FRONTEND_URL,
+      ].filter(Boolean);
+      
+      if (!origin || allowedOrigins.includes(origin) || /^https:\/\/beauty-parle-.*\.vercel\.app$/.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
