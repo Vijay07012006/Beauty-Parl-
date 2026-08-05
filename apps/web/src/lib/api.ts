@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // ✅ Use environment variable
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://beauty-parl-api.onrender.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 console.log('🔗 API Base URL:', API_URL);
 

@@ -143,7 +143,8 @@ export class AuthService {
       console.warn('⚠️ [Email] Failed to send password reset email:', err);
     }
 
-    const resetLink = `http://localhost:3000/en/auth/reset-password/${token}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetLink = `${frontendUrl}/en/auth/reset-password/${token}`;
     console.log('\n================================================');
     console.log(`🔑 Password Reset Link for ${email}:`);
     console.log(`🔗 ${resetLink}`);
