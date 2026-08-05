@@ -16,7 +16,10 @@ export class RedisService {
       this.client = null;
     } else {
       try {
-        this.client = new Redis(url!);
+        this.client = new Redis(url!, {
+          enableOfflineQueue: false,
+          maxRetriesPerRequest: 1,
+        });
         this.client.on('error', (err) => {
           console.warn('⚠️ [Redis] Client error:', err.message);
         });
