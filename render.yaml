@@ -3,8 +3,8 @@ services:
     name: beauty-parle-api
     runtime: node
     repo: https://github.com/211710072/Beauty-Parl
-    buildCommand: pnpm install && pnpm run build
-    startCommand: pnpm run start:prod
+    buildCommand: pnpm install && pnpm exec turbo build --filter=api...
+    startCommand: node apps/api/dist/main.js
     region: frankfurt
     autoDeploy: true
     autoDetectBuild: true 

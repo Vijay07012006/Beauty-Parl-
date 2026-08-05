@@ -4,23 +4,26 @@ import Razorpay from 'razorpay';
 
 @Injectable()
 export class RazorpayService {
-  private razorpay: Razorpay;
+  private razorpay?: Razorpay;
 
   constructor(private configService: ConfigService) {
     const keyId = this.configService.get<string>('razorpay.keyId');
     const keySecret = this.configService.get<string>('razorpay.keySecret');
 
     if (!keyId || !keySecret) {
-      throw new Error('Razorpay credentials are not defined in configurations');
+      console.warn('⚠️ [Payments] Razorpay credentials are not defined. Payments using Razorpay will fail.');
+    } else {
+      this.razorpay = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret,
+      });
     }
-
-    this.razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
-    });
   }
 
   async createOrder(amount: number, currency = 'INR'): Promise<any> {
+    if (!this.razorpay) {
+      throw new InternalServerErrorException('Razorpay service is not configured. Payments are disabled.');
+    }
     try {
       const options = {
         amount: Math.round(amount * 100), // paise

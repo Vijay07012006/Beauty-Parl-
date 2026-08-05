@@ -21,7 +21,8 @@ export class AdminSeeder implements OnModuleInit {
     
     const seedPassword = process.env.ADMIN_SEED_PASSWORD;
     if (!seedPassword) {
-      throw new Error('Missing env var: ADMIN_SEED_PASSWORD');
+      console.warn('⚠️ [AdminSeeder] Missing env var: ADMIN_SEED_PASSWORD. Skipping admin seeding.');
+      return;
     }
 
     if (!existing) {

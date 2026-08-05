@@ -22,7 +22,7 @@ export class OtpService {
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
 
     let redisSaved = false;
-    if (this.redisService) {
+    if (this.redisService && this.redisService.isEnabled()) {
       try {
         await this.redisService.set(`otp:${email}`, JSON.stringify({ otp, expiresAt }), 300);
         redisSaved = true;
@@ -51,7 +51,7 @@ export class OtpService {
   async verifyOtp(email: string, otp: string): Promise<boolean> {
     let record: { otp: string; expiresAt: number } | null = null;
 
-    if (this.redisService) {
+    if (this.redisService && this.redisService.isEnabled()) {
       try {
         const val = await this.redisService.get(`otp:${email}`);
         if (val) {
@@ -73,7 +73,7 @@ export class OtpService {
 
     if (Date.now() > record.expiresAt) {
       console.log(`[OTP] OTP expired for ${email}`);
-      if (this.redisService) {
+      if (this.redisService && this.redisService.isEnabled()) {
         try { await this.redisService.del(`otp:${email}`); } catch {}
       }
       otpStore.delete(email);
@@ -86,7 +86,7 @@ export class OtpService {
     }
 
     console.log(`[OTP] ✅ OTP verified successfully for ${email}`);
-    if (this.redisService) {
+    if (this.redisService && this.redisService.isEnabled()) {
       try { await this.redisService.del(`otp:${email}`); } catch {}
     }
     otpStore.delete(email);
