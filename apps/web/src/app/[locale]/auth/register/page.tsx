@@ -33,21 +33,17 @@ export default function RegisterPage() {
       return;
     }
     
-    // First, register the user (inactive/unverified)
-    await register(name, email, password, phone);
-    if (!useAuthStore.getState().error) {
-      // Send OTP
-      setOtpLoading(true);
-      try {
-        const sent = await sendOtp(email, phone);
-        if (sent) {
-          setStep('otp');
-        } else {
-          setOtpError('Failed to send OTP. Please try again.');
-        }
-      } finally {
-        setOtpLoading(false);
+    try {
+      // ✅ FIX: Register user — backend already sends OTP during registration
+      const result = await register(name, email, password, phone);
+      if (result.success) {
+        // Go straight to OTP step — no need to call sendOtp again
+        setStep('otp');
       }
+      // If !success, error is already set in the store and displayed
+    } catch (err) {
+      // Shouldn't reach here, but just in case
+      setFormError('Registration failed. Please try again.');
     }
   };
 
@@ -58,14 +54,14 @@ export default function RegisterPage() {
     try {
       const res = await api.post('/auth/verify-otp', { email, otp });
       if (res.data.success) {
-        // Auto-login after OTP verification
-        await useAuthStore.getState().login(email, password);
-        router.push(`/${locale}`);
+        // ✅ FIX: Redirect to login page instead of auto-login
+        localStorage.removeItem('pendingVerificationEmail');
+        router.push(`/${locale}/auth/login?verified=true`);
       } else {
-        setOtpError('Invalid OTP');
+        setOtpError('Invalid OTP. Please try again.');
       }
     } catch (err) {
-      setOtpError('Failed to verify OTP');
+      setOtpError('Failed to verify OTP. Please try again.');
     } finally {
       setOtpLoading(false);
     }

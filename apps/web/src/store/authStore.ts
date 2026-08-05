@@ -22,7 +22,7 @@ interface AuthStore {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<LoginResult>;
-  register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, phone?: string) => Promise<{ success: boolean }>;
   sendOtp: (email: string, phone?: string) => Promise<boolean>;
   logout: () => void;
   hydrate: () => void;
@@ -82,11 +82,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
-  register: async (name: string, email: string, password: string, phone?: string): Promise<void> => {
+  register: async (name: string, email: string, password: string, phone?: string): Promise<{ success: boolean }> => {
     set({ loading: true, error: null });
     try {
       await api.post('/auth/register', { name, email, password, phone });
+      // ✅ Don't auto-login — backend already sent OTP during registration
+      localStorage.setItem('pendingVerificationEmail', email);
       set({ loading: false });
+      return { success: true };
     } catch (error: any) {
       const msg =
         error.response?.data?.message ||
@@ -95,7 +98,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
           : null) ||
         'Registration failed. Please try again.';
       set({ error: msg, loading: false });
-      throw new Error(msg);
+      return { success: false };
     }
   },
 
