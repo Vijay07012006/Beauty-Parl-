@@ -46,6 +46,9 @@ export class Order {
   @Column({ nullable: true })
   paymentId!: string;
 
+  @Column({ nullable: true })
+  razorpayOrderId!: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

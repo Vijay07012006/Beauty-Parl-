@@ -1,7 +1,7 @@
-import { Controller, Post, Body, Get, Param, Put, NotFoundException, UseGuards, Request, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put, NotFoundException, UseGuards, Request, ForbiddenException, BadRequestException, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { Order } from './order.entity';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../auth/user.entity';
@@ -23,22 +23,31 @@ export class OrdersController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  async findOne(@Param('id') id: number, @Request() req: any): Promise<Order> {
+  @UseGuards(OptionalJwtAuthGuard)
+  async findOne(
+    @Param('id') id: number,
+    @Request() req: any,
+    @Query('email') email?: string,
+  ): Promise<Order> {
     const order = await this.ordersService.findOne(id);
     if (!order) {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
     
-    // Admin and Super Admin can view any order. Owners can only view their own.
-    const isUserAdmin = req.user.role === UserRole.ADMIN || req.user.role === UserRole.SUPER_ADMIN;
-    const isUserOwner = order.userId === req.user.id;
-    
-    if (!isUserAdmin && !isUserOwner) {
-      throw new ForbiddenException('You do not have permission to view this order');
+    if (req.user) {
+      const isUserAdmin = req.user.role === UserRole.ADMIN || req.user.role === UserRole.SUPER_ADMIN;
+      const isUserOwner = order.userId === req.user.id;
+      
+      if (isUserAdmin || isUserOwner) {
+        return order;
+      }
     }
     
-    return order;
+    if (order.guestEmail && email && order.guestEmail.toLowerCase() === email.toLowerCase()) {
+      return order;
+    }
+    
+    throw new ForbiddenException('You do not have permission to view this order');
   }
 
   @Put(':id')

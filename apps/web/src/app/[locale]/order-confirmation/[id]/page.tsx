@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
@@ -10,23 +10,32 @@ import Link from 'next/link';
 
 export default function OrderConfirmationPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
+  const email = searchParams?.get('email');
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
-      api.get(`/orders/${id}`)
+      api.get(`/orders/${id}`, { params: email ? { email } : {} })
         .then(res => setOrder(res.data))
         .catch(() => setOrder(null))
         .finally(() => setLoading(false));
     }
-  }, [id]);
+  }, [id, email]);
 
   const locale = params?.locale || 'en';
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!order) return <div className="min-h-screen flex items-center justify-center">Order not found</div>;
+
+  const isPaid = order.status === 'paid' || searchParams?.get('payment') === 'success';
+  const paymentMethodLabel = order.paymentMethod === 'cod' 
+    ? 'COD' 
+    : order.paymentMethod === 'razorpay' 
+      ? 'Razorpay' 
+      : 'Stripe';
 
   return (
     <>
@@ -41,7 +50,7 @@ export default function OrderConfirmationPage() {
           <p className="text-sm bg-secondary/30 p-4 rounded-xl inline-block text-left">
             Order ID: {order.id} <br />
             Total Amount: ${Number(order.total).toFixed(2)} <br />
-            Payment Status: {order.status === 'paid' ? 'Paid' : 'Pending (COD)'}
+            Payment Status: {isPaid ? 'Paid ✨' : `Pending (${paymentMethodLabel})`}
           </p>
           <div className="mt-8 space-x-4">
             <Link href={`/${locale}/products`}>

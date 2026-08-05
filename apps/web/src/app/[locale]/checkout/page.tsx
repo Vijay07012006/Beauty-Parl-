@@ -73,39 +73,34 @@ export default function CheckoutPage() {
       total: useCartStore.getState().total(),
       paymentMethod,
       shippingAddress: form,
+      status: 'pending' as const,
     };
 
     if (paymentMethod === 'razorpay') {
       try {
-        // 1. Create order on Razorpay backend
-        const razorpayOrderRes = await api.post('/payments/create-order', { amount: orderData.total });
+        // 1. Create order on the database first (in 'pending' state)
+        const orderRes = await api.post('/orders', orderData);
+        const orderId = orderRes.data.id;
+
+        // 2. Generate Razorpay order on backend (passing DB orderId)
+        const razorpayOrderRes = await api.post('/payments/create-order', {
+          amount: orderData.total,
+          orderId: orderId,
+        });
         const { id: razorpayOrderId, keyId } = razorpayOrderRes.data;
 
-        // 2. Setup Razorpay options
+        // 3. Setup Razorpay options
         const options = {
-          key: keyId,
-          amount: Math.round(orderData.total * 100),
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || keyId,
+          amount: Math.round(orderData.total * 100), // in paise
           currency: 'INR',
           name: 'Beauty Parlé',
-          description: 'Payment for your Beauty Parlé order',
+          description: `Order #${orderId}`,
           order_id: razorpayOrderId,
-          handler: async function (response: any) {
-            // Payment success handler
-            const finalOrderData = {
-              ...orderData,
-              paymentId: response.razorpay_payment_id,
-              status: 'paid',
-            };
-
-            try {
-              const res = await api.post('/orders', finalOrderData);
-              clearCart();
-              router.push(`/${locale}/order-confirmation/${res.data.id}`);
-            } catch (err) {
-              setError('Payment succeeded, but order registration failed. Please contact support.');
-            } finally {
-              setLoading(false);
-            }
+          handler: function (response: any) {
+            // Payment success → redirect to confirmation page with details
+            clearCart();
+            router.push(`/${locale}/order-confirmation/${orderId}?payment=success&payment_id=${response.razorpay_payment_id}&email=${form.email}`);
           },
           prefill: {
             name: form.name,
@@ -113,11 +108,13 @@ export default function CheckoutPage() {
             contact: form.phone,
           },
           theme: {
-            color: '#F43F5E', // primary rose color matching theme
+            color: '#E8A0BF',
           },
           modal: {
             ondismiss: function () {
               setLoading(false);
+              // Payment cancelled / modal closed → redirect back to checkout to retry
+              router.push(`/${locale}/checkout`);
             },
           },
         };
@@ -138,7 +135,7 @@ export default function CheckoutPage() {
       try {
         const res = await api.post('/orders', orderData);
         clearCart();
-        router.push(`/${locale}/order-confirmation/${res.data.id}`);
+        router.push(`/${locale}/order-confirmation/${res.data.id}?email=${form.email}`);
       } catch (err) {
         setError('Failed to place order. Please try again.');
       } finally {
@@ -162,7 +159,11 @@ export default function CheckoutPage() {
   return (
     <>
       <Header />
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <Script
+        id="razorpay-checkout"
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="afterInteractive"
+      />
       
       <main className="py-12">
         <div className="container mx-auto px-4 max-w-5xl">
