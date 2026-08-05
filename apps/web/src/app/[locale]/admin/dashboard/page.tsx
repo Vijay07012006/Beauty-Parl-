@@ -31,15 +31,9 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('https://beauty-parl-api.onrender.com/admin/stats', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        const data = await response.json();
-        setStats(data);
+        // ✅ FIX: Use api.get() which automatically includes auth token
+        const response = await api.get('/admin/stats');
+        setStats(response.data);
       } catch (error) {
         console.error('Failed to fetch stats', error);
       } finally {

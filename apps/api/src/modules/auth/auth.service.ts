@@ -36,39 +36,38 @@ export class AuthService {
     // Check if user exists
     const existing = await this.userRepository.findOne({ where: { email } });
     if (existing) {
-      throw new ConflictException('An account with this email already exists.');
+      throw new BadRequestException('Email already registered');
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Save user
+    // Create user
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
       name,
       phone,
+      isVerified: false,
       role: UserRole.USER,
-      isActive: true, // Let account stay active, use isVerified flag instead
-      isVerified: false, // OTP is required to verify
     });
+    
     await this.userRepository.save(user);
-
-    // Send OTP code
+    
+    // ✅ FIX: Generate and send OTP
     try {
       await this.otpService.sendOtp(email, phone);
-    } catch (otpErr) {
-      console.warn('⚠️ [OTP] Failed to generate/send OTP during registration:', otpErr);
+    } catch (error: any) {
+      console.error('❌ OTP send failed:', error.message);
     }
-
-    // Send welcome email
+    
+    // ✅ FIX: Send welcome email (don't crash if fails)
     try {
-      await this.emailService.sendWelcomeEmail(user.email, user.name);
-    } catch (emailErr) {
-      console.warn('⚠️ [Email] Failed to send welcome email during registration:', emailErr);
+      await this.emailService.sendWelcomeEmail(email, name);
+    } catch (error: any) {
+      console.error('❌ Welcome email failed:', error.message);
     }
-
-    // Return user without password
+    
     const { password: _, ...result } = user;
     return result;
   }
@@ -120,7 +119,11 @@ export class AuthService {
     await this.userRepository.save(user);
 
     // Send real password reset email
-    await this.emailService.sendPasswordResetEmail(user.email, token);
+    try {
+      await this.emailService.sendPasswordResetEmail(user.email, token);
+    } catch (err) {
+      console.warn('⚠️ [Email] Failed to send password reset email:', err);
+    }
 
     const resetLink = `http://localhost:3000/en/auth/reset-password/${token}`;
     console.log('\n================================================');

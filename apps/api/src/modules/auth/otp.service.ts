@@ -35,19 +35,17 @@ export class OtpService {
       otpStore.set(email, { otp, expiresAt });
     }
 
-    // Send real email
+    // ✅ FIX: Try email, fallback to console
     try {
       await this.emailService.sendOtpEmail(email, otp);
-    } catch (err) {
-      console.warn('⚠️ [Email] Failed to send OTP email:', err);
+      console.log(`✅ OTP email sent to ${email}`);
+    } catch (error) {
+      console.log(`⚠️ OTP email failed. Falling back to console.`);
+      console.log(`📧 OTP for ${email}: ${otp}`);
     }
-
-    // Always visible in terminal
-    console.log('\n================================================');
-    console.log(`📧  OTP for ${email}: ${otp}`);
-    if (phone) console.log(`📱  OTP for ${phone}: ${otp}`);
-    console.log(`⏰  Expires in 5 minutes`);
-    console.log('================================================\n');
+  
+    // Always print to console as backup
+    console.log(`🔐 OTP for ${email}: ${otp}`);
 
     return otp;
   }
