@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
@@ -12,6 +12,7 @@ import { OtpModal } from '@/components/auth/OtpModal';
 export default function LoginPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const locale = params?.locale || 'en';
   const { login, loading, error, user, hydrate, sendOtp } = useAuthStore();
   const [email, setEmail] = useState('');
@@ -19,9 +20,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpEmail, setOtpEmail] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     hydrate();
+    // Show success message if redirected from registration OTP verification
+    const verified = searchParams.get('verified');
+    if (verified === 'true') {
+      setSuccessMessage('✅ Account verified successfully! Please login.');
+    }
   }, []);
 
   useEffect(() => {
@@ -81,6 +88,12 @@ export default function LoginPage() {
           <div className="bg-card rounded-2xl shadow-lg p-8 border border-border/50">
             <h1 className="text-3xl font-playfair font-bold text-center mb-2">Welcome Back</h1>
             <p className="text-muted-foreground text-center mb-6">Sign in to your account</p>
+
+            {successMessage && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                {successMessage}
+              </div>
+            )}
 
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
