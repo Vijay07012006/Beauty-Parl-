@@ -45,6 +45,7 @@ export class RedisService {
       }
     } catch (err: any) {
       console.warn('⚠️ [Redis] set operation failed:', err.message);
+      throw err;
     }
   }
 
@@ -55,7 +56,7 @@ export class RedisService {
       return await this.client.get(prefixedKey);
     } catch (err: any) {
       console.warn('⚠️ [Redis] get operation failed:', err.message);
-      return null;
+      throw err;
     }
   }
 
@@ -66,6 +67,7 @@ export class RedisService {
       await this.client.del(prefixedKey);
     } catch (err: any) {
       console.warn('⚠️ [Redis] del operation failed:', err.message);
+      throw err;
     }
   }
 
