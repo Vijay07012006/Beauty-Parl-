@@ -33,15 +33,24 @@ export class AdminSeeder implements OnModuleInit {
         password: hashedPassword,
         role: UserRole.SUPER_ADMIN,
         isActive: true,
+        isVerified: true,
       });
       await this.userRepo.save(admin);
       console.log('✅ Admin user created:', adminEmail);
     } else {
-      // Ensure existing user has admin role
+      // Ensure existing user has admin role and is verified
+      let needsSave = false;
       if (existing.role !== UserRole.SUPER_ADMIN) {
         existing.role = UserRole.SUPER_ADMIN;
+        needsSave = true;
+      }
+      if (!existing.isVerified) {
+        existing.isVerified = true;
+        needsSave = true;
+      }
+      if (needsSave) {
         await this.userRepo.save(existing);
-        console.log('✅ Existing user promoted to admin:', adminEmail);
+        console.log('✅ Existing user promoted and verified as admin:', adminEmail);
       }
     }
   }

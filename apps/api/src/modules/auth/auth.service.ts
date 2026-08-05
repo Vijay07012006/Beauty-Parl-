@@ -6,6 +6,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { User, UserRole } from './user.entity';
 import { EmailService } from '../email/email.service';
+import { OtpService } from './otp.service';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +15,7 @@ export class AuthService {
     private userRepository: Repository<User>,
     private jwtService: JwtService,
     private emailService: EmailService,
+    private otpService: OtpService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -52,8 +54,19 @@ export class AuthService {
     });
     await this.userRepository.save(user);
 
+    // Send OTP code
+    try {
+      await this.otpService.sendOtp(email, phone);
+    } catch (otpErr) {
+      console.warn('⚠️ [OTP] Failed to generate/send OTP during registration:', otpErr);
+    }
+
     // Send welcome email
-    await this.emailService.sendWelcomeEmail(user.email, user.name);
+    try {
+      await this.emailService.sendWelcomeEmail(user.email, user.name);
+    } catch (emailErr) {
+      console.warn('⚠️ [Email] Failed to send welcome email during registration:', emailErr);
+    }
 
     // Return user without password
     const { password: _, ...result } = user;

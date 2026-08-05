@@ -36,7 +36,11 @@ export class OtpService {
     }
 
     // Send real email
-    await this.emailService.sendOtpEmail(email, otp);
+    try {
+      await this.emailService.sendOtpEmail(email, otp);
+    } catch (err) {
+      console.warn('⚠️ [Email] Failed to send OTP email:', err);
+    }
 
     // Always visible in terminal
     console.log('\n================================================');
