@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
@@ -9,7 +9,7 @@ import { OtpModal } from '@/components/auth/OtpModal';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, loading, error } = useAuthStore();
+  const { register, loading, error, clearError } = useAuthStore();
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [form, setForm] = useState({
@@ -20,6 +20,10 @@ export default function RegisterPage() {
     confirmPassword: '',
   });
 
+  useEffect(() => {
+    clearError();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
@@ -29,15 +33,13 @@ export default function RegisterPage() {
 
     const result = await register(form.name, form.email, form.password, form.phone);
     if (result.success) {
-      // ✅ Registration successful — show OTP modal
       setRegisteredEmail(form.email);
       setShowOtpModal(true);
     }
   };
 
-  const handleOtpVerified = async () => {
+  const handleOtpVerified = () => {
     setShowOtpModal(false);
-    // ✅ Redirect to login page with success message
     router.push('/en/auth/login?verified=true');
   };
 
@@ -85,7 +87,7 @@ export default function RegisterPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Phone Number</label>
                 <input
-                  type="text"
+                  type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({...form, phone: e.target.value})}
                   className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"

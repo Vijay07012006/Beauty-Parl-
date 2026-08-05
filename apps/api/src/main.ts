@@ -8,17 +8,12 @@ async function bootstrap() {
 
   app.use(helmet());
   
-  // ✅ FIX: Allow Vercel frontend
+  // ✅ DEBUG MODE: Allow ALL origins
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://beauty-parle.vercel.app',
-      'https://beauty-parle-*.vercel.app',
-      'https://beauty-parl-api.onrender.com',
-    ],
+    origin: '*',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   });
   
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));

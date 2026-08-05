@@ -11,7 +11,7 @@ import { OtpModal } from '@/components/auth/OtpModal';
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, loading, error } = useAuthStore();
+  const { login, loading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -19,21 +19,20 @@ export default function LoginPage() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    clearError();
     const msg = searchParams.get('message');
     if (msg) setMessage(msg);
     const verified = searchParams.get('verified');
     if (verified === 'true') setMessage('✅ Account verified! Please login.');
-  }, [searchParams]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = await login(email, password);
     if (result.success && result.requiresOtp) {
-      // User is unverified — show OTP modal
       setUnverifiedEmail(email);
       setShowOtpModal(true);
     } else if (result.success && result.user) {
-      // Verified user — redirect
       const user = result.user;
       if (user.role === 'admin' || user.role === 'super_admin') {
         router.push('/en/admin/dashboard');
@@ -45,7 +44,6 @@ export default function LoginPage() {
 
   const handleOtpVerified = async () => {
     setShowOtpModal(false);
-    // After OTP verification, retry login automatically
     const result = await login(unverifiedEmail, password);
     if (result.success && result.user) {
       const user = result.user;

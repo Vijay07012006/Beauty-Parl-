@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// ✅ Use environment variable or fallback to Render URL
+// ✅ Use environment variable
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://beauty-parl-api.onrender.com';
 
-console.log('🔗 [API] Base URL:', API_URL);
+console.log('🔗 API Base URL:', API_URL);
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -15,26 +15,26 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor — logs requests
+// ✅ Log all requests
 api.interceptors.request.use(
   (config) => {
-    console.log(`📤 [API] ${config.method?.toUpperCase()} ${config.url}`);
+    console.log(`📤 ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
-    console.error('❌ [API] Request error:', error);
+    console.error('❌ Request error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor — logs responses and errors
+// ✅ Log all responses
 api.interceptors.response.use(
   (response) => {
-    console.log(`📥 [API] ${response.status} ${response.config.url}`);
+    console.log(`📥 ${response.status} ${response.config.url}`);
     return response;
   },
   (error) => {
-    console.error('❌ [API] Response error:', error.response?.status, error.response?.data || error.message);
+    console.error('❌ Response error:', error.response?.status, error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
