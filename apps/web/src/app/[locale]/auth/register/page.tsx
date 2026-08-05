@@ -4,67 +4,60 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { OtpModal } from '@/components/auth/OtpModal';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 
 export default function RegisterPage() {
   const router = useRouter();
   const params = useParams();
   const locale = params?.locale || 'en';
-  const { register, loading, error, sendOtp } = useAuthStore();
-  const [step, setStep] = useState<'register' | 'otp'>('register');
+  const { register, loading, error } = useAuthStore();
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [registeredPhone, setRegisteredPhone] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpError, setOtpError] = useState('');
-  const [otpLoading, setOtpLoading] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
+
     if (password !== confirmPassword) {
       setFormError('Passwords do not match');
       return;
     }
-    
+
     try {
-      // ✅ FIX: Register user — backend already sends OTP during registration
+      // ✅ Register user — backend creates account + sends OTP automatically
       const result = await register(name, email, password, phone);
       if (result.success) {
-        // Go straight to OTP step — no need to call sendOtp again
-        setStep('otp');
+        // Show OTP modal on success
+        setRegisteredEmail(email);
+        setRegisteredPhone(phone);
+        setShowOtpModal(true);
       }
       // If !success, error is already set in the store and displayed
     } catch (err) {
-      // Shouldn't reach here, but just in case
       setFormError('Registration failed. Please try again.');
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setOtpLoading(true);
-    setOtpError('');
-    try {
-      const res = await api.post('/auth/verify-otp', { email, otp });
-      if (res.data.success) {
-        // ✅ FIX: Redirect to login page instead of auto-login
-        localStorage.removeItem('pendingVerificationEmail');
-        router.push(`/${locale}/auth/login?verified=true`);
-      } else {
-        setOtpError('Invalid OTP. Please try again.');
-      }
-    } catch (err) {
-      setOtpError('Failed to verify OTP. Please try again.');
-    } finally {
-      setOtpLoading(false);
-    }
+  const handleOtpVerified = () => {
+    setShowOtpModal(false);
+    // ✅ After OTP verification, redirect to login page
+    router.push(`/${locale}/auth/login?verified=true`);
+  };
+
+  const handleOtpClose = () => {
+    setShowOtpModal(false);
+    // User can still login later — account is created, just not verified
+    router.push(`/${locale}/auth/login`);
   };
 
   return (
@@ -74,144 +67,93 @@ export default function RegisterPage() {
         <div className="w-full max-w-md mx-auto px-4">
           <div className="bg-card rounded-2xl shadow-lg p-8 border border-border/50">
             <h1 className="text-3xl font-playfair font-bold text-center mb-2">
-              {step === 'register' ? 'Create Account' : 'Verify OTP'}
+              Create Account
             </h1>
             <p className="text-muted-foreground text-center mb-6">
-              {step === 'register' 
-                ? 'Join the Beauty Parlé community' 
-                : (
-                  <>
-                    Code sent to <strong>{email}</strong>.<br/>
-                    <span className="text-amber-600 font-medium">💡 Check the NestJS terminal for: 📧 OTP for {email}: XXXXXX</span>
-                  </>
-                )}
+              Join the Beauty Parlé community
             </p>
 
-            {step === 'register' ? (
-              <form onSubmit={handleRegister} className="space-y-4">
-                {(error || formError) && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                    {formError || error}
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
-                  />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {(error || formError) && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                  {formError || error}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    placeholder="+91 98765 43210"
-                    className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Password</label>
-                  <PasswordInput
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Confirm Password</label>
-                  <PasswordInput
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition font-medium disabled:opacity-50 cursor-pointer"
-                >
-                  {loading ? 'Creating...' : 'Create Account'}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
-                {otpError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                    {otpError}
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium mb-1">OTP Code</label>
-                  <input
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    placeholder="123456"
-                    maxLength={6}
-                    required
-                    className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50 text-center text-2xl tracking-widest"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Didn't receive the code?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtpError('');
-                      sendOtp(email, phone);
-                    }}
-                    className="text-primary hover:underline cursor-pointer"
-                  >
-                    Resend
-                  </button>
-                </p>
-                <button
-                  type="submit"
-                  disabled={otpLoading}
-                  className="w-full py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition font-medium disabled:opacity-50 cursor-pointer"
-                >
-                  {otpLoading ? 'Verifying...' : 'Verify OTP'}
-                </button>
-              </form>
-            )}
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  placeholder="+91 98765 43210"
+                  className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Password</label>
+                <PasswordInput
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Confirm Password</label>
+                <PasswordInput
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition font-medium disabled:opacity-50 cursor-pointer"
+              >
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </button>
+            </form>
 
             <p className="text-center text-sm text-muted-foreground mt-6">
-              {step === 'register' ? (
-                <>
-                  Already have an account?{' '}
-                  <Link href={`/${locale}/auth/login`} className="text-primary hover:underline">
-                    Sign In
-                  </Link>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setStep('register')}
-                  className="text-primary hover:underline cursor-pointer"
-                >
-                  Back to registration
-                </button>
-              )}
+              Already have an account?{' '}
+              <Link href={`/${locale}/auth/login`} className="text-primary hover:underline">
+                Sign In
+              </Link>
             </p>
           </div>
         </div>
       </main>
+
+      {/* ✅ OTP Modal — shows on successful registration */}
+      {showOtpModal && (
+        <OtpModal
+          email={registeredEmail}
+          phone={registeredPhone}
+          onVerified={handleOtpVerified}
+          onClose={handleOtpClose}
+        />
+      )}
       <Footer />
     </>
   );
