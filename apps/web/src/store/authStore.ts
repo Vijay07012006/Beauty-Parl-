@@ -40,6 +40,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const user = localStorage.getItem('user');
       if (token && user) {
         try {
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           set({ token, user: JSON.parse(user) });
         } catch {
           localStorage.removeItem('token');
@@ -66,6 +67,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         localStorage.setItem('token', access_token);
         localStorage.setItem('user', JSON.stringify(user));
       }
+      api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       set({ user, token: access_token, loading: false, error: null });
       return { success: true };
     } catch (error: any) {
