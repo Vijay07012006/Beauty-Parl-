@@ -8,15 +8,8 @@ async function bootstrap() {
 
   app.use(helmet());
 
-  // 🔥 READ CORS ORIGINS FROM ENVIRONMENT VARIABLE
-  const corsOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',')
-    : ['http://localhost:3000', 'https://beauty-parle.vercel.app'];
-
-  console.log('🔗 CORS Origins:', corsOrigins);
-
   app.enableCors({
-    origin: corsOrigins,
+    origin: true,  // ✅ Allow ALL origins (temporary for testing)
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
