@@ -7,17 +7,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(helmet());
+  
+  // 🔥 COMPLETE CORS FIX — Allow all origins for now (debug mode)
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://beauty-parle.vercel.app',
-      'https://beauty-parle-*.vercel.app',   // Allow all Vercel preview deployments
-      'https://beauty-parl-api.onrender.com',
-    ],
+    origin: true,  // Allow any origin (temporary for debugging)
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   });
+  
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   const port = process.env.PORT || 3001;
