@@ -114,31 +114,35 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
+    // ✅ Find user
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      // Don't reveal if user exists — security best practice
+      // ✅ Always return success (security: don't reveal if user exists)
       return { success: true, message: 'If this email exists, a reset link has been sent' };
     }
 
+    // ✅ Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiry = new Date(Date.now() + 3600000); // 1 hour
-    
+
     await this.userRepository.update(user.id, { resetToken, resetTokenExpiry: expiry });
+
+    // ✅ Send email with fallback to console (NON-BLOCKING)
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
     
     try {
       await this.emailService.sendPasswordResetEmail(email, resetToken);
-    } catch (error: any) {
-      console.error('❌ Reset email failed:', error.message);
-      // Still return success — user can retry
+      console.log(`✅ Reset email sent to ${email}`);
+    } catch (error) {
+      console.log(`⚠️ Reset email failed. Fallback link: ${resetLink}`);
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
     console.log('\n================================================');
     console.log(`🔑 Password Reset Link for ${email}:`);
     console.log(`🔗 ${resetLink}`);
     console.log('================================================\n');
-    
+
     return { success: true, message: 'If this email exists, a reset link has been sent' };
   }
 
