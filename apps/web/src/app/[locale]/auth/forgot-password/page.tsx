@@ -20,14 +20,27 @@ export default function ForgotPasswordPage() {
     setError('');
 
     try {
-      await api.post('/auth/forgot-password', { email });
-      setMessage('✅ Reset link sent! Check your email (or console logs).');
-      setEmail('');
-    } catch (err) {
+      const response = await api.post('/auth/forgot-password', { email });
+      console.log('✅ Forgot password response:', response.data);
+      
+      if (response.data.success) {
+        setMessage('✅ Reset link sent! Check your email (or console logs).');
+        setEmail('');
+      } else {
+        setError('❌ ' + (response.data.message || 'Failed to send reset link.'));
+      }
+    } catch (err: any) {
+      console.error('❌ Forgot password error:', err);
+      // ✅ Show user-friendly error
       setError('❌ Failed to send reset link. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ Handle fallback link from console
+  const handleConsoleFallback = () => {
+    setMessage('📌 Check the Render console for the reset link (email failed).');
   };
 
   return (
@@ -44,6 +57,12 @@ export default function ForgotPasswordPage() {
             {message && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
                 {message}
+                <button
+                  onClick={handleConsoleFallback}
+                  className="ml-2 text-primary underline text-xs cursor-pointer"
+                >
+                  (Check console)
+                </button>
               </div>
             )}
             {error && (
@@ -67,7 +86,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition font-medium disabled:opacity-50"
+                className="w-full py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition font-medium disabled:opacity-50 cursor-pointer"
               >
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </button>

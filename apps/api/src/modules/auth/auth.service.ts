@@ -114,36 +114,39 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    // ✅ Find user
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (!user) {
-      // ✅ Always return success (security: don't reveal if user exists)
+    try {
+      // ✅ Find user
+      const user = await this.userRepository.findOne({ where: { email } });
+      if (!user) {
+        // ✅ Security: Don't reveal if user exists
+        console.log(`🔍 Forgot password attempt for: ${email} (not found)`);
+        return { success: true, message: 'If this email exists, a reset link has been sent' };
+      }
+
+      // ✅ Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date(Date.now() + 3600000); // 1 hour
+
+      await this.userRepository.update(user.id, { resetToken, resetTokenExpiry: expiry });
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
+
+      // ✅ Send email with fallback
+      try {
+        await this.emailService.sendPasswordResetEmail(email, resetToken);
+        console.log(`✅ Password reset email sent to ${email}`);
+      } catch (emailError: any) {
+        console.log(`⚠️ Email failed for ${email}:`, emailError.message);
+        console.log(`🔗 Fallback reset link: ${resetLink}`);
+      }
+
+      return { success: true, message: 'If this email exists, a reset link has been sent' };
+    } catch (error: any) {
+      console.error('❌ Forgot password error:', error.message);
+      // ✅ Always return success (security)
       return { success: true, message: 'If this email exists, a reset link has been sent' };
     }
-
-    // ✅ Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const expiry = new Date(Date.now() + 3600000); // 1 hour
-
-    await this.userRepository.update(user.id, { resetToken, resetTokenExpiry: expiry });
-
-    // ✅ Send email with fallback to console (NON-BLOCKING)
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
-    
-    try {
-      await this.emailService.sendPasswordResetEmail(email, resetToken);
-      console.log(`✅ Reset email sent to ${email}`);
-    } catch (error) {
-      console.log(`⚠️ Reset email failed. Fallback link: ${resetLink}`);
-    }
-
-    console.log('\n================================================');
-    console.log(`🔑 Password Reset Link for ${email}:`);
-    console.log(`🔗 ${resetLink}`);
-    console.log('================================================\n');
-
-    return { success: true, message: 'If this email exists, a reset link has been sent' };
   }
 
   async resetPassword(token: string, newPassword: string) {
