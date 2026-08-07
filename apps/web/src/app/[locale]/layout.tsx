@@ -1,4 +1,5 @@
 import '../globals.css';
+import { Toaster } from 'sonner';
  
 export default async function RootLayout({
   children,
@@ -23,7 +24,10 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" 
         />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <Toaster position="top-center" richColors />
+      </body>
     </html>
   );
 }

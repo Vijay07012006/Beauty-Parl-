@@ -83,9 +83,14 @@ export function Header() {
 
           {/* Auth Button */}
           {user ? (
-            <button onClick={logout} className="text-sm hover:text-primary transition-colors cursor-pointer font-medium">
-              Logout
-            </button>
+            <div className="flex items-center gap-4">
+              <Link href={`/${locale}/profile`} className="text-sm hover:text-primary transition-colors font-medium">
+                Profile
+              </Link>
+              <button onClick={logout} className="text-sm hover:text-primary transition-colors cursor-pointer font-medium">
+                Logout
+              </button>
+            </div>
           ) : (
             <Link href={`/${locale}/auth/login`} className="text-sm hover:text-primary transition-colors font-medium">
               Sign In
@@ -128,12 +133,17 @@ export function Header() {
                 Contact
               </Link>
               {user ? (
-                <button 
-                  onClick={() => { logout(); setIsMenuOpen(false); }} 
-                  className="text-sm font-medium hover:text-primary transition-colors py-2 text-left cursor-pointer"
-                >
-                  Logout
-                </button>
+                <>
+                  <Link href={`/${locale}/profile`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                    Profile
+                  </Link>
+                  <button 
+                    onClick={() => { logout(); setIsMenuOpen(false); }} 
+                    className="text-sm font-medium hover:text-primary transition-colors py-2 text-left cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </>
               ) : (
                 <Link href={`/${locale}/auth/login`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                   Sign In

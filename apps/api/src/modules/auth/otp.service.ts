@@ -1,7 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { EmailService } from '../email/email.service';
-import { SmsService } from '../sms/sms.service';
 
 const otpStore = new Map<string, { otp: string; expiresAt: number }>();
 
@@ -9,7 +8,6 @@ const otpStore = new Map<string, { otp: string; expiresAt: number }>();
 export class OtpService {
   constructor(
     private emailService: EmailService,
-    private smsService: SmsService,
     @Optional() private redisService?: RedisService,
   ) {}
 
@@ -38,10 +36,6 @@ export class OtpService {
 
   async sendOtpViaEmail(email: string, otp: string): Promise<void> {
     await this.emailService.sendOtpEmail(email, otp);
-  }
-
-  async sendOtpViaSms(phone: string, otp: string): Promise<void> {
-    await this.smsService.sendOtpSms(phone, otp);
   }
 
   async verifyOtp(email: string, otp: string): Promise<boolean> {

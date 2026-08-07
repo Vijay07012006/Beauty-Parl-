@@ -6,6 +6,7 @@ interface User {
   email: string;
   name: string;
   role: 'user' | 'admin' | 'super_admin';
+  phone?: string;
   isVerified?: boolean;
 }
 
@@ -15,11 +16,12 @@ interface AuthStore {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; requiresOtp?: boolean; user?: User; error?: string }>;
-  register: (name: string, email: string, password: string, phone: string, otpChannel?: string) => Promise<{ success: boolean; user?: User; error?: string }>;
+  register: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   verifyOtp: (email: string, otp: string) => Promise<{ success: boolean; error?: string }>;
   resendOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
   forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (token: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  updateProfile: (name: string, phone: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   logout: () => void;
   hydrate: () => void;
   clearError: () => void;
@@ -60,21 +62,21 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ user, token: access_token, loading: false });
       return { success: true, user };
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      const message = error.response?.data?.message || 'Login failed';
       set({ error: message, loading: false });
       return { success: false, error: message };
     }
   },
 
-  register: async (name: string, email: string, password: string, phone: string, otpChannel = 'email') => {
+  register: async (name: string, email: string, password: string, phone: string) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.post('/auth/register', { name, email, password, phone, otpChannel });
+      const response = await api.post('/auth/register', { name, email, password, phone });
       const data = response.data;
       set({ loading: false });
       return { success: true, user: data.user };
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Registration failed. Please try again.';
+      const message = error.response?.data?.message || 'Registration failed';
       set({ error: message, loading: false });
       return { success: false, error: message };
     }
@@ -87,7 +89,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ loading: false });
       return { success: true };
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Invalid OTP. Please try again.';
+      const message = error.response?.data?.message || 'Invalid OTP';
       set({ error: message, loading: false });
       return { success: false, error: message };
     }
@@ -100,7 +102,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ loading: false });
       return { success: true };
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to resend OTP. Please try again.';
+      const message = error.response?.data?.message || 'Failed to resend OTP';
       set({ error: message, loading: false });
       return { success: false, error: message };
     }
@@ -113,7 +115,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ loading: false });
       return { success: true };
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to send reset link. Please try again.';
+      const message = error.response?.data?.message || 'Failed to send reset link';
       set({ error: message, loading: false });
       return { success: false, error: message };
     }
@@ -126,7 +128,25 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ loading: false });
       return { success: true };
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to reset password. Please try again.';
+      const message = error.response?.data?.message || 'Failed to reset password';
+      set({ error: message, loading: false });
+      return { success: false, error: message };
+    }
+  },
+
+  updateProfile: async (name: string, phone: string) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await api.put('/auth/profile', { name, phone });
+      const data = response.data;
+      if (data.success && data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        set({ user: data.user, loading: false });
+        return { success: true, user: data.user };
+      }
+      throw new Error('Profile update failed');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to update profile';
       set({ error: message, loading: false });
       return { success: false, error: message };
     }

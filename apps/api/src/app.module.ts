@@ -14,7 +14,6 @@ import { AdminModule } from './modules/admin/admin.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { EmailModule } from './modules/email/email.module';
-import { SmsModule } from './modules/sms/sms.module';
 import { Product } from './modules/products/product.entity';
 import { User } from './modules/auth/user.entity';
 import { Order } from './modules/orders/order.entity';
@@ -59,7 +58,6 @@ import configuration from './config/configuration';
     RedisModule,
     PaymentsModule,
     EmailModule,
-    SmsModule,
   ],
   controllers: [AppController],
   providers: [

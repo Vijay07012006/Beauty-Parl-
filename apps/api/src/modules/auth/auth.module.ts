@@ -11,7 +11,6 @@ import { JwtStrategy } from './jwt.strategy';
 import { User } from './user.entity';
 import { EmailModule } from '../email/email.module';
 import { RedisModule } from '../redis/redis.module';
-import { SmsModule } from '../sms/sms.module';
 import { AdminSeeder } from './admin-seeder.service';
 
 @Module({
@@ -27,7 +26,6 @@ import { AdminSeeder } from './admin-seeder.service';
     }),
     EmailModule,
     RedisModule,
-    SmsModule,
   ],
   controllers: [AuthController, OtpController],
   providers: [AuthService, OtpService, JwtStrategy, AdminSeeder],

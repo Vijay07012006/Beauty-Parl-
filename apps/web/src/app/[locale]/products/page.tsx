@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useSearchParams, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { ProductSkeleton } from '@/components/ui/ProductSkeleton';
 
 function ProductsContent() {
   const searchParams = useSearchParams();
@@ -59,9 +60,16 @@ function ProductsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-lg font-medium text-primary">Loading products...</div>
-      </div>
+      <main className="min-h-screen py-12">
+        <div className="container mx-auto px-4">
+          <h1 className="text-4xl font-playfair font-bold mb-8">All Products</h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <ProductSkeleton key={idx} />
+            ))}
+          </div>
+        </div>
+      </main>
     );
   }
 

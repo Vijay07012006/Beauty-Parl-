@@ -7,7 +7,6 @@ import * as crypto from 'crypto';
 import { User, UserRole } from './user.entity';
 import { EmailService } from '../email/email.service';
 import { OtpService } from './otp.service';
-import { SmsService } from '../sms/sms.service';
 
 @Injectable()
 export class AuthService {
@@ -17,11 +16,10 @@ export class AuthService {
     private jwtService: JwtService,
     private emailService: EmailService,
     private otpService: OtpService,
-    private smsService: SmsService,
   ) {}
 
   async register(registerDto: any) {
-    const { email, password, name, phone, otpChannel = 'email' } = registerDto;
+    const { email, password, name, phone } = registerDto;
 
     // ✅ Fast validation (no database calls)
     if (!email || !password || !name) {
@@ -51,7 +49,6 @@ export class AuthService {
       phone: phone || '',
       isVerified: false,
       role: UserRole.USER,
-      otpChannel,
     });
     await this.userRepository.save(user);
 
@@ -65,14 +62,10 @@ export class AuthService {
       // Still return success — user can resend OTP later
     }
 
-    // ✅ Send OTP via chosen channel (non-blocking)
+    // ✅ Send OTP via email (non-blocking)
     if (otp) {
       setImmediate(() => {
-        if (otpChannel === 'sms' && phone) {
-          this.smsService.sendOtpSms(phone, otp).catch(() => {});
-        } else {
-          this.emailService.sendOtpEmail(email, otp).catch(() => {});
-        }
+        this.emailService.sendOtpEmail(email, otp).catch(() => {});
       });
     }
 
@@ -170,6 +163,14 @@ export class AuthService {
     });
     
     return { success: true, message: 'Password reset successfully' };
+  }
+
+  async updateProfile(userId: number, name?: string, phone?: string) {
+    await this.userRepository.update(userId, { name, phone });
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+    const { password, ...result } = user;
+    return result;
   }
 
   async changePassword(userId: number, currentPassword: string, newPassword: string) {

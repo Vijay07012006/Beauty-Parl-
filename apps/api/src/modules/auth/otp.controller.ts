@@ -30,11 +30,7 @@ export class OtpController {
     }
     const otp = await this.otpService.generateAndStoreOtp(body.email);
     setImmediate(() => {
-      if (user.otpChannel === 'sms' && user.phone) {
-        this.otpService.sendOtpViaSms(user.phone, otp).catch(() => {});
-      } else {
-        this.otpService.sendOtpViaEmail(body.email, otp).catch(() => {});
-      }
+      this.otpService.sendOtpViaEmail(body.email, otp).catch(() => {});
     });
     return { success: true, message: 'OTP resent successfully' };
   }

@@ -13,7 +13,6 @@ export default function RegisterPage() {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [registeredPhone, setRegisteredPhone] = useState('');
-  const [otpChannel, setOtpChannel] = useState('email');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -33,7 +32,7 @@ export default function RegisterPage() {
       return;
     }
 
-    const result = await register(form.name, form.email, form.password, form.phone, otpChannel);
+    const result = await register(form.name, form.email, form.password, form.phone);
     if (result.success) {
       setRegisteredEmail(form.email);
       setRegisteredPhone(form.phone);
@@ -96,33 +95,6 @@ export default function RegisterPage() {
                   className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 font-semibold">Receive OTP via</label>
-                <div className="flex gap-6 mt-1">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm">
-                    <input
-                      type="radio"
-                      name="otpChannel"
-                      value="email"
-                      checked={otpChannel === 'email'}
-                      onChange={() => setOtpChannel('email')}
-                      className="w-4 h-4 text-primary focus:ring-primary"
-                    />
-                    Email
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer text-sm">
-                    <input
-                      type="radio"
-                      name="otpChannel"
-                      value="sms"
-                      checked={otpChannel === 'sms'}
-                      onChange={() => setOtpChannel('sms')}
-                      className="w-4 h-4 text-primary focus:ring-primary"
-                    />
-                    SMS
-                  </label>
-                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Password</label>
