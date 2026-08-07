@@ -1,13 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -21,26 +19,21 @@ export default function ForgotPasswordPage() {
 
     try {
       const response = await api.post('/auth/forgot-password', { email });
-      console.log('✅ Forgot password response:', response.data);
-      
+
+      // ✅ Always show success message (security)
       if (response.data.success) {
-        setMessage('✅ Reset link sent! Check your email (or console logs).');
+        setMessage('✅ If this email exists, a reset link has been sent. Check your email (or console logs).');
         setEmail('');
       } else {
-        setError('❌ ' + (response.data.message || 'Failed to send reset link.'));
+        setError('❌ ' + (response.data.message || 'Something went wrong. Please try again.'));
       }
     } catch (err: any) {
-      console.error('❌ Forgot password error:', err);
-      // ✅ Show user-friendly error
-      setError('❌ Failed to send reset link. Please try again.');
+      console.error('Forgot password error:', err);
+      // ✅ Show generic success even on error (security)
+      setMessage('✅ If this email exists, a reset link has been sent. Check your email (or console logs).');
     } finally {
       setLoading(false);
     }
-  };
-
-  // ✅ Handle fallback link from console
-  const handleConsoleFallback = () => {
-    setMessage('📌 Check the Render console for the reset link (email failed).');
   };
 
   return (
@@ -58,10 +51,10 @@ export default function ForgotPasswordPage() {
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
                 {message}
                 <button
-                  onClick={handleConsoleFallback}
+                  onClick={() => setMessage('📌 Check Render console for reset link if email not received.')}
                   className="ml-2 text-primary underline text-xs cursor-pointer"
                 >
-                  (Check console)
+                  (Console help)
                 </button>
               </div>
             )}

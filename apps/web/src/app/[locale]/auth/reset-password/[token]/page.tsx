@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -16,6 +16,12 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!token) {
+      setError('❌ Invalid reset link. Please request a new one.');
+    }
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +41,10 @@ export default function ResetPasswordPage() {
     try {
       await api.post('/auth/reset-password', { token, newPassword: password });
       setMessage('✅ Password reset successfully! Redirecting to login...');
-      setTimeout(() => router.push('/en/auth/login'), 2000);
-    } catch (err) {
-      setError('❌ Failed to reset password. Link may be expired.');
+      setTimeout(() => router.push('/en/auth/login?reset=success'), 2000);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Failed to reset password. Link may be expired.';
+      setError('❌ ' + msg);
     } finally {
       setLoading(false);
     }
@@ -91,8 +98,8 @@ export default function ResetPasswordPage() {
               </div>
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition font-medium disabled:opacity-50"
+                disabled={loading || !token}
+                className="w-full py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition font-medium disabled:opacity-50 cursor-pointer"
               >
                 {loading ? 'Resetting...' : 'Reset Password'}
               </button>
