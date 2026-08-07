@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Redis } from 'ioredis';
+import Redis from 'ioredis';
 
 @Injectable()
-export class RedisService {
+export class RedisService implements OnModuleDestroy {
   private client: Redis | null = null;
   private readonly prefix = 'beauty:';
 
@@ -12,14 +12,17 @@ export class RedisService {
     const isRedisDisabled = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_URL;
 
     if (isRedisDisabled) {
-      console.warn('⚠️ [Redis] Redis is disabled (REDIS_URL is not set or REDIS_DISABLED is true). Falling back to in-memory store.');
+      console.warn('⚠️ [Redis] Redis is disabled. Falling back to in-memory store.');
       this.client = null;
     } else {
       try {
         this.client = new Redis(url!, {
-          enableOfflineQueue: false,
-          maxRetriesPerRequest: 1,
+          connectTimeout: 5000,
+          maxRetriesPerRequest: 3,
+          enableReadyCheck: true,
+          lazyConnect: true,
         });
+        this.client.connect().catch(() => {});
         this.client.on('error', (err) => {
           console.warn('⚠️ [Redis] Client error:', err.message);
         });

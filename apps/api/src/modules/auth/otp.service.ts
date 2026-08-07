@@ -11,14 +11,15 @@ export class OtpService {
     @Optional() private redisService?: RedisService,
   ) {}
 
-  async sendOtp(email: string, phone?: string): Promise<string> {
+  async generateAndStoreOtp(email: string): Promise<string> {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+    const key = `otp:${email}`;
 
     let redisSaved = false;
     if (this.redisService && this.redisService.isEnabled()) {
       try {
-        await this.redisService.set(`otp:${email}`, otp, 300);
+        await this.redisService.set(key, otp, 300);
         redisSaved = true;
       } catch (err) {
         console.warn('Redis OTP save failed, falling back to memory:', err);
@@ -29,27 +30,22 @@ export class OtpService {
       otpStore.set(email, { otp, expiresAt });
     }
 
-    // Try email
-    try {
-      await this.emailService.sendOtpEmail(email, otp);
-      console.log(`✅ OTP email sent to ${email}`);
-    } catch (error: any) {
-      console.log(`⚠️ OTP email failed. Fallback to console.`);
-      console.log(`📧 OTP for ${email}: ${otp}`);
-    }
-    
-    // Always print to console as backup
-    console.log(`🔐 OTP for ${email}: ${otp}`);
+    console.log('🔐 OTP generated for', email, ':', otp);
     return otp;
   }
 
+  async sendOtpEmail(email: string, otp: string): Promise<void> {
+    await this.emailService.sendOtpEmail(email, otp);
+  }
+
   async verifyOtp(email: string, otp: string): Promise<boolean> {
+    const key = `otp:${email}`;
     let record: string | null = null;
     const fallbackRecord = otpStore.get(email);
 
     if (this.redisService && this.redisService.isEnabled()) {
       try {
-        record = await this.redisService.get(`otp:${email}`);
+        record = await this.redisService.get(key);
       } catch (err) {
         console.warn('Redis OTP retrieve failed, checking memory:', err);
       }
@@ -57,7 +53,7 @@ export class OtpService {
 
     if (record) {
       if (record === otp) {
-        try { await this.redisService?.del(`otp:${email}`); } catch {}
+        try { await this.redisService?.del(key); } catch {}
         return true;
       }
       return false;
@@ -78,7 +74,11 @@ export class OtpService {
     return false;
   }
 
-  async resendOtp(email: string, phone?: string): Promise<string> {
-    return this.sendOtp(email, phone);
+  async resendOtp(email: string): Promise<string> {
+    const otp = await this.generateAndStoreOtp(email);
+    setImmediate(() => {
+      this.emailService.sendOtpEmail(email, otp).catch(() => {});
+    });
+    return otp;
   }
 }

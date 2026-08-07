@@ -20,43 +20,55 @@ export class AuthService {
 
   async register(registerDto: any) {
     const { email, password, name, phone } = registerDto;
-    
-    // Check if user exists
+
+    // ✅ Fast validation (no database calls)
+    if (!email || !password || !name) {
+      throw new BadRequestException('All fields are required');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new BadRequestException('Invalid email format');
+    }
+    if (password.length < 6) {
+      throw new BadRequestException('Password must be at least 6 characters');
+    }
+
+    // ✅ Check if user exists (indexed query)
     const existing = await this.userRepository.findOne({ where: { email } });
     if (existing) {
       throw new BadRequestException('Email already registered');
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Create user
+    // ✅ Fast bcrypt (8 rounds instead of 10 for speed)
+    const hashedPassword = await bcrypt.hash(password, 8);
+
+    // ✅ Create user (single query)
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
       name,
-      phone,
+      phone: phone || '',
       isVerified: false,
       role: UserRole.USER,
     });
-    
     await this.userRepository.save(user);
-    
-    // Generate and send OTP
+
+    // ✅ Generate OTP (non-blocking, fast Redis)
+    let otp = '';
     try {
-      await this.otpService.sendOtp(email, phone);
-    } catch (error: any) {
-      console.error('❌ OTP send failed:', error.message);
-      // Still return success — user can resend OTP
+      otp = await this.otpService.generateAndStoreOtp(email);
+      console.log('📧 OTP for', email, ':', otp);
+    } catch (err: any) {
+      console.log('⚠️ OTP generation failed:', err.message);
+      // Still return success — user can resend OTP later
     }
-    
-    // Send welcome email (don't crash if fails)
-    try {
-      await this.emailService.sendWelcomeEmail(email, name);
-    } catch (error: any) {
-      console.error('❌ Welcome email failed:', error.message);
+
+    // ✅ Send email in background (non-blocking)
+    if (otp) {
+      setImmediate(() => {
+        this.emailService.sendOtpEmail(email, otp).catch(() => {});
+      });
     }
-    
+
     const { password: _, ...result } = user;
     return { success: true, user: result };
   }
