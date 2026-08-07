@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const { register, loading, error, clearError } = useAuthStore();
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [registeredPhone, setRegisteredPhone] = useState('');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -34,6 +35,7 @@ export default function RegisterPage() {
     const result = await register(form.name, form.email, form.password, form.phone);
     if (result.success) {
       setRegisteredEmail(form.email);
+      setRegisteredPhone(form.phone);
       setShowOtpModal(true);
     }
   };
@@ -102,6 +104,7 @@ export default function RegisterPage() {
                   onChange={(e) => setForm({...form, password: e.target.value})}
                   className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
                   required
+                  minLength={6}
                 />
               </div>
               <div>
@@ -136,6 +139,7 @@ export default function RegisterPage() {
       {showOtpModal && (
         <OtpModal
           email={registeredEmail}
+          phone={registeredPhone}
           onVerified={handleOtpVerified}
           onClose={handleOtpClose}
         />

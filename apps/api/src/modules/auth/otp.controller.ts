@@ -14,18 +14,31 @@ export class OtpController {
 
   @Post('send-otp')
   async sendOtp(@Body() body: { email: string; phone: string }) {
+    const user = await this.userRepo.findOne({ where: { email: body.email } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
     await this.otpService.sendOtp(body.email, body.phone);
-    return { success: true, message: 'OTP sent' };
+    return { success: true, message: 'OTP sent successfully' };
   }
 
   @Post('verify-otp')
   async verifyOtp(@Body() body: { email: string; otp: string }) {
     const isValid = await this.otpService.verifyOtp(body.email, body.otp);
     if (!isValid) {
-      return { success: false, message: 'Invalid OTP' };
+      throw new BadRequestException('Invalid or expired OTP');
     }
-    // Mark user as verified
     await this.userRepo.update({ email: body.email }, { isVerified: true });
-    return { success: true, message: 'Verified successfully' };
+    return { success: true, message: 'Account verified successfully' };
+  }
+
+  @Post('resend-otp')
+  async resendOtp(@Body() body: { email: string; phone: string }) {
+    const user = await this.userRepo.findOne({ where: { email: body.email } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    await this.otpService.resendOtp(body.email, body.phone);
+    return { success: true, message: 'OTP resent successfully' };
   }
 }

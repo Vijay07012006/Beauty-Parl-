@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -17,19 +17,6 @@ export class AuthService {
     private emailService: EmailService,
     private otpService: OtpService,
   ) {}
-
-  async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (!user) {
-      return null;
-    }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return null;
-    }
-    // ✅ Return user with isVerified status
-    return user;
-  }
 
   async register(registerDto: any) {
     const { email, password, name, phone } = registerDto;
@@ -55,14 +42,15 @@ export class AuthService {
     
     await this.userRepository.save(user);
     
-    // ✅ FIX: Generate and send OTP
+    // Generate and send OTP
     try {
       await this.otpService.sendOtp(email, phone);
     } catch (error: any) {
       console.error('❌ OTP send failed:', error.message);
+      // Still return success — user can resend OTP
     }
     
-    // ✅ FIX: Send welcome email (don't crash if fails)
+    // Send welcome email (don't crash if fails)
     try {
       await this.emailService.sendWelcomeEmail(email, name);
     } catch (error: any) {
@@ -70,14 +58,23 @@ export class AuthService {
     }
     
     const { password: _, ...result } = user;
-    return result;
+    return { success: true, user: result };
+  }
+
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      return null;
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+    return user;
   }
 
   async login(user: any) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const token = this.jwtService.sign(payload);
-    
-    // ✅ If user is not verified, send requiresOtp flag
+    // Check if user is verified
     if (!user.isVerified) {
       return {
         requiresOtp: true,
@@ -90,6 +87,9 @@ export class AuthService {
       };
     }
     
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const token = this.jwtService.sign(payload);
+    
     return {
       access_token: token,
       user: {
@@ -99,6 +99,58 @@ export class AuthService {
         role: user.role,
       }
     };
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      // Don't reveal if user exists — security best practice
+      return { success: true, message: 'If this email exists, a reset link has been sent' };
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 3600000); // 1 hour
+    
+    await this.userRepository.update(user.id, { resetToken, resetTokenExpiry: expiry });
+    
+    try {
+      await this.emailService.sendPasswordResetEmail(email, resetToken);
+    } catch (error: any) {
+      console.error('❌ Reset email failed:', error.message);
+      // Still return success — user can retry
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
+    console.log('\n================================================');
+    console.log(`🔑 Password Reset Link for ${email}:`);
+    console.log(`🔗 ${resetLink}`);
+    console.log('================================================\n');
+    
+    return { success: true, message: 'If this email exists, a reset link has been sent' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const user = await this.userRepository.findOne({ 
+      where: { resetToken: token },
+    });
+    
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+    
+    if (user.resetTokenExpiry && user.resetTokenExpiry < new Date()) {
+      throw new BadRequestException('Reset token has expired');
+    }
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update(user.id, { 
+      password: hashedPassword,
+      resetToken: undefined,
+      resetTokenExpiry: undefined,
+    });
+    
+    return { success: true, message: 'Password reset successfully' };
   }
 
   async changePassword(userId: number, currentPassword: string, newPassword: string) {
@@ -117,61 +169,13 @@ export class AuthService {
     return { success: true, message: 'Password changed successfully' };
   }
 
-  async activateUser(email: string) {
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (user) {
-      user.isVerified = true;
-      await this.userRepository.save(user);
+  async verifyOtp(email: string, otp: string) {
+    const isValid = await this.otpService.verifyOtp(email, otp);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired OTP');
     }
-  }
-
-  async forgotPassword(email: string): Promise<string> {
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (!user) {
-      throw new BadRequestException('User with this email does not exist.');
-    }
-
-    const token = crypto.randomBytes(32).toString('hex');
-    user.resetToken = token;
-    user.resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour expiry
-    await this.userRepository.save(user);
-
-    // Send real password reset email
-    try {
-      await this.emailService.sendPasswordResetEmail(user.email, token);
-    } catch (err) {
-      console.warn('⚠️ [Email] Failed to send password reset email:', err);
-    }
-
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetLink = `${frontendUrl}/en/auth/reset-password/${token}`;
-    console.log('\n================================================');
-    console.log(`🔑 Password Reset Link for ${email}:`);
-    console.log(`🔗 ${resetLink}`);
-    console.log('================================================\n');
-
-    return token;
-  }
-
-  async resetPassword(token: string, newPassword: string): Promise<void> {
-    const user = await this.userRepository.findOne({ 
-      where: { resetToken: token } 
-    });
-
-    if (!user) {
-      throw new BadRequestException('Invalid or expired reset token.');
-    }
-
-    if (user.resetTokenExpiry && Date.now() > user.resetTokenExpiry.getTime()) {
-      user.resetToken = undefined;
-      user.resetTokenExpiry = undefined;
-      await this.userRepository.save(user);
-      throw new BadRequestException('Reset token has expired.');
-    }
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    user.resetToken = undefined;
-    user.resetTokenExpiry = undefined;
-    await this.userRepository.save(user);
+    
+    await this.userRepository.update({ email }, { isVerified: true });
+    return { success: true, message: 'Account verified successfully' };
   }
 }

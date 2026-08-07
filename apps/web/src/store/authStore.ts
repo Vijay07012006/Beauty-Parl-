@@ -14,9 +14,10 @@ interface AuthStore {
   token: string | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; requiresOtp?: boolean; user?: User }>;
-  register: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; user?: User }>;
-  verifyOtp: (email: string, otp: string) => Promise<{ success: boolean }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresOtp?: boolean; user?: User; error?: string }>;
+  register: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; user?: User; error?: string }>;
+  verifyOtp: (email: string, otp: string) => Promise<{ success: boolean; error?: string }>;
+  resendOtp: (email: string, phone: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   hydrate: () => void;
   clearError: () => void;
@@ -67,9 +68,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await api.post('/auth/register', { name, email, password, phone });
-      const user = response.data.user || response.data;
+      const data = response.data;
       set({ loading: false });
-      return { success: true, user };
+      return { success: true, user: data.user };
     } catch (error: any) {
       const message = error.response?.data?.message || 'Registration failed. Please try again.';
       set({ error: message, loading: false });
@@ -85,6 +86,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return { success: true };
     } catch (error: any) {
       const message = error.response?.data?.message || 'Invalid OTP. Please try again.';
+      set({ error: message, loading: false });
+      return { success: false, error: message };
+    }
+  },
+
+  resendOtp: async (email: string, phone: string) => {
+    set({ loading: true, error: null });
+    try {
+      await api.post('/auth/resend-otp', { email, phone });
+      set({ loading: false });
+      return { success: true };
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to resend OTP. Please try again.';
       set({ error: message, loading: false });
       return { success: false, error: message };
     }

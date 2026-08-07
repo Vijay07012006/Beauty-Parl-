@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState('');
+  const [unverifiedPassword, setUnverifiedPassword] = useState('');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function LoginPage() {
     const result = await login(email, password);
     if (result.success && result.requiresOtp) {
       setUnverifiedEmail(email);
+      setUnverifiedPassword(password);
       setShowOtpModal(true);
     } else if (result.success && result.user) {
       const user = result.user;
@@ -44,7 +46,7 @@ export default function LoginPage() {
 
   const handleOtpVerified = async () => {
     setShowOtpModal(false);
-    const result = await login(unverifiedEmail, password);
+    const result = await login(unverifiedEmail, unverifiedPassword);
     if (result.success && result.user) {
       const user = result.user;
       if (user.role === 'admin' || user.role === 'super_admin') {

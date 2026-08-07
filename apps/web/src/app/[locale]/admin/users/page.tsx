@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { api } from '@/lib/api';
 import { Trash2, Shield, ShieldOff, Check, AlertTriangle } from 'lucide-react';
+import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal';
 
 interface User {
   id: number;
@@ -18,6 +19,9 @@ interface User {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUsers = () => {
     setLoading(true);
@@ -50,13 +54,23 @@ export default function AdminUsersPage() {
     }
   };
 
-  const deleteUser = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+  const handleDeleteClick = (user: User) => {
+    setUserToDelete(user);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
     try {
-      await api.delete(`/admin/users/${id}`);
+      await api.delete(`/admin/users/${userToDelete.id}`);
       fetchUsers();
+      setDeleteModalOpen(false);
+      setUserToDelete(null);
     } catch (err) {
       alert('Failed to delete user');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -125,7 +139,7 @@ export default function AdminUsersPage() {
                               {user.isActive ? <AlertTriangle size={18} /> : <Check size={18} />}
                             </button>
                             <button
-                              onClick={() => deleteUser(user.id)}
+                              onClick={() => handleDeleteClick(user)}
                               className="p-2 text-red-500 hover:bg-red-50 rounded-full transition cursor-pointer"
                               title="Delete User"
                             >
@@ -142,6 +156,18 @@ export default function AdminUsersPage() {
           )}
         </div>
       </AdminLayout>
+
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        title="Delete User"
+        message={`Are you sure you want to delete "${userToDelete?.name}"? This action cannot be undone.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setUserToDelete(null);
+        }}
+        isLoading={isDeleting}
+      />
     </AdminGuard>
   );
 }
