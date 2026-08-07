@@ -12,16 +12,6 @@ export class OtpController {
     private userRepo: Repository<User>,
   ) {}
 
-  @Post('send-otp')
-  async sendOtp(@Body() body: { email: string; phone: string }) {
-    const user = await this.userRepo.findOne({ where: { email: body.email } });
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-    await this.otpService.sendOtp(body.email, body.phone);
-    return { success: true, message: 'OTP sent successfully' };
-  }
-
   @Post('verify-otp')
   async verifyOtp(@Body() body: { email: string; otp: string }) {
     const isValid = await this.otpService.verifyOtp(body.email, body.otp);
@@ -33,12 +23,12 @@ export class OtpController {
   }
 
   @Post('resend-otp')
-  async resendOtp(@Body() body: { email: string; phone: string }) {
+  async resendOtp(@Body() body: { email: string }) {
     const user = await this.userRepo.findOne({ where: { email: body.email } });
     if (!user) {
       throw new BadRequestException('User not found');
     }
-    await this.otpService.resendOtp(body.email, body.phone);
+    const otp = await this.otpService.resendOtp(body.email);
     return { success: true, message: 'OTP resent successfully' };
   }
 }

@@ -4,31 +4,27 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { Roles } from './roles.decorator';
 import { UserRole } from './user.entity';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-  ) {}
+  constructor(private authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() registerDto: any) {
     try {
-      const user = await this.authService.register(registerDto);
-      return { success: true, user };
+      return await this.authService.register(registerDto);
     } catch (error: any) {
-      throw new BadRequestException(error.message);
+      throw new BadRequestException(error.message || 'Registration failed');
     }
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: { email: string; password: string }) {
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new BadRequestException('Invalid credentials');
     }
     return this.authService.login(user);
   }
@@ -62,17 +58,15 @@ export class AuthController {
     if (!body.email) {
       throw new BadRequestException('Email is required');
     }
-    await this.authService.forgotPassword(body.email);
-    return { success: true, message: 'Reset link sent to your email.' };
+    return this.authService.forgotPassword(body.email);
   }
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() body: { token: string; password: string }) {
-    if (!body.token || !body.password) {
-      throw new BadRequestException('Token and password are required');
+  async resetPassword(@Body() body: { token: string; newPassword: string }) {
+    if (!body.token || !body.newPassword) {
+      throw new BadRequestException('Token and newPassword are required');
     }
-    await this.authService.resetPassword(body.token, body.password);
-    return { success: true, message: 'Password has been reset successfully.' };
+    return this.authService.resetPassword(body.token, body.newPassword);
   }
 }

@@ -4,11 +4,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
-import { OtpController } from './otp.controller';
 import { AuthService } from './auth.service';
+import { OtpController } from './otp.controller';
+import { OtpService } from './otp.service';
 import { JwtStrategy } from './jwt.strategy';
 import { User } from './user.entity';
-import { OtpService } from './otp.service';
+import { EmailModule } from '../email/email.module';
+import { RedisModule } from '../redis/redis.module';
 import { AdminSeeder } from './admin-seeder.service';
 
 @Module({
@@ -22,9 +24,11 @@ import { AdminSeeder } from './admin-seeder.service';
       }),
       inject: [ConfigService],
     }),
+    EmailModule,
+    RedisModule,
   ],
   controllers: [AuthController, OtpController],
-  providers: [AuthService, JwtStrategy, AdminSeeder, OtpService],
-  exports: [AuthService, OtpService],
+  providers: [AuthService, OtpService, JwtStrategy, AdminSeeder],
+  exports: [AuthService],
 })
 export class AuthModule {}
