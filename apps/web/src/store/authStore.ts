@@ -44,14 +44,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const response = await api.post('/auth/login', { email, password });
       const data = response.data;
-      
-      // If unverified, return requiresOtp flag
+
       if (data.requiresOtp) {
         set({ loading: false });
         return { success: true, requiresOtp: true, user: data.user };
       }
-      
-      // Verified user
+
       const { access_token, user } = data;
       localStorage.setItem('token', access_token);
       localStorage.setItem('user', JSON.stringify(user));
