@@ -7,6 +7,7 @@ import * as crypto from 'crypto';
 import { User, UserRole } from './user.entity';
 import { EmailService } from '../email/email.service';
 import { OtpService } from './otp.service';
+import { SmsService } from '../sms/sms.service';
 
 @Injectable()
 export class AuthService {
@@ -16,10 +17,11 @@ export class AuthService {
     private jwtService: JwtService,
     private emailService: EmailService,
     private otpService: OtpService,
+    private smsService: SmsService,
   ) {}
 
   async register(registerDto: any) {
-    const { email, password, name, phone } = registerDto;
+    const { email, password, name, phone, otpChannel = 'email' } = registerDto;
 
     // ✅ Fast validation (no database calls)
     if (!email || !password || !name) {
@@ -49,6 +51,7 @@ export class AuthService {
       phone: phone || '',
       isVerified: false,
       role: UserRole.USER,
+      otpChannel,
     });
     await this.userRepository.save(user);
 
@@ -62,15 +65,19 @@ export class AuthService {
       // Still return success — user can resend OTP later
     }
 
-    // ✅ Send email in background (non-blocking)
+    // ✅ Send OTP via chosen channel (non-blocking)
     if (otp) {
       setImmediate(() => {
-        this.emailService.sendOtpEmail(email, otp).catch(() => {});
+        if (otpChannel === 'sms' && phone) {
+          this.smsService.sendOtpSms(phone, otp).catch(() => {});
+        } else {
+          this.emailService.sendOtpEmail(email, otp).catch(() => {});
+        }
       });
     }
 
     const { password: _, ...result } = user;
-    return { success: true, user: result };
+    return { success: true, user: result, otp };
   }
 
   async validateUser(email: string, password: string): Promise<any> {

@@ -28,7 +28,14 @@ export class OtpController {
     if (!user) {
       throw new BadRequestException('User not found');
     }
-    const otp = await this.otpService.resendOtp(body.email);
+    const otp = await this.otpService.generateAndStoreOtp(body.email);
+    setImmediate(() => {
+      if (user.otpChannel === 'sms' && user.phone) {
+        this.otpService.sendOtpViaSms(user.phone, otp).catch(() => {});
+      } else {
+        this.otpService.sendOtpViaEmail(body.email, otp).catch(() => {});
+      }
+    });
     return { success: true, message: 'OTP resent successfully' };
   }
 }

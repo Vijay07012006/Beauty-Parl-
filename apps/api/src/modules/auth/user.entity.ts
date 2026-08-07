@@ -32,6 +32,9 @@ export class User {
   @Column({ default: false })
   isVerified!: boolean;
 
+  @Column({ default: 'email' })
+  otpChannel!: string;
+
   @Column({ nullable: true })
   resetToken?: string;
 

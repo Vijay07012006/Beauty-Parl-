@@ -15,7 +15,7 @@ interface AuthStore {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; requiresOtp?: boolean; user?: User; error?: string }>;
-  register: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; user?: User; error?: string }>;
+  register: (name: string, email: string, password: string, phone: string, otpChannel?: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   verifyOtp: (email: string, otp: string) => Promise<{ success: boolean; error?: string }>;
   resendOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
   forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -66,10 +66,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  register: async (name: string, email: string, password: string, phone: string) => {
+  register: async (name: string, email: string, password: string, phone: string, otpChannel = 'email') => {
     set({ loading: true, error: null });
     try {
-      const response = await api.post('/auth/register', { name, email, password, phone });
+      const response = await api.post('/auth/register', { name, email, password, phone, otpChannel });
       const data = response.data;
       set({ loading: false });
       return { success: true, user: data.user };
