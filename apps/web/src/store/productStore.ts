@@ -28,7 +28,9 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await api.get('/products');
-      set({ products: response.data, loading: false });
+      const data = response.data;
+      const productList = Array.isArray(data) ? data : (data.products || data.data || []);
+      set({ products: productList, loading: false });
     } catch (error) {
       set({ error: 'Failed to fetch products', loading: false });
     }

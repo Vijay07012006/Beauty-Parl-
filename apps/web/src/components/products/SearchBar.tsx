@@ -33,8 +33,8 @@ export function SearchBar({ initialQuery = '' }: { initialQuery?: string }) {
         const response = await api.get(`/products`, {
           params: { limit: 5, search: query }
         });
-        const items = response.data?.data || response.data || [];
-        setSuggestions(items.slice(0, 5));
+        const items = response.data?.products || response.data?.data || response.data || [];
+        setSuggestions(Array.isArray(items) ? items.slice(0, 5) : []);
       } catch (err) {
         console.error('Error fetching suggestions:', err);
       } finally {

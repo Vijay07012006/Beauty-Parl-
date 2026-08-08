@@ -34,7 +34,11 @@ export default function AdminProductsPage() {
   const fetchProducts = () => {
     setLoading(true);
     api.get('/products')
-      .then(res => setProducts(res.data))
+      .then(res => {
+        const data = res.data;
+        const list = Array.isArray(data) ? data : (data.products || data.data || []);
+        setProducts(list);
+      })
       .catch(err => console.error('Failed to fetch products', err))
       .finally(() => setLoading(false));
   };

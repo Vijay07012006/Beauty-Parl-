@@ -78,8 +78,9 @@ export default function ProductDetailPage() {
         const similarRes = await api.get('/products', {
           params: { limit: 4, category: res.data.category }
         });
-        const items = similarRes.data?.data || similarRes.data || [];
-        setSimilarProducts(items.filter((item: Product) => item.id !== res.data.id).slice(0, 4));
+        const items = similarRes.data?.products || similarRes.data?.data || similarRes.data || [];
+        const itemsArray = Array.isArray(items) ? items : [];
+        setSimilarProducts(itemsArray.filter((item: Product) => item.id !== res.data.id).slice(0, 4));
       }
     } catch (err) {
       console.error('Failed to load product detail', err);
