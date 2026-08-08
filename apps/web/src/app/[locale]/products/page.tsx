@@ -56,7 +56,19 @@ function ProductsContent() {
     ? products 
     : products.filter(p => p.category?.toLowerCase() === category.toLowerCase());
 
-  const categories = ['all', 'Makeup', 'Skincare', 'Haircare', 'Fragrance'];
+  const categories = [
+    'all',
+    'Makeup',
+    'Skincare',
+    'Haircare',
+    'Fragrance',
+    'Tools & Brushes',
+    'Bath & Body',
+    'Men\'s Grooming',
+    'Natural & Organic',
+    'Luxury Collection',
+    'Accessories'
+  ];
 
   if (loading) {
     return (

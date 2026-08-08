@@ -65,15 +65,14 @@ export function OtpModal({ email, phone, onVerified, onClose }: OtpModalProps) {
         )}
 
         {/* Header */}
-        <h2 className="text-3xl font-playfair font-bold mb-2 text-center">Verify Your Account</h2>
-        <p className="text-sm text-muted-foreground text-center mb-3">
-          Enter the 6-digit code for <span className="font-semibold text-foreground">{email}</span>
-        </p>
-
-        {/* Dev hint */}
-        <div className="text-xs text-center text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 mb-5">
-          💡 <strong>Dev mode:</strong> Check the <strong>NestJS terminal</strong> — look for:<br/>
-          <code className="font-mono text-amber-800">📧 OTP for {email}: XXXXXX</code>
+        <h2 className="text-3xl font-playfair font-bold mb-4 text-center">Verify Your Account</h2>
+        <div className="text-center mb-6">
+          <p className="text-muted-foreground mb-2">
+            Enter the 6-digit code sent to <strong>{email}</strong>
+          </p>
+          <p className="text-xs text-muted-foreground/70 mb-4">
+            📧 Check your email inbox (and spam folder)
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

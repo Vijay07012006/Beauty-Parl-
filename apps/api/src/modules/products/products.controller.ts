@@ -28,6 +28,7 @@ export class ProductsController {
   }
 
   @Get(':id')
+  @CacheTTL(60)
   async findOne(@Param('id') id: number): Promise<Product | null> {
     return this.productsService.findOne(id);
   }
