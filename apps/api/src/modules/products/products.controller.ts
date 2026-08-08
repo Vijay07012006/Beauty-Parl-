@@ -77,6 +77,11 @@ export class ProductsController {
     return this.productsService.findReviews(id);
   }
 
+  @Get(':id/reviews/stats')
+  async getReviewStats(@Param('id') id: number) {
+    return this.productsService.getRatingStats(id);
+  }
+
   @Post(':id/reviews')
   @HttpCode(HttpStatus.CREATED)
   async postReview(
@@ -84,5 +89,25 @@ export class ProductsController {
     @Body() body: { reviewerName: string; rating: number; comment: string }
   ) {
     return this.productsService.createReview(id, body);
+  }
+
+  // ========== 🔧 ADMIN REVIEW ENDPOINTS ==========
+
+  @Get('admin/reviews')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  async getAllReviews(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20',
+  ) {
+    return this.productsService.getAllReviews(parseInt(page, 10), parseInt(limit, 10));
+  }
+
+  @Delete('reviews/:reviewId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async deleteReview(@Param('reviewId') reviewId: number) {
+    return this.productsService.deleteReview(reviewId);
   }
 }

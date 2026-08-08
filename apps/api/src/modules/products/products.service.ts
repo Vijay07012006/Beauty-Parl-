@@ -176,16 +176,45 @@ export class ProductsService {
     await this.reviewRepository.save(review);
 
     // Recalculate average rating & ratingCount for the product
+    await this.recalculateRating(productId);
+
+    return review;
+  }
+
+  async getRatingStats(productId: number): Promise<{ average: number; count: number }> {
+    const reviews = await this.reviewRepository.find({ where: { productId } });
+    const count = reviews.length;
+    if (count === 0) return { average: 0, count: 0 };
+    const total = reviews.reduce((sum, r) => sum + r.rating, 0);
+    return { average: parseFloat((total / count).toFixed(1)), count };
+  }
+
+  private async recalculateRating(productId: number): Promise<void> {
     const reviews = await this.reviewRepository.find({ where: { productId } });
     const ratingCount = reviews.length;
     const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
     const avgRating = ratingCount > 0 ? parseFloat((totalRating / ratingCount).toFixed(2)) : 4.50;
+    await this.productRepository.update(productId, { rating: avgRating, ratingCount });
+  }
 
-    await this.productRepository.update(productId, {
-      rating: avgRating,
-      ratingCount
+  // ========== 🔧 ADMIN REVIEW METHODS ==========
+
+  async getAllReviews(page: number = 1, limit: number = 20): Promise<{ reviews: ProductReview[]; total: number }> {
+    const [reviews, total] = await this.reviewRepository.findAndCount({
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { reviews, total };
+  }
 
-    return review;
+  async deleteReview(reviewId: number): Promise<{ success: boolean }> {
+    const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
+    if (!review) throw new NotFoundException('Review not found');
+    const { productId } = review;
+    await this.reviewRepository.delete(reviewId);
+    await this.recalculateRating(productId);
+    return { success: true };
   }
 }
+

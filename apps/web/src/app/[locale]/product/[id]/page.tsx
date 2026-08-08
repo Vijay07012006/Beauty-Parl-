@@ -14,6 +14,8 @@ import { DeliveryChecker } from '@/components/products/DeliveryChecker';
 import { WishlistButton } from '@/components/products/WishlistButton';
 import { ProductCard } from '@/components/products/ProductCard';
 import { toast } from 'sonner';
+import { ReviewForm } from '@/components/reviews/ReviewForm';
+import { ReviewList } from '@/components/reviews/ReviewList';
 
 interface Product {
   id: number;
@@ -30,13 +32,7 @@ interface Product {
   ratingCount?: number;
 }
 
-interface Review {
-  id: number;
-  reviewerName: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-}
+
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -52,11 +48,7 @@ export default function ProductDetailPage() {
   const [selectedVariant, setSelectedVariant] = useState('Standard');
 
   // Reviews state
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [reviewName, setReviewName] = useState('');
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState('');
-  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewRefresh, setReviewRefresh] = useState(0);
 
   // Similar Products state
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
@@ -69,10 +61,8 @@ export default function ProductDetailPage() {
       const res = await api.get(`/products/${id}`);
       setProduct(res.data);
 
-      // Fetch reviews
-      const reviewsRes = await api.get(`/products/${id}/reviews`);
-      setReviews(reviewsRes.data || []);
-
+      // Trigger review list to load fresh data
+      setReviewRefresh(Date.now());
       // Fetch similar products
       if (res.data?.category) {
         const similarRes = await api.get('/products', {
@@ -117,27 +107,6 @@ export default function ProductDetailPage() {
     router.push('/en/cart');
   };
 
-  const handlePostReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id || !reviewName.trim() || !reviewComment.trim()) return;
-    setSubmittingReview(true);
-    try {
-      await api.post(`/products/${id}/reviews`, {
-        reviewerName: reviewName,
-        rating: reviewRating,
-        comment: reviewComment
-      });
-      toast.success('Thank you for your review!');
-      setReviewName('');
-      setReviewComment('');
-      // Reload product data to get updated rating and review list
-      fetchProductData();
-    } catch (err) {
-      toast.error('Failed to post review. Please try again.');
-    } finally {
-      setSubmittingReview(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -250,7 +219,7 @@ export default function ProductDetailPage() {
                 <div className="flex items-center gap-3">
                   <RatingStars rating={product.rating} count={product.ratingCount} size={18} />
                   <span className="text-xs text-muted-foreground border-l border-border/70 pl-3">
-                    {reviews.length} Verified Buyer Reviews
+                    {product.ratingCount || 0} Verified Buyer Reviews
                   </span>
                 </div>
               )}
@@ -349,7 +318,7 @@ export default function ProductDetailPage() {
                   desc: 'Description',
                   ingredients: 'Ingredients',
                   'how-to': 'How to Use',
-                  reviews: `Reviews (${reviews.length})`
+                  reviews: `Reviews (${product.ratingCount || 0})`
                 };
                 return (
                   <button
@@ -406,76 +375,14 @@ export default function ProductDetailPage() {
 
               {activeTab === 'reviews' && (
                 <div className="space-y-8">
-                  {/* Reviews Stats block */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-secondary/15 p-6 rounded-2xl border border-border/50">
-                    <div className="text-center space-y-1">
-                      <span className="text-4xl font-extrabold text-foreground">{(product.rating ?? 4.5).toFixed(1)}</span>
-                      <div className="flex justify-center">
-                        <RatingStars rating={product.rating ?? 4.5} />
-                      </div>
-                      <span className="text-xs text-muted-foreground">Product Rating Summary</span>
-                    </div>
-
-                    <div className="md:col-span-2 space-y-2 border-t md:border-t-0 md:border-l border-border/70 pt-4 md:pt-0 md:pl-6">
-                      <h4 className="text-sm font-bold mb-3">Add Your Verified Review</h4>
-                      <form onSubmit={handlePostReview} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          required
-                          value={reviewName}
-                          onChange={(e) => setReviewName(e.target.value)}
-                          placeholder="Your Name"
-                          className="px-3 py-2 rounded-xl border border-input text-xs bg-background focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        />
-                        <select
-                          value={reviewRating}
-                          onChange={(e) => setReviewRating(parseInt(e.target.value, 10))}
-                          className="px-3 py-2 rounded-xl border border-input text-xs bg-background focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        >
-                          <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
-                          <option value="4">⭐⭐⭐⭐ (4/5)</option>
-                          <option value="3">⭐⭐⭐ (3/5)</option>
-                          <option value="2">⭐⭐ (2/5)</option>
-                          <option value="1">⭐ (1/5)</option>
-                        </select>
-                        <textarea
-                          required
-                          rows={2}
-                          value={reviewComment}
-                          onChange={(e) => setReviewComment(e.target.value)}
-                          placeholder="Write comments here..."
-                          className="md:col-span-2 px-3 py-2 rounded-xl border border-input text-xs bg-background focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        />
-                        <button
-                          type="submit"
-                          disabled={submittingReview}
-                          className="md:col-span-2 py-2 text-xs font-bold bg-primary text-white rounded-xl hover:bg-primary/90 transition-all cursor-pointer"
-                        >
-                          {submittingReview ? 'Submitting...' : 'Submit Review'}
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-
-                  {/* Reviews List */}
-                  {reviews.length === 0 ? (
-                    <p className="text-center py-6 text-muted-foreground text-sm">No reviews yet. Be the first to share your thoughts!</p>
-                  ) : (
-                    <div className="space-y-4 divide-y divide-border/40">
-                      {reviews.map((rev) => (
-                        <div key={rev.id} className="pt-4 first:pt-0 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <h5 className="font-semibold text-sm">{rev.reviewerName}</h5>
-                            <span className="text-[10px] text-muted-foreground">
-                              {new Date(rev.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <RatingStars rating={rev.rating} size={12} />
-                          <p className="text-xs text-muted-foreground leading-relaxed">{rev.comment}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <ReviewForm
+                    productId={product.id}
+                    onReviewSubmitted={() => setReviewRefresh(Date.now())}
+                  />
+                  <ReviewList
+                    productId={product.id}
+                    refreshTrigger={reviewRefresh}
+                  />
                 </div>
               )}
             </div>
