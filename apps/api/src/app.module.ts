@@ -15,9 +15,11 @@ import { RedisModule } from './modules/redis/redis.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { EmailModule } from './modules/email/email.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
 import { Product } from './modules/products/product.entity';
 import { ProductReview } from './modules/products/review.entity';
 import { Wishlist } from './modules/wishlist/wishlist.entity';
+import { Address } from './modules/addresses/address.entity';
 import { User } from './modules/auth/user.entity';
 import { Order } from './modules/orders/order.entity';
 import configuration from './config/configuration';
@@ -38,7 +40,7 @@ import configuration from './config/configuration';
         username: config.get('database.url') ? undefined : config.get('database.username'),
         password: config.get('database.url') ? undefined : config.get('database.password'),
         database: config.get('database.url') ? undefined : config.get('database.database'),
-        entities: [Product, User, Order, ProductReview, Wishlist],
+        entities: [Product, User, Order, ProductReview, Wishlist, Address],
         autoLoadEntities: true,
         synchronize: process.env.DB_SYNCHRONIZE !== 'false', // Default to true unless explicitly disabled, ensuring tables are created on startup since there are no migrations
         logging: process.env.NODE_ENV === 'development',
@@ -62,6 +64,7 @@ import configuration from './config/configuration';
     PaymentsModule,
     EmailModule,
     WishlistModule,
+    AddressesModule,
   ],
   controllers: [AppController],
   providers: [

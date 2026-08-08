@@ -16,10 +16,13 @@ export default function CheckoutPage() {
   const locale = params?.locale || 'en';
   
   const { items, total, clearCart } = useCartStore();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
 
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -36,15 +39,42 @@ export default function CheckoutPage() {
     setMounted(true);
   }, []);
 
+  // Fetch saved addresses if logged in
   useEffect(() => {
-    if (user) {
+    if (user && token) {
+      api.get('/addresses')
+        .then(res => {
+          const list = Array.isArray(res.data) ? res.data : [];
+          setAddresses(list);
+          const defaultAddress = list.find((a: any) => a.isDefault);
+          if (defaultAddress) {
+            setSelectedAddressId(defaultAddress.id);
+            setForm({
+              name: defaultAddress.name || user.name || '',
+              email: user.email || '',
+              phone: defaultAddress.phone || '',
+              address: defaultAddress.address || '',
+              city: defaultAddress.city || '',
+              state: defaultAddress.state || '',
+              pincode: defaultAddress.pincode || '',
+            });
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load user addresses', err);
+        });
+    }
+  }, [user, token]);
+
+  useEffect(() => {
+    if (user && !selectedAddressId) {
       setForm(f => ({
         ...f,
         name: f.name || user.name || '',
         email: f.email || user.email || '',
       }));
     }
-  }, [user]);
+  }, [user, selectedAddressId]);
 
   useEffect(() => {
     if (mounted && items.length === 0) {
@@ -175,6 +205,39 @@ export default function CheckoutPage() {
               <div className="bg-card p-6 rounded-2xl shadow-sm border border-border/50">
                 <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
                 <div className="space-y-4">
+                  {addresses.length > 0 && (
+                    <div className="space-y-1.5 pb-2">
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Select Saved Address</label>
+                      <select
+                        value={selectedAddressId || ''}
+                        onChange={(e) => {
+                          const id = Number(e.target.value);
+                          setSelectedAddressId(id);
+                          const address = addresses.find((a: any) => a.id === id);
+                          if (address) {
+                            setForm({
+                              name: address.name || '',
+                              email: user?.email || form.email || '',
+                              phone: address.phone || '',
+                              address: address.address || '',
+                              city: address.city || '',
+                              state: address.state || '',
+                              pincode: address.pincode || '',
+                            });
+                          }
+                        }}
+                        className="w-full px-4 py-3 rounded-xl border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer font-medium"
+                      >
+                        <option value="">Choose a saved address...</option>
+                        {addresses.map((address: any) => (
+                          <option key={address.id} value={address.id}>
+                            {address.name} - {address.city}, {address.state} {address.isDefault ? '(Default)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">Full Name</label>

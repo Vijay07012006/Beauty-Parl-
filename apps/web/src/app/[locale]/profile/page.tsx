@@ -1,15 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { User, Mail, Phone, Shield, Edit2, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
+
   const { user, token, updateProfile } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({
@@ -20,9 +24,9 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!token) {
-      router.push('/en/auth/login');
+      router.push(`/${locale}/auth/login`);
     }
-  }, [token, router]);
+  }, [token, router, locale]);
 
   useEffect(() => {
     if (user) {
@@ -123,11 +127,14 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Change Password Link */}
-            <div className="mt-6 pt-6 border-t border-border/50">
-              <a href="/en/auth/forgot-password" className="text-primary hover:underline text-sm font-medium">
+            {/* Change Password & Saved Addresses Links */}
+            <div className="mt-6 pt-6 border-t border-border/50 flex justify-between items-center text-sm font-medium">
+              <Link href={`/${locale}/addresses`} className="text-primary hover:underline">
+                Saved Addresses →
+              </Link>
+              <Link href={`/${locale}/auth/forgot-password`} className="text-primary hover:underline">
                 Change Password →
-              </a>
+              </Link>
             </div>
           </div>
 
