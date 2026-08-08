@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useProductStore } from '@/store/productStore';
 import { useCartStore } from '@/store/cartStore';
+import { useTranslations } from 'next-intl';
 
 interface Product {
   id: number;
@@ -19,6 +20,7 @@ interface Product {
 }
 
 export function FeaturedProducts() {
+  const t = useTranslations('products');
   const params = useParams();
   const locale = params?.locale || 'en';
   
@@ -37,7 +39,7 @@ export function FeaturedProducts() {
     return (
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-muted-foreground animate-pulse">Loading products...</p>
+          <p className="text-muted-foreground animate-pulse">Loading...</p>
         </div>
       </section>
     );
@@ -66,13 +68,13 @@ export function FeaturedProducts() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h2 className="text-4xl font-playfair font-bold text-foreground">Featured Products</h2>
-          <p className="text-muted-foreground mt-2">Our handpicked favorites</p>
+          <h2 className="text-4xl font-playfair font-bold text-foreground">{t('featured')}</h2>
+          <p className="text-muted-foreground mt-2">{t('handpicked')}</p>
         </motion.div>
 
         {displayProducts.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No products available yet.</p>
+            <p className="text-muted-foreground">{t('no_products')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -119,9 +121,9 @@ export function FeaturedProducts() {
                             maxStock: product.stock || 10,
                           });
                         }}
-                        className="w-full mt-2 px-4 py-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors text-sm font-medium cursor-pointer"
+                        className="w-full mt-2 px-4 py-2 bg-primary text-white rounded-full hover:bg-primary/95 transition-colors text-sm font-semibold cursor-pointer"
                       >
-                        Add to Cart
+                        {t('add_to_cart')}
                       </button>
                     </div>
                   </div>

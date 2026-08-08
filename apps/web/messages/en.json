@@ -2,6 +2,8 @@
   "common": {
     "title": "Beauty Parlé",
     "tagline": "Where Beauty Speaks Your Language",
+    "description": "Discover premium cosmetics, book professional makeup services, and embrace beauty that understands you.",
+    "language": "Language",
     "shop_now": "Shop Now",
     "book_appointment": "Book Appointment",
     "products": "Products",

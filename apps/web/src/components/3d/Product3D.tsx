@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 
 const Fallback = () => (
-  <div className="w-full h-[400px] md:h-[500px] lg:h-[550px] flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/20 to-primary/5 rounded-2xl">
+  <div className="w-full h-[300px] md:h-[350px] lg:h-[400px] flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/20 to-primary/5 rounded-2xl">
     <div className="text-center p-4">
-      <span className="text-5xl mb-3 block">💄</span>
-      <p className="text-muted-foreground text-sm font-medium">3D viewer unavailable</p>
+      <span className="text-4xl mb-3 block">💄</span>
+      <p className="text-muted-foreground text-xs font-medium">3D viewer unavailable</p>
     </div>
   </div>
 );
@@ -46,7 +46,7 @@ export function Product3D() {
   // SSR: don't render canvas server-side (avoids hydration mismatch)
   if (!isMounted) {
     return (
-      <div className="w-full h-[400px] md:h-[500px] lg:h-[550px] animate-pulse bg-gradient-to-br from-primary/10 via-secondary/20 to-primary/5 rounded-2xl" />
+      <div className="w-full h-[300px] md:h-[350px] lg:h-[400px] animate-pulse bg-gradient-to-br from-primary/10 via-secondary/20 to-primary/5 rounded-2xl" />
     );
   }
 

@@ -66,8 +66,7 @@ export function Hero() {
               transition={{ delay: 0.4 }}
               className="text-lg text-muted-foreground max-w-lg"
             >
-              Discover premium cosmetics, book professional makeup services,
-              and embrace beauty that understands you.
+              {t('description')}
             </motion.p>
 
             <motion.div
@@ -117,7 +116,7 @@ export function Hero() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4, duration: 0.8, type: "spring" }}
-            className="relative"
+            className="relative lg:col-span-1 max-w-md mx-auto w-full"
           >
             <Product3D />
           </motion.div>

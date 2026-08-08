@@ -114,9 +114,9 @@ export function Product3DViewer() {
   }, []);
 
   return (
-    <div className="w-full h-[400px] md:h-[500px] lg:h-[550px] relative">
+    <div className="w-full h-[300px] md:h-[350px] lg:h-[400px] relative">
       <Canvas
-        camera={{ position: [0, 0, isMobile ? 5.5 : 4.5], fov: 40 }}
+        camera={{ position: [0, 0, isMobile ? 6 : 5], fov: 42 }}
         gl={{ 
           antialias: true, 
           alpha: true,
