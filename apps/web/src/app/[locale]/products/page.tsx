@@ -37,12 +37,15 @@ export default function ProductsPage() {
     try {
       const url = `/products?page=${pageNum}&limit=12${category ? `&category=${category}` : ''}`;
       const response = await api.get(url);
-      const newProducts = response.data.products || [];
+      const newProducts = Array.isArray(response.data.products) ? response.data.products : [];
       
       if (newProducts.length === 0) {
         setHasMore(false);
       } else {
-        setProducts(prev => pageNum === 1 ? newProducts : [...prev, ...newProducts]);
+        setProducts(prev => {
+          const prevArray = Array.isArray(prev) ? prev : [];
+          return pageNum === 1 ? newProducts : [...prevArray, ...newProducts];
+        });
         setHasMore(response.data.hasMore ?? (newProducts.length >= 12));
       }
     } catch (error) {
@@ -90,7 +93,8 @@ export default function ProductsPage() {
     }
   }, [page]);
 
-  const filteredProducts = products.filter(p => 
+  const productsArray = Array.isArray(products) ? products : [];
+  const filteredProducts = productsArray.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.category.toLowerCase().includes(searchTerm.toLowerCase())
   );

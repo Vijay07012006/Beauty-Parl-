@@ -1,5 +1,6 @@
 import '../globals.css';
 import { Toaster } from 'sonner';
+import { ErrorBoundaryProvider } from '@/components/providers/ErrorBoundaryProvider';
  
 export default async function RootLayout({
   children,
@@ -25,7 +26,9 @@ export default async function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
-        {children}
+        <ErrorBoundaryProvider>
+          {children}
+        </ErrorBoundaryProvider>
         <Toaster position="top-center" richColors />
       </body>
     </html>

@@ -1,14 +1,32 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useProductStore } from '@/store/productStore';
 import { useCartStore } from '@/store/cartStore';
 
+interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  stock: number;
+}
+
 export function FeaturedProducts() {
-  const { products, loading, error, fetchProducts } = useProductStore();
+  const params = useParams();
+  const locale = params?.locale || 'en';
+  
+  const products = useProductStore((state) => state.products) || [];
+  const loading = useProductStore((state) => state.loading);
+  const error = useProductStore((state) => state.error);
+  const fetchProducts = useProductStore((state) => state.fetchProducts);
+  
   const { addItem } = useCartStore();
 
   useEffect(() => {
@@ -17,9 +35,9 @@ export function FeaturedProducts() {
 
   if (loading) {
     return (
-      <section className="py-16">
+      <section className="py-16 bg-background">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-muted-foreground">Loading products...</p>
+          <p className="text-muted-foreground animate-pulse">Loading products...</p>
         </div>
       </section>
     );
@@ -27,7 +45,7 @@ export function FeaturedProducts() {
 
   if (error) {
     return (
-      <section className="py-16">
+      <section className="py-16 bg-background">
         <div className="container mx-auto px-4 text-center">
           <p className="text-red-500">{error}</p>
         </div>
@@ -35,10 +53,11 @@ export function FeaturedProducts() {
     );
   }
 
-  const displayProducts = products.slice(0, 4);
+  const productsArray = Array.isArray(products) ? products : [];
+  const displayProducts = productsArray.slice(0, 4);
 
   return (
-    <section className="py-16">
+    <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -47,13 +66,13 @@ export function FeaturedProducts() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h2 className="text-4xl font-playfair font-bold">Featured Products</h2>
+          <h2 className="text-4xl font-playfair font-bold text-foreground">Featured Products</h2>
           <p className="text-muted-foreground mt-2">Our handpicked favorites</p>
         </motion.div>
 
         {displayProducts.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No products available yet. Add some via API!</p>
+            <p className="text-muted-foreground">No products available yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -67,8 +86,8 @@ export function FeaturedProducts() {
                 whileHover={{ y: -8 }}
                 className="group"
               >
-                <Link href={`/product/${product.id}`}>
-                  <div className="bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
+                <Link href={`/${locale}/product/${product.id}`}>
+                  <div className="bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 border border-border/50">
                     <div className="relative h-64 overflow-hidden bg-secondary/30">
                       {product.image ? (
                         <Image
@@ -86,7 +105,7 @@ export function FeaturedProducts() {
                       )}
                     </div>
                     <div className="p-4 space-y-2">
-                      <h3 className="font-medium text-lg truncate">{product.name}</h3>
+                      <h3 className="font-medium text-lg truncate text-foreground">{product.name}</h3>
                       <p className="text-primary font-bold">${Number(product.price).toFixed(2)}</p>
                       <button
                         onClick={(e) => {
