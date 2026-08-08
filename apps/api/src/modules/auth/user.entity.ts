@@ -35,6 +35,23 @@ export class User {
   @Column({ default: 'email' })
   otpChannel!: string;
 
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    default: {
+      marketing: true,
+      order_updates: true,
+      newsletter: false,
+      promotional: false,
+    },
+  })
+  emailPreferences!: {
+    marketing: boolean;
+    order_updates: boolean;
+    newsletter: boolean;
+    promotional: boolean;
+  };
+
   @Column({ nullable: true })
   resetToken?: string;
 

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as SibApiV3Sdk from '@sendinblue/client';
+import { User } from '../auth/user.entity';
 
 @Injectable()
 export class EmailService {
@@ -8,7 +11,11 @@ export class EmailService {
   private fromEmail: string;
   private frontendUrl: string;
 
-  constructor(private config: ConfigService) {
+  constructor(
+    private config: ConfigService,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {
     const apiKey = process.env.BREVO_API_KEY || '';
     this.fromEmail = this.config.get<string>('email.from') || 'Beauty Parlé <noreply@beautyparle.com>';
     this.frontendUrl = this.config.get<string>('frontendUrl') || 'http://localhost:3000';
@@ -132,6 +139,13 @@ export class EmailService {
   }
 
   async sendOrderConfirmation(to: string, orderId: number, total: number, items: any[]) {
+    // Check user preferences
+    const user = await this.userRepo.findOne({ where: { email: to } });
+    if (user && user.emailPreferences && user.emailPreferences.order_updates === false) {
+      console.log(`📧 Order confirmation email skipped for ${to} (preference disabled)`);
+      return;
+    }
+
     const itemsHtml = items.map(i =>
       `<tr><td style="padding: 8px 0; border-bottom: 1px solid #FDF0F0;">${i.name}</td><td style="padding: 8px 0; text-align: center;">${i.quantity}</td><td style="padding: 8px 0; text-align: right;">$${Number(i.price).toFixed(2)}</td></tr>`
     ).join('');
@@ -162,6 +176,13 @@ export class EmailService {
   }
 
   async sendOrderStatusEmail(to: string, orderId: number, status: string) {
+    // Check user preferences
+    const user = await this.userRepo.findOne({ where: { email: to } });
+    if (user && user.emailPreferences && user.emailPreferences.order_updates === false) {
+      console.log(`📧 Order status email skipped for ${to} (preference disabled)`);
+      return;
+    }
+
     const statusMap: Record<string, string> = {
       shipped: '📦 Shipped',
       delivered: '✅ Delivered',

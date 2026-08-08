@@ -80,4 +80,17 @@ export class AuthController {
     }
     return this.authService.resetPassword(body.token, body.newPassword);
   }
+
+  @Get('preferences')
+  @UseGuards(JwtAuthGuard)
+  async getPreferences(@Request() req: any) {
+    return this.authService.getPreferences(req.user.id);
+  }
+
+  @Put('preferences')
+  @UseGuards(JwtAuthGuard)
+  async updatePreferences(@Request() req: any, @Body() preferences: any) {
+    const updated = await this.authService.updatePreferences(req.user.id, preferences);
+    return { success: true, preferences: updated };
+  }
 }

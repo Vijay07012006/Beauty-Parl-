@@ -209,4 +209,30 @@ export class AuthService {
     await this.userRepository.update({ email }, { isVerified: true });
     return { success: true, message: 'Account verified successfully' };
   }
+
+  async getPreferences(userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+    return user.emailPreferences || {
+      marketing: true,
+      order_updates: true,
+      newsletter: false,
+      promotional: false,
+    };
+  }
+
+  async updatePreferences(userId: number, preferences: any) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+
+    const emailPreferences = {
+      marketing: !!preferences.marketing,
+      order_updates: !!preferences.order_updates,
+      newsletter: !!preferences.newsletter,
+      promotional: !!preferences.promotional,
+    };
+
+    await this.userRepository.update(userId, { emailPreferences });
+    return emailPreferences;
+  }
 }
