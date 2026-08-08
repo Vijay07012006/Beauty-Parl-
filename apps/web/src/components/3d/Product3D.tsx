@@ -1,132 +1,95 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Float, Environment } from '@react-three/drei';
+import { OrbitControls, Environment, Float } from '@react-three/drei';
 import * as THREE from 'three';
 
-interface FloatingProductProps {
-  isHovered: boolean;
-}
+// Simple 3D product model (fallback if glTF not available)
+function CosmeticProduct() {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
+  const clock = useRef(new THREE.Clock());
 
-function FloatingProduct({ isHovered }: FloatingProductProps) {
-  const meshRef = useRef<any>(null);
-
-  useFrame((state, delta) => {
-    const elapsed = state.clock.getElapsedTime();
+  useFrame(() => {
+    const delta = clock.current.getDelta();
+    const elapsed = clock.current.getElapsedTime();
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.5;
+    }
     if (meshRef.current) {
-      // Smooth auto-rotation with hover pause
-      if (!isHovered) {
-        meshRef.current.rotation.y += delta * 0.45;
-      }
-      meshRef.current.rotation.x = Math.sin(elapsed * 0.3) * 0.06;
-      meshRef.current.position.y = Math.cos(elapsed * 0.6) * 0.05;
+      meshRef.current.rotation.x = Math.sin(elapsed * 0.2) * 0.05;
     }
   });
 
   return (
-    <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.4}>
-      <mesh ref={meshRef} position={[0, -0.2, 0]} castShadow receiveShadow>
-        {/* Luxury Lipstick Tube Body */}
-        <cylinderGeometry args={[0.55, 0.6, 1.8, 64]} />
-        <meshPhysicalMaterial 
-          color="#2D1B2E" 
-          roughness={0.15} 
-          metalness={0.1}
-          clearcoat={1.0}
-          clearcoatRoughness={0.05}
-          reflectivity={0.8}
+    <group ref={groupRef} position={[0, 0, 0]}>
+      {/* Main Body */}
+      <mesh ref={meshRef} position={[0, 0, 0]}>
+        <cylinderGeometry args={[0.6, 0.8, 1.8, 32]} />
+        <meshStandardMaterial
+          color="#E8A0BF"
+          roughness={0.3}
+          metalness={0.4}
+          envMapIntensity={0.8}
         />
-        
-        {/* Gold Cap / Neck */}
-        <mesh position={[0, 1.15, 0]} castShadow>
-          <cylinderGeometry args={[0.5, 0.5, 0.5, 64]} />
-          <meshPhysicalMaterial 
-            color="#D4AF37" 
-            roughness={0.05} 
-            metalness={0.95}
-            clearcoat={1.0}
-            clearcoatRoughness={0.05}
-          />
-        </mesh>
-
-        {/* actual Lipstick Product Bullet */}
-        <mesh position={[0, 1.6, 0]} castShadow>
-          <cylinderGeometry args={[0.42, 0.42, 0.5, 64]} />
-          <meshPhysicalMaterial 
-            color="#E8A0BF" 
-            roughness={0.25} 
-            metalness={0.0}
-            clearcoat={0.3}
-            clearcoatRoughness={0.2}
-          />
-        </mesh>
-
-        {/* Gold Accent Band */}
-        <mesh position={[0, 0.0, 0]} castShadow>
-          <torusGeometry args={[0.575, 0.04, 16, 64]} />
-          <meshPhysicalMaterial 
-            color="#D4AF37" 
-            roughness={0.05} 
-            metalness={0.95}
-            clearcoat={1.0}
-            clearcoatRoughness={0.05}
-          />
-        </mesh>
       </mesh>
-    </Float>
+
+      {/* Gold Ring */}
+      <mesh position={[0, 0.9, 0]}>
+        <torusGeometry args={[0.65, 0.04, 16, 32]} />
+        <meshStandardMaterial
+          color="#D4AF37"
+          roughness={0.2}
+          metalness={0.8}
+        />
+      </mesh>
+
+      {/* Cap */}
+      <mesh position={[0, 1.2, 0]}>
+        <cylinderGeometry args={[0.7, 0.65, 0.4, 32]} />
+        <meshStandardMaterial
+          color="#D4AF37"
+          roughness={0.2}
+          metalness={0.7}
+        />
+      </mesh>
+
+      {/* Decorative Dot */}
+      <mesh position={[0, 1.0, 0]}>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial color="#E8A0BF" />
+      </mesh>
+    </group>
   );
 }
 
 export function Product3D() {
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
-    <div 
-      className="w-full h-[320px] md:h-[450px] lg:h-[500px] bg-gradient-to-tr from-secondary/40 via-background to-primary/10 rounded-3xl overflow-hidden shadow-inner relative border border-border/30 group"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Canvas camera={{ position: [0, 0.5, 4.2], fov: 45 }} shadows>
-        {/* Better Lighting System */}
-        <ambientLight intensity={0.6} />
-        
-        {/* Directional Key Light */}
-        <directionalLight 
-          position={[5, 8, 5]} 
-          intensity={1.8} 
-          castShadow 
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-        />
-        
-        {/* Rim / Hair Light for outline definition */}
-        <directionalLight 
-          position={[-5, 5, -5]} 
-          intensity={1.5} 
-          color="#FFF5EA" 
-        />
-        
-        {/* Soft Fill Light from below */}
-        <directionalLight 
-          position={[0, -3, 2]} 
-          intensity={0.6} 
-          color="#E8A0BF" 
-        />
-        
-        {/* Fill light from the left */}
-        <pointLight position={[-4, 2, 2]} intensity={0.5} />
-
-        <Environment preset="studio" />
-        
-        <FloatingProduct isHovered={isHovered} />
-        
-        <OrbitControls 
-          enableZoom={false} 
-          enablePan={false} 
-          minPolarAngle={Math.PI / 3}
-          maxPolarAngle={Math.PI / 1.8}
-        />
+    <div className="w-full h-[450px] md:h-[500px] rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 via-secondary/20 to-primary/5">
+      <Canvas
+        camera={{ position: [0, 0, 5], fov: 45 }}
+        gl={{ antialias: true, alpha: true }}
+        dpr={[1, 2]}
+      >
+        <Suspense fallback={null}>
+          <ambientLight intensity={0.5} />
+          <spotLight position={[5, 10, 5]} angle={0.15} penumbra={1} intensity={1.2} />
+          <pointLight position={[-5, -5, -5]} intensity={0.5} />
+          <directionalLight position={[0, 5, 5]} intensity={0.8} />
+          <Environment preset="sunset" background={false} />
+          <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+            <CosmeticProduct />
+          </Float>
+          <OrbitControls
+            enableZoom={true}
+            enablePan={false}
+            autoRotate={true}
+            autoRotateSpeed={1.5}
+            minPolarAngle={Math.PI / 3}
+            maxPolarAngle={Math.PI / 1.5}
+          />
+        </Suspense>
       </Canvas>
     </div>
   );

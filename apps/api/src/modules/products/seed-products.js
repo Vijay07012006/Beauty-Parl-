@@ -3,23 +3,23 @@ const { Client } = require('pg');
 const connectionString = 'postgresql://neondb_owner:npg_UvCBr62dQNXc@ep-fancy-forest-aoczkmqc-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require';
 
 const categoriesData = [
-  { name: 'Makeup', slug: 'makeup', desc: 'Lipsticks, foundations, mascara & more', img: '/images/categories/makeup.webp' },
-  { name: 'Skincare', slug: 'skincare', desc: 'Serums, moisturizers, sunscreens', img: '/images/categories/skincare.webp' },
-  { name: 'Haircare', slug: 'haircare', desc: 'Shampoos, conditioners, styling products', img: '/images/categories/haircare.webp' },
-  { name: 'Fragrance', slug: 'fragrance', desc: 'Perfumes, body mists, deodorants', img: '/images/categories/fragrance.webp' },
-  { name: 'Tools & Brushes', slug: 'tools', desc: 'Makeup brushes, sponges, applicators', img: '/images/categories/tools.webp' },
-  { name: 'Bath & Body', slug: 'bath-body', desc: 'Shower gels, body lotions, scrubs', img: '/images/categories/bath-body.webp' },
-  { name: 'Men\'s Grooming', slug: 'mens-grooming', desc: 'Beard oils, shaving creams, aftershaves', img: '/images/categories/mens-grooming.webp' },
-  { name: 'Natural & Organic', slug: 'natural-organic', desc: 'Eco-friendly, vegan, cruelty-free products', img: '/images/categories/natural-organic.webp' },
-  { name: 'Luxury Collection', slug: 'luxury', desc: 'Premium, high-end beauty products', img: '/images/categories/luxury.webp' },
-  { name: 'Accessories', slug: 'accessories', desc: 'Hair accessories, jewelry, bags', img: '/images/categories/accessories.webp' }
+  { name: 'Makeup', slug: 'makeup', desc: 'Lipsticks, foundations, mascara & more', img: '/images/categories/makeup.jpg' },
+  { name: 'Skincare', slug: 'skincare', desc: 'Serums, moisturizers, sunscreens', img: '/images/categories/skincare.jpg' },
+  { name: 'Haircare', slug: 'haircare', desc: 'Shampoos, conditioners, styling products', img: '/images/categories/haircare.jpg' },
+  { name: 'Fragrance', slug: 'fragrance', desc: 'Perfumes, body mists, deodorants', img: '/images/categories/fragrance.jpg' },
+  { name: 'Tools & Brushes', slug: 'tools', desc: 'Makeup brushes, sponges, applicators', img: '/images/categories/tools.jpg' },
+  { name: 'Bath & Body', slug: 'bath-body', desc: 'Shower gels, body lotions, scrubs', img: '/images/categories/bath-body.jpg' },
+  { name: 'Men\'s Grooming', slug: 'mens-grooming', desc: 'Beard oils, shaving creams, aftershaves', img: '/images/categories/mens-grooming.jpg' },
+  { name: 'Natural & Organic', slug: 'natural-organic', desc: 'Eco-friendly, vegan, cruelty-free products', img: '/images/categories/natural-organic.jpg' },
+  { name: 'Luxury Collection', slug: 'luxury', desc: 'Premium, high-end beauty products', img: '/images/categories/luxury.jpg' },
+  { name: 'Accessories', slug: 'accessories', desc: 'Hair accessories, jewelry, bags', img: '/images/categories/accessories.jpg' }
 ];
 
 const productsTemplates = [
   // 1. Makeup
   {
     category: 'Makeup',
-    image: '/images/products/makeup.webp',
+    image: '/images/products/makeup.jpg',
     items: [
       { name: 'Rose Velvet Lipstick', brand: 'MAC', desc: 'Long-lasting matte lipstick with nourishing rose extract.' },
       { name: 'Matte Silk Foundation', brand: 'Maybelline', desc: 'Full coverage foundation with a lightweight, breathable finish.' },
@@ -46,7 +46,7 @@ const productsTemplates = [
   // 2. Skincare
   {
     category: 'Skincare',
-    image: '/images/products/skincare.webp',
+    image: '/images/products/skincare.jpg',
     items: [
       { name: 'Vitamin C Brightening Serum', brand: 'The Ordinary', desc: 'A potent 20% Vitamin C serum that targets dark spots and uneven tone.' },
       { name: 'Hyaluronic Acid Moist Gel', brand: 'Neutrogena', desc: 'Deeply hydrating gel moisturizer that locks in moisture.' },
@@ -73,7 +73,7 @@ const productsTemplates = [
   // 3. Haircare
   {
     category: 'Haircare',
-    image: '/images/products/haircare.webp',
+    image: '/images/products/haircare.jpg',
     items: [
       { name: 'Argan Oil Repair Shampoo', brand: 'Moroccanoil', desc: 'Gently cleanses while restoring shine and strength with organic argan oil.' },
       { name: 'Keratin Smooth Conditioner', brand: 'Tresemme', desc: 'Frizz-control conditioner that leaves hair silky and manageable.' },
@@ -100,7 +100,7 @@ const productsTemplates = [
   // 4. Fragrance
   {
     category: 'Fragrance',
-    image: '/images/products/fragrance.webp',
+    image: '/images/products/fragrance.jpg',
     items: [
       { name: 'Midnight Rose Eau de Parfum', brand: 'Lancome', desc: 'A rich blend of black rose, warm vanilla, and dark amber.' },
       { name: 'Sandalwood & Oud Cologne', brand: 'Jo Malone', desc: 'Warm woody cologne with notes of cedar, sandalwood, and spices.' },
@@ -127,7 +127,7 @@ const productsTemplates = [
   // 5. Tools & Brushes
   {
     category: 'Tools & Brushes',
-    image: '/images/products/tools.webp',
+    image: '/images/products/tools.jpg',
     items: [
       { name: 'Professional Foundation Brush', brand: 'Sigma', desc: 'Flat kabuki foundation brush with dense, synthetic bristles.' },
       { name: 'Beauty Blending Sponge Duo', brand: 'Beautyblender', desc: 'Soft latex-free makeup sponges for flawless liquid application.' },
@@ -154,7 +154,7 @@ const productsTemplates = [
   // 6. Bath & Body
   {
     category: 'Bath & Body',
-    image: '/images/products/bath-body.webp',
+    image: '/images/products/bath-body.jpg',
     items: [
       { name: 'Vanilla Shea Body Butter', brand: 'The Body Shop', desc: 'Rich, whipped body butter for deep hydration and dry skin relief.' },
       { name: 'Lavender Sleep Shower Gel', brand: 'L\'Occitane', desc: 'Calming lavender oil body wash for night time relaxation.' },
@@ -181,7 +181,7 @@ const productsTemplates = [
   // 7. Men's Grooming
   {
     category: "Men's Grooming",
-    image: '/images/products/mens-grooming.webp',
+    image: '/images/products/mens-grooming.jpg',
     items: [
       { name: 'Sandalwood Beard Balm', brand: 'Honest Amish', desc: 'Shapes, conditions, and softens coarse beard hairs.' },
       { name: 'Cedarwood Beard Wash', brand: 'Gillette', desc: 'Gentle moisturizing wash designed specifically for beards.' },
@@ -208,7 +208,7 @@ const productsTemplates = [
   // 8. Natural & Organic
   {
     category: 'Natural & Organic',
-    image: '/images/products/natural-organic.webp',
+    image: '/images/products/natural-organic.jpg',
     items: [
       { name: 'Organic Rosehip Seed Oil', brand: 'Trilogy', desc: '100% Pure cold-pressed organic rosehip oil for skin repair.' },
       { name: 'Vegan Green Tea Serum', brand: 'Innisfree', desc: 'Soothing antioxidant serum with organic green tea.' },
@@ -235,7 +235,7 @@ const productsTemplates = [
   // 9. Luxury Collection
   {
     category: 'Luxury Collection',
-    image: '/images/products/luxury.webp',
+    image: '/images/products/luxury.jpg',
     items: [
       { name: '24K Gold Face Cream', brand: 'La Prairie', desc: 'Luxury rejuvenating cream infused with real 24K gold flakes.' },
       { name: 'Imperial Rose Serum', brand: 'Guerlain', desc: 'Highly concentrated active rose serum to brighten and lift skin.' },
@@ -262,7 +262,7 @@ const productsTemplates = [
   // 10. Accessories
   {
     category: 'Accessories',
-    image: '/images/products/accessories.webp',
+    image: '/images/products/accessories.jpg',
     items: [
       { name: 'Silk Sleep Eye Mask', brand: 'Slip', desc: 'Pure mulberry silk eye mask for a luxurious night sleep.' },
       { name: 'Satin Hair Scrunchies Set', brand: 'Slip', desc: 'Set of 5 satin hair scrunchies that prevent frizz.' },
@@ -342,12 +342,11 @@ async function seed() {
     await client.query('DELETE FROM products;');
 
     // 3. Seed new products with e-commerce pricing details
-    console.log('🌱 Seeding 200 next-gen products...');
+    console.log('🌱 Seeding 200 next-gen products with local JPG paths...');
     let count = 0;
     
     for (const group of productsTemplates) {
       const category = group.category;
-      const image = group.image;
 
       for (const item of group.items) {
         // Base selling price
@@ -361,6 +360,55 @@ async function seed() {
         const ratingCount = Math.floor(getRandomArbitrary(15, 250));
         const stock = Math.floor(getRandomArbitrary(10, 80));
 
+        // Dynamically map exact local JPG file paths to match downloaded assets
+        let imagePath = group.image; // fallback
+        const nameLower = item.name.toLowerCase();
+        
+        if (category === 'Makeup') {
+          if (nameLower.includes('lipstick') || nameLower.includes('lip liner') || nameLower.includes('lip gloss') || nameLower.includes('lip oil')) {
+            imagePath = '/images/products/lipstick1.jpg';
+            if (nameLower.includes('gloss') || nameLower.includes('oil') || nameLower.includes('liner') || nameLower.includes('velvet')) {
+              imagePath = '/images/products/lipstick2.jpg';
+            }
+          } else if (nameLower.includes('foundation') || nameLower.includes('cc cream') || nameLower.includes('concealer') || nameLower.includes('primer')) {
+            imagePath = '/images/products/foundation1.jpg';
+          } else if (nameLower.includes('mascara') || nameLower.includes('eyeliner') || nameLower.includes('brow')) {
+            imagePath = '/images/products/mascara1.jpg';
+          } else {
+            imagePath = '/images/products/lipstick1.jpg';
+          }
+        } else if (category === 'Skincare') {
+          if (nameLower.includes('serum') || nameLower.includes('oil') || nameLower.includes('essence')) {
+            imagePath = '/images/products/serum1.jpg';
+          } else if (nameLower.includes('moisturizer') || nameLower.includes('cream') || nameLower.includes('balm') || nameLower.includes('mask')) {
+            imagePath = '/images/products/moisturizer1.jpg';
+          } else {
+            imagePath = '/images/products/serum1.jpg';
+          }
+        } else if (category === 'Haircare') {
+          if (nameLower.includes('shampoo') || nameLower.includes('wash') || nameLower.includes('scrub')) {
+            imagePath = '/images/products/shampoo1.jpg';
+          } else if (nameLower.includes('conditioner') || nameLower.includes('mask') || nameLower.includes('balm') || nameLower.includes('cream')) {
+            imagePath = '/images/products/conditioner1.jpg';
+          } else {
+            imagePath = '/images/products/shampoo1.jpg';
+          }
+        } else if (category === 'Fragrance') {
+          imagePath = '/images/products/perfume1.jpg';
+        } else if (category === 'Tools & Brushes') {
+          imagePath = '/images/products/brush1.jpg';
+        } else if (category === 'Bath & Body') {
+          imagePath = '/images/products/moisturizer1.jpg';
+        } else if (category === "Men's Grooming") {
+          imagePath = '/images/products/shampoo1.jpg';
+        } else if (category === 'Natural & Organic') {
+          imagePath = '/images/products/serum1.jpg';
+        } else if (category === 'Luxury Collection') {
+          imagePath = '/images/products/perfume1.jpg';
+        } else if (category === 'Accessories') {
+          imagePath = '/images/products/brush1.jpg';
+        }
+
         const queryText = `
           INSERT INTO products (name, description, price, mrp, "discountPercent", image, category, stock, rating, "ratingCount", brand, "createdAt", "updatedAt")
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
@@ -371,7 +419,7 @@ async function seed() {
           price,
           mrp,
           discountPercent,
-          image,
+          imagePath,
           category,
           stock,
           rating,
@@ -384,7 +432,7 @@ async function seed() {
       }
     }
 
-    console.log(`🚀 Seeding complete! Successfully seeded ${count} products.`);
+    console.log(`🚀 Seeding complete! Successfully seeded ${count} products with local JPG paths.`);
   } catch (err) {
     console.error('❌ Seeding failed:', err);
   } finally {
