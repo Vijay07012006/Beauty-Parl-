@@ -27,12 +27,16 @@ export class ProductsService {
     take: number;
     category?: string;
     search?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    minRating?: number;
+    sort?: string;
   }) {
-    const { skip, take, category, search } = options;
+    const { skip, take, category, search, minPrice, maxPrice, minRating, sort } = options;
 
     const queryBuilder = this.productRepository.createQueryBuilder('product');
 
-    if (category) {
+    if (category && category.toLowerCase() !== 'all') {
       // Allow case insensitive category match or slug mapping
       if (category.toLowerCase() === 'tools') {
         queryBuilder.andWhere('product.category IN (:...cats)', { cats: ['Tools & Brushes', 'Tools'] });
@@ -50,10 +54,38 @@ export class ProductsService {
       );
     }
 
+    if (minPrice !== undefined && !isNaN(minPrice)) {
+      queryBuilder.andWhere('product.price >= :minPrice', { minPrice });
+    }
+    if (maxPrice !== undefined && !isNaN(maxPrice)) {
+      queryBuilder.andWhere('product.price <= :maxPrice', { maxPrice });
+    }
+
+    if (minRating !== undefined && !isNaN(minRating)) {
+      queryBuilder.andWhere('product.rating >= :minRating', { minRating });
+    }
+
+    // Sorting
+    switch (sort) {
+      case 'price-asc':
+        queryBuilder.orderBy('product.price', 'ASC');
+        break;
+      case 'price-desc':
+        queryBuilder.orderBy('product.price', 'DESC');
+        break;
+      case 'rating-desc':
+        queryBuilder.orderBy('product.rating', 'DESC');
+        break;
+      case 'newest':
+        queryBuilder.orderBy('product.createdAt', 'DESC');
+        break;
+      default:
+        queryBuilder.orderBy('product.id', 'ASC');
+    }
+
     const [products, total] = await queryBuilder
       .skip(skip)
       .take(take)
-      .orderBy('product.id', 'ASC')
       .getManyAndCount();
 
     return [products, total] as [Product[], number];

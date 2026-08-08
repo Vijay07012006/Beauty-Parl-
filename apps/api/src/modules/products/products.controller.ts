@@ -20,6 +20,10 @@ export class ProductsController {
     @Query('limit') limit: string = '12',
     @Query('category') category?: string,
     @Query('search') search?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+    @Query('minRating') minRating?: string,
+    @Query('sort') sort?: string,
   ) {
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 12;
@@ -30,6 +34,10 @@ export class ProductsController {
       take: limitNum,
       category: category && category !== 'All' ? category : undefined,
       search,
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      minRating: minRating ? parseFloat(minRating) : undefined,
+      sort,
     });
 
     return {
