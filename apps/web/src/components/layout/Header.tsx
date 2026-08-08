@@ -61,6 +61,10 @@ export function Header() {
             About
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
+          <Link href={`/${locale}/wishlist`} className="text-sm font-medium hover:text-primary transition-colors relative group">
+            Wishlist
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
         </nav>
  
         {/* Right Actions */}
@@ -128,6 +132,9 @@ export function Header() {
               </Link>
               <Link href={`/${locale}/about`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                 About
+              </Link>
+              <Link href={`/${locale}/wishlist`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                Wishlist
               </Link>
               <Link href={`/${locale}/contact`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                 Contact

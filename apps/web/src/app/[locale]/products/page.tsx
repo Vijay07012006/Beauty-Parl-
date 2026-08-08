@@ -1,172 +1,189 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import Image from 'next/image';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { useSearchParams, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { ProductCard } from '@/components/products/ProductCard';
+import { CategoryFilter } from '@/components/products/CategoryFilter';
+import { SearchBar } from '@/components/products/SearchBar';
+import { InfiniteScroll } from '@/components/products/InfiniteScroll';
 import { ProductSkeleton } from '@/components/ui/ProductSkeleton';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 
 function ProductsContent() {
   const searchParams = useSearchParams();
   const params = useParams();
   const locale = params?.locale || 'en';
-  const urlCategory = searchParams?.get('category') || 'all';
-  const [category, setCategory] = useState(urlCategory);
 
   const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const limit = 8;
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchProducts = async () => {
+  // Filters State
+  const [category, setCategory] = useState(searchParams?.get('category') || 'all');
+  const [brand, setBrand] = useState('all');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [rating, setRating] = useState(0);
+  const [search, setSearch] = useState(searchParams?.get('search') || '');
+
+  // Sync state when URL params change
+  useEffect(() => {
+    const cat = searchParams?.get('category') || 'all';
+    const q = searchParams?.get('search') || '';
+    setCategory(cat);
+    setSearch(q);
+    
+    // Reset state for new search
+    setProducts([]);
+    setPage(1);
+    setHasMore(true);
+    setInitialLoading(true);
+  }, [searchParams]);
+
+  // Fetch products from database
+  const fetchProducts = async (pageNum: number, isInitial = false) => {
     setLoading(true);
     try {
-      const response = await api.get(`/products?page=${page}&limit=${limit}`);
-      if (response.data && Array.isArray(response.data)) {
-        setProducts(response.data);
-        setTotalPages(1);
-      } else if (response.data && response.data.data) {
-        setProducts(response.data.data);
-        setTotalPages(Math.ceil(response.data.total / limit));
+      const paramsObj: any = {
+        page: pageNum,
+        limit: 12,
+        category: category !== 'all' ? category : undefined,
+        brand: brand !== 'all' ? brand : undefined,
+        minPrice: minPrice ? parseFloat(minPrice) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+        rating: rating > 0 ? rating : undefined,
+        search: search || undefined
+      };
+
+      const res = await api.get('/products', { params: paramsObj });
+      const items = res.data?.data || res.data || [];
+      const total = res.data?.total || items.length;
+
+      if (isInitial) {
+        setProducts(items);
+      } else {
+        setProducts(prev => {
+          const ids = new Set(prev.map(p => p.id));
+          const filtered = items.filter((i: any) => !ids.has(i.id));
+          return [...prev, ...filtered];
+        });
       }
+
+      // Check if more items are available
+      setHasMore(products.length + items.length < total && items.length > 0);
     } catch (err) {
-      console.error('Failed to fetch products', err);
+      console.error('Error fetching products:', err);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
+  // Re-fetch products when filter keys change
   useEffect(() => {
-    fetchProducts();
-  }, [page]);
+    setProducts([]);
+    setPage(1);
+    setHasMore(true);
+    setInitialLoading(true);
+    fetchProducts(1, true);
+  }, [category, brand, minPrice, maxPrice, rating, search]);
 
-  useEffect(() => {
-    if (urlCategory) {
-      setCategory(urlCategory);
-      setPage(1); // Reset to page 1 when category changes
+  // Infinite Scroll Trigger
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchProducts(nextPage, false);
     }
-  }, [urlCategory]);
+  };
 
-  const filteredProducts = category.toLowerCase() === 'all'
-    ? products 
-    : products.filter(p => p.category?.toLowerCase() === category.toLowerCase());
-
-  const categories = [
-    'all',
-    'Makeup',
-    'Skincare',
-    'Haircare',
-    'Fragrance',
-    'Tools & Brushes',
-    'Bath & Body',
-    'Men\'s Grooming',
-    'Natural & Organic',
-    'Luxury Collection',
-    'Accessories'
-  ];
-
-  if (loading) {
-    return (
-      <main className="min-h-screen py-12">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-playfair font-bold mb-8">All Products</h1>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, idx) => (
-              <ProductSkeleton key={idx} />
-            ))}
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const handleClearFilters = () => {
+    setCategory('all');
+    setBrand('all');
+    setMinPrice('');
+    setMaxPrice('');
+    setRating(0);
+    setSearch('');
+  };
 
   return (
-    <main className="min-h-screen py-12">
+    <main className="min-h-screen py-8 bg-secondary/10">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-playfair font-bold mb-8">All Products</h1>
-        
-        {/* Category Filters */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                setCategory(cat);
-                setPage(1);
-              }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors cursor-pointer ${
-                category.toLowerCase() === cat.toLowerCase()
-                  ? 'bg-primary text-white' 
-                  : 'bg-secondary hover:bg-primary/20'
-              }`}
-            >
-              {cat === 'all' ? 'All' : cat}
-            </button>
-          ))}
+        {/* Search Bar Wrapper */}
+        <div className="mb-10">
+          <SearchBar initialQuery={search} />
         </div>
 
-        {/* Products Grid */}
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">No products found</div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredProducts.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ y: -5 }}
-                  className="bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow"
-                >
-                  <Link href={`/${locale}/product/${product.id}`}>
-                    <div className="relative h-56 bg-secondary/20">
-                      {product.image ? (
-                        <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 25vw" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl">💄</div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-medium truncate">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{product.category}</p>
-                      <p className="text-primary font-bold mt-1">${Number(product.price).toFixed(2)}</p>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Filters Sidebar */}
+          <aside className="w-full lg:w-1/4 flex-shrink-0">
+            <CategoryFilter
+              selectedCategory={category}
+              onCategoryChange={setCategory}
+              minPrice={minPrice}
+              onMinPriceChange={setMinPrice}
+              maxPrice={maxPrice}
+              onMaxPriceChange={setMaxPrice}
+              selectedRating={rating}
+              onRatingChange={setRating}
+              selectedBrand={brand}
+              onBrandChange={setBrand}
+              onClear={handleClearFilters}
+            />
+          </aside>
+
+          {/* Product Listing Area */}
+          <div className="flex-1 space-y-6">
+            <div className="flex items-center justify-between bg-card px-6 py-4 rounded-2xl border border-border/50">
+              <h2 className="text-xl font-bold font-playfair">
+                {category !== 'all' ? `${category} Collection` : 'All Products'}
+              </h2>
+              <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                {products.length} Products Loaded
+              </span>
             </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-12">
+            {initialLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <ProductSkeleton key={idx} />
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-16 px-6 bg-card rounded-3xl border border-border/50 space-y-4">
+                <span className="text-5xl block select-none">💄</span>
+                <h3 className="text-lg font-bold">No Products Found</h3>
+                <p className="text-sm text-muted-foreground">
+                  Try adjusting your filter parameters or search terms.
+                </p>
                 <button
-                  onClick={() => setPage(p => Math.max(p - 1, 1))}
-                  disabled={page === 1}
-                  className="px-4 py-2 bg-secondary rounded-xl hover:bg-primary hover:text-white disabled:opacity-50 transition cursor-pointer font-medium"
+                  onClick={handleClearFilters}
+                  className="px-6 py-2 text-xs font-bold bg-primary text-white rounded-full hover:bg-primary/90 transition-all cursor-pointer"
                 >
-                  Previous
-                </button>
-                <span className="text-sm font-medium">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(p => Math.min(p + 1, totalPages))}
-                  disabled={page === totalPages}
-                  className="px-4 py-2 bg-secondary rounded-xl hover:bg-primary hover:text-white disabled:opacity-50 transition cursor-pointer font-medium"
-                >
-                  Next
+                  Clear Filters
                 </button>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+
+                <InfiniteScroll
+                  hasMore={hasMore}
+                  loading={loading}
+                  onLoadMore={handleLoadMore}
+                />
+              </>
             )}
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </main>
   );
@@ -178,7 +195,7 @@ export default function ProductsPage() {
       <Header />
       <Suspense fallback={
         <main className="min-h-screen flex items-center justify-center">
-          <div className="animate-pulse text-lg font-medium text-primary">Loading products...</div>
+          <div className="animate-pulse text-lg font-medium text-primary">Loading products catalog...</div>
         </main>
       }>
         <ProductsContent />

@@ -18,11 +18,27 @@ export class ProductsController {
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-  ): Promise<Product[] | { data: Product[]; total: number; page: number; limit: number }> {
-    if (page || limit) {
+    @Query('category') category?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+    @Query('rating') rating?: string,
+    @Query('brand') brand?: string,
+    @Query('search') search?: string,
+  ) {
+    if (page || limit || category || minPrice || maxPrice || rating || brand || search) {
       const pageNum = parseInt(page || '1', 10) || 1;
-      const limitNum = parseInt(limit || '10', 10) || 10;
-      return this.productsService.findPaginated(pageNum, limitNum);
+      const limitNum = parseInt(limit || '12', 10) || 12;
+      
+      const filters = {
+        category,
+        minPrice: minPrice ? parseFloat(minPrice) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+        rating: rating ? parseFloat(rating) : undefined,
+        brand,
+        search,
+      };
+
+      return this.productsService.findPaginated(pageNum, limitNum, filters);
     }
     return this.productsService.findAll();
   }
@@ -54,5 +70,21 @@ export class ProductsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: number): Promise<void> {
     return this.productsService.delete(id);
+  }
+
+  // ========== 💬 REVIEWS ENDPOINTS ==========
+
+  @Get(':id/reviews')
+  async getReviews(@Param('id') id: number) {
+    return this.productsService.findReviews(id);
+  }
+
+  @Post(':id/reviews')
+  @HttpCode(HttpStatus.CREATED)
+  async postReview(
+    @Param('id') id: number,
+    @Body() body: { reviewerName: string; rating: number; comment: string }
+  ) {
+    return this.productsService.createReview(id, body);
   }
 }
