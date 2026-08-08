@@ -22,6 +22,69 @@ export class ProductsService {
     return this.productRepository.find();
   }
 
+  async findAllWithFilters(options: {
+    skip: number;
+    take: number;
+    category?: string;
+    search?: string;
+  }) {
+    const { skip, take, category, search } = options;
+
+    const queryBuilder = this.productRepository.createQueryBuilder('product');
+
+    if (category) {
+      // Allow case insensitive category match or slug mapping
+      if (category.toLowerCase() === 'tools') {
+        queryBuilder.andWhere('product.category IN (:...cats)', { cats: ['Tools & Brushes', 'Tools'] });
+      } else if (category.toLowerCase() === 'luxury') {
+        queryBuilder.andWhere('product.category IN (:...cats)', { cats: ['Luxury Collection', 'Luxury'] });
+      } else {
+        queryBuilder.andWhere('LOWER(product.category) = :category', { category: category.toLowerCase() });
+      }
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(product.name ILIKE :search OR product.description ILIKE :search OR product.brand ILIKE :search)',
+        { search: `%${search}%` }
+      );
+    }
+
+    const [products, total] = await queryBuilder
+      .skip(skip)
+      .take(take)
+      .orderBy('product.id', 'ASC')
+      .getManyAndCount();
+
+    return [products, total] as [Product[], number];
+  }
+
+  async findCategories() {
+    const query = `
+      SELECT c.id, c.name, c.slug, c.description, c.image, 
+             COALESCE(p.count, 0) as count
+      FROM categories c
+      LEFT JOIN (
+        SELECT category, COUNT(*) as count 
+        FROM products 
+        GROUP BY category
+      ) p ON (
+        LOWER(p.category) = LOWER(c.slug) OR
+        (c.slug = 'tools' AND p.category = 'Tools & Brushes') OR
+        (c.slug = 'luxury' AND p.category = 'Luxury Collection') OR
+        (c.slug = 'mens-grooming' AND p.category = 'Men''s Grooming') OR
+        (c.slug = 'natural-organic' AND p.category = 'Natural & Organic') OR
+        (c.slug = 'bath-body' AND p.category = 'Bath & Body')
+      )
+      ORDER BY c.id ASC
+    `;
+    const results = await this.productRepository.manager.query(query);
+    return results.map((r: any) => ({
+      ...r,
+      count: parseInt(r.count, 10)
+    }));
+  }
+
   async findOne(id: number): Promise<Product | null> {
     return this.productRepository.findOne({ where: { id } });
   }

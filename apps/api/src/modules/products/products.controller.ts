@@ -16,31 +16,29 @@ export class ProductsController {
   @Get()
   @CacheTTL(60)
   async findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '12',
     @Query('category') category?: string,
-    @Query('minPrice') minPrice?: string,
-    @Query('maxPrice') maxPrice?: string,
-    @Query('rating') rating?: string,
-    @Query('brand') brand?: string,
     @Query('search') search?: string,
   ) {
-    if (page || limit || category || minPrice || maxPrice || rating || brand || search) {
-      const pageNum = parseInt(page || '1', 10) || 1;
-      const limitNum = parseInt(limit || '12', 10) || 12;
-      
-      const filters = {
-        category,
-        minPrice: minPrice ? parseFloat(minPrice) : undefined,
-        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
-        rating: rating ? parseFloat(rating) : undefined,
-        brand,
-        search,
-      };
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 12;
+    const skip = (pageNum - 1) * limitNum;
 
-      return this.productsService.findPaginated(pageNum, limitNum, filters);
-    }
-    return this.productsService.findAll();
+    const [products, total] = await this.productsService.findAllWithFilters({
+      skip,
+      take: limitNum,
+      category: category && category !== 'All' ? category : undefined,
+      search,
+    });
+
+    return {
+      products,
+      total,
+      page: pageNum,
+      limit: limitNum,
+      hasMore: skip + products.length < total,
+    };
   }
 
   @Get(':id')
