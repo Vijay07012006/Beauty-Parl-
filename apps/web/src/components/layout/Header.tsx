@@ -2,11 +2,12 @@
  
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, Menu, X, Sparkles } from 'lucide-react';
+import { ShoppingCart, Menu, X, Sparkles, Heart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
+import { useWishlistStore } from '@/store/wishlistStore';
 
  
 export function Header() {
@@ -17,6 +18,7 @@ export function Header() {
 
 
   const { totalItems } = useCartStore();
+  const wishlistCount = useWishlistStore((state) => state.items.length);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -77,6 +79,16 @@ export function Header() {
             🌐 {locale.toUpperCase()}
           </button>
           
+          {/* Wishlist */}
+          <Link href={`/${locale}/wishlist`} className="relative p-2 hover:bg-secondary rounded-full transition-colors" aria-label="Wishlist">
+            <Heart size={20} className={mounted && wishlistCount > 0 ? 'fill-red-500 text-red-500' : ''} />
+            {mounted && wishlistCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                {wishlistCount > 99 ? '99+' : wishlistCount}
+              </span>
+            )}
+          </Link>
+
           {/* Cart */}
           <Link href={`/${locale}/cart`} className="relative p-2 hover:bg-secondary rounded-full transition-colors">
             <ShoppingCart size={20} />

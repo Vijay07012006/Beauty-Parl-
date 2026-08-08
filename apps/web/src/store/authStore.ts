@@ -155,6 +155,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('wishlist-storage'); // clear wishlisted items on logout
     delete api.defaults.headers.common['Authorization'];
     set({ user: null, token: null });
   },
