@@ -30,8 +30,23 @@ export class OrdersService {
     return saved;
   }
 
-  async findAll(): Promise<Order[]> {
-    return this.orderRepo.find({ order: { createdAt: 'DESC' } });
+  async findAll(status?: string): Promise<Order[]> {
+    const query: any = { order: { createdAt: 'DESC' } };
+    if (status) {
+      query.where = { status };
+    }
+    return this.orderRepo.find(query);
+  }
+
+  async findByUser(userId: number, status?: string): Promise<Order[]> {
+    const query: any = {
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    };
+    if (status) {
+      query.where.status = status;
+    }
+    return this.orderRepo.find(query);
   }
 
   async findOne(id: number): Promise<Order | null> {
@@ -40,10 +55,11 @@ export class OrdersService {
 
   async update(id: number, data: Partial<Order>): Promise<Order | null> {
     const originalOrder = await this.findOne(id);
+    if (!originalOrder) return null;
     await this.orderRepo.update(id, data);
     const updated = await this.findOne(id);
 
-    if (updated && data.status && originalOrder?.status !== data.status) {
+    if (updated && data.status && originalOrder.status !== data.status) {
       const email = updated.guestEmail || (updated.userId ? await this.getUserEmail(updated.userId) : null);
       if (email) {
         try {

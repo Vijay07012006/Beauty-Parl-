@@ -103,6 +103,9 @@ export function Header() {
               <Link href={`/${locale}/profile`} className="text-sm hover:text-primary transition-colors font-medium">
                 Profile
               </Link>
+              <Link href={`/${locale}/orders`} className="text-sm hover:text-primary transition-colors font-medium">
+                My Orders
+              </Link>
               <button onClick={logout} className="text-sm hover:text-primary transition-colors cursor-pointer font-medium">
                 Logout
               </button>
@@ -155,6 +158,9 @@ export function Header() {
                 <>
                   <Link href={`/${locale}/profile`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                     Profile
+                  </Link>
+                  <Link href={`/${locale}/orders`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                    My Orders
                   </Link>
                   <button 
                     onClick={() => { logout(); setIsMenuOpen(false); }} 

@@ -16,10 +16,19 @@ export class OrdersController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async findAll(): Promise<Order[]> {
-    return this.ordersService.findAll();
+  @UseGuards(JwtAuthGuard)
+  async getMyOrders(
+    @Request() req: any,
+    @Query('status') status?: string,
+  ): Promise<Order[]> {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    if (userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN) {
+      return this.ordersService.findAll(status);
+    }
+
+    return this.ordersService.findByUser(userId, status);
   }
 
   @Get(':id')
