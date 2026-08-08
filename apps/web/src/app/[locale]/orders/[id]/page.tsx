@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
 import { ArrowLeft, Package, Truck, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { OrderTimeline } from '@/components/orders/OrderTimeline';
 
 const statusIcons = {
   pending: <Package size={20} className="text-yellow-500 animate-pulse" />,
@@ -55,7 +56,7 @@ export default function OrderDetailPage() {
       <>
         <Header />
         <main className="min-h-screen py-12 bg-secondary/10">
-          <div className="container mx-auto px-4 max-w-3xl">
+          <div className="container mx-auto px-4 max-w-3xl space-y-6">
             <div className="animate-pulse bg-card rounded-3xl h-96 border border-border/50" />
           </div>
         </main>
@@ -111,6 +112,9 @@ export default function OrderDetailPage() {
                 </span>
               </div>
             </div>
+
+            {/* Order Tracking Progress Timeline */}
+            <OrderTimeline status={order.status} createdAt={order.createdAt} />
 
             {/* Shipping & Payment Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
