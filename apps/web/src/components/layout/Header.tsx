@@ -1,21 +1,38 @@
 'use client';
  
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ShoppingCart, Menu, X, Sparkles, Heart } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { ShoppingCart, Menu, X, Sparkles, Heart, Globe, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
+import { useTranslations } from 'next-intl';
 
- 
+const languages = [
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'hi', name: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'bn', name: 'বাংলা', flag: '🇮🇳' },
+  { code: 'ta', name: 'தமிழ்', flag: '🇮🇳' },
+  { code: 'te', name: 'తెలుగు', flag: '🇮🇳' },
+  { code: 'mr', name: 'मराठी', flag: '🇮🇳' },
+  { code: 'gu', name: 'ગુજરાતી', flag: '🇮🇳' },
+  { code: 'kn', name: 'ಕನ್ನಡ', flag: '🇮🇳' },
+  { code: 'ml', name: 'മലയാളം', flag: '🇮🇳' },
+  { code: 'pa', name: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
+];
+
 export function Header() {
+  const t = useTranslations('common');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLangOpen, setIsLangOpen] = useState(false);
   const { user, logout, hydrate } = useAuthStore();
   const pathname = usePathname();
+  const router = useRouter();
   const locale = pathname?.split('/')[1] || 'en';
-
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { totalItems } = useCartStore();
   const wishlistCount = useWishlistStore((state) => state.items.length);
@@ -26,20 +43,31 @@ export function Header() {
     setMounted(true);
   }, []);
 
- 
-  const toggleLocale = () => {
-    const nextLocale = locale === 'en' ? 'hi' : 'en';
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsLangOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const switchLanguage = (newLocale: string) => {
     const pathSegments = pathname.split('/');
-    pathSegments[1] = nextLocale;
-    window.location.href = pathSegments.join('/') || '/';
+    pathSegments[1] = newLocale;
+    router.push(pathSegments.join('/') || '/');
+    setIsLangOpen(false);
   };
+
+  const activeLang = languages.find(l => l.code === locale) || languages[0];
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href={`/${locale}`} className="flex items-center gap-2 group">
-          <span className="text-2xl font-playfair font-bold text-primary group-hover:scale-105 transition-transform">
+          <span className="text-2xl font-playfair font-bold text-primary group-hover:scale-105 transition-transform select-none">
             Beauty Parlé
           </span>
           <Sparkles size={16} className="text-accent animate-pulse" />
@@ -48,49 +76,78 @@ export function Header() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           <Link href={`/${locale}/products`} className="text-sm font-medium hover:text-primary transition-colors relative group">
-            Products
+            {t('products')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
           <Link href={`/${locale}/categories`} className="text-sm font-medium hover:text-primary transition-colors relative group">
-            Categories
+            {t('categories')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
           <Link href={`/${locale}/booking`} className="text-sm font-medium hover:text-primary transition-colors relative group">
-            Book Appointment
+            {t('book_appointment')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
           <Link href={`/${locale}/about`} className="text-sm font-medium hover:text-primary transition-colors relative group">
-            About
+            {t('about')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
           <Link href={`/${locale}/wishlist`} className="text-sm font-medium hover:text-primary transition-colors relative group">
-            Wishlist
+            {t('wishlist')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
         </nav>
  
         {/* Right Actions */}
         <div className="flex items-center gap-4">
-          {/* Language Switcher */}
-          <button 
-            onClick={toggleLocale}
-            className="text-sm px-3 py-1 rounded-full border border-border hover:border-primary transition-colors cursor-pointer"
-          >
-            🌐 {locale.toUpperCase()}
-          </button>
+          {/* Language Switcher Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsLangOpen(!isLangOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border hover:border-primary/70 transition-colors text-xs font-semibold bg-secondary/20 cursor-pointer select-none"
+            >
+              <Globe size={14} className="text-muted-foreground" />
+              <span>{activeLang.flag}</span>
+              <span className="hidden sm:inline font-mono">{locale.toUpperCase()}</span>
+              <ChevronDown size={12} className={`text-muted-foreground transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {isLangOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-full right-0 mt-2 bg-card rounded-2xl shadow-xl border border-border/50 p-1.5 w-44 max-h-64 overflow-y-auto z-50 space-y-0.5"
+                >
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => switchLanguage(lang.code)}
+                      className={`w-full text-left px-3 py-2 rounded-xl hover:bg-secondary/70 transition-colors flex items-center gap-2.5 text-xs font-medium cursor-pointer ${
+                        locale === lang.code ? 'bg-primary/10 text-primary font-bold' : 'text-foreground/80'
+                      }`}
+                    >
+                      <span className="text-sm">{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           
           {/* Wishlist */}
           <Link href={`/${locale}/wishlist`} className="relative p-2 hover:bg-secondary rounded-full transition-colors" aria-label="Wishlist">
             <Heart size={20} className={mounted && wishlistCount > 0 ? 'fill-red-500 text-red-500' : ''} />
             {mounted && wishlistCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold animate-pulse">
                 {wishlistCount > 99 ? '99+' : wishlistCount}
               </span>
             )}
           </Link>
 
           {/* Cart */}
-          <Link href={`/${locale}/cart`} className="relative p-2 hover:bg-secondary rounded-full transition-colors">
+          <Link href={`/${locale}/cart`} className="relative p-2 hover:bg-secondary rounded-full transition-colors" aria-label="Cart">
             <ShoppingCart size={20} />
             <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
               {mounted ? totalItems() : 0}
@@ -99,36 +156,36 @@ export function Header() {
 
           {/* Auth Button */}
           {user ? (
-            <div className="flex items-center gap-4">
-              <Link href={`/${locale}/profile`} className="text-sm hover:text-primary transition-colors font-medium">
-                Profile
+            <div className="hidden lg:flex items-center gap-4 text-xs font-semibold">
+              <Link href={`/${locale}/profile`} className="hover:text-primary transition-colors">
+                {t('profile')}
               </Link>
-              <Link href={`/${locale}/orders`} className="text-sm hover:text-primary transition-colors font-medium">
-                My Orders
+              <Link href={`/${locale}/orders`} className="hover:text-primary transition-colors">
+                {t('orders')}
               </Link>
-              <Link href={`/${locale}/preferences`} className="text-sm hover:text-primary transition-colors font-medium">
-                Preferences
+              <Link href={`/${locale}/preferences`} className="hover:text-primary transition-colors">
+                {t('preferences')}
               </Link>
-              <button onClick={logout} className="text-sm hover:text-primary transition-colors cursor-pointer font-medium">
-                Logout
+              <button onClick={logout} className="hover:text-primary transition-colors cursor-pointer">
+                {t('logout')}
               </button>
             </div>
           ) : (
-            <Link href={`/${locale}/auth/login`} className="text-sm hover:text-primary transition-colors font-medium">
-              Sign In
+            <Link href={`/${locale}/auth/login`} className="hidden lg:block text-sm hover:text-primary transition-colors font-medium">
+              {t('sign_in')}
             </Link>
           )}
  
           {/* Mobile Menu Toggle */}
           <button 
-            className="md:hidden p-2 hover:bg-secondary rounded-full transition-colors cursor-pointer"
+            className="lg:hidden p-2 hover:bg-secondary rounded-full transition-colors cursor-pointer"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
- 
+  
       {/* Mobile Navigation */}
       <AnimatePresence>
         {isMenuOpen && (
@@ -136,48 +193,45 @@ export function Header() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl"
+            className="lg:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl"
           >
             <nav className="container mx-auto px-4 py-6 flex flex-col gap-4">
               <Link href={`/${locale}/products`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                Products
+                {t('products')}
               </Link>
               <Link href={`/${locale}/categories`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                Categories
+                {t('categories')}
               </Link>
               <Link href={`/${locale}/booking`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                Book Appointment
+                {t('book_appointment')}
               </Link>
               <Link href={`/${locale}/about`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                About
+                {t('about')}
               </Link>
               <Link href={`/${locale}/wishlist`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                Wishlist
-              </Link>
-              <Link href={`/${locale}/contact`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                Contact
+                {t('wishlist')}
               </Link>
               {user ? (
                 <>
                   <Link href={`/${locale}/profile`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                    Profile
+                    {t('profile')}
                   </Link>
                   <Link href={`/${locale}/orders`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                    My Orders
+                    {t('orders')}
                   </Link>
                   <Link href={`/${locale}/preferences`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                    Email Preferences
+                    {t('preferences')}
                   </Link>
                   <button 
                     onClick={() => { logout(); setIsMenuOpen(false); }} 
                     className="text-sm font-medium hover:text-primary transition-colors py-2 text-left cursor-pointer"
                   >
-                    Logout
+                    {t('logout')}
                   </button>
                 </>
               ) : (
                 <Link href={`/${locale}/auth/login`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                  Sign In
+                  {t('sign_in')}
                 </Link>
               )}
             </nav>

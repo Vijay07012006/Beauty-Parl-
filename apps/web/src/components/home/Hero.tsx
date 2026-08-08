@@ -6,6 +6,8 @@ import { ArrowRight, Sparkles, ShoppingBag } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 
+import { useTranslations } from 'next-intl';
+
 const Product3D = dynamic(
   () => import('@/components/3d/Product3D').then(mod => mod.Product3D),
   { 
@@ -17,6 +19,7 @@ const Product3D = dynamic(
 );
 
 export function Hero() {
+  const t = useTranslations('common');
   const params = useParams();
   const locale = params?.locale || 'en';
 
@@ -45,7 +48,7 @@ export function Hero() {
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary text-sm font-medium"
             >
               <Sparkles size={16} className="animate-pulse" />
-              Premium Beauty Products
+              Beauty Parlé
             </motion.div>
 
             <motion.h1
@@ -54,8 +57,7 @@ export function Hero() {
               transition={{ delay: 0.3 }}
               className="text-5xl md:text-7xl font-playfair font-bold leading-tight"
             >
-              Where Beauty Speaks{' '}
-              <span className="text-primary">Your Language</span>
+              {t('tagline')}
             </motion.h1>
 
             <motion.p
@@ -65,7 +67,7 @@ export function Hero() {
               className="text-lg text-muted-foreground max-w-lg"
             >
               Discover premium cosmetics, book professional makeup services,
-              and embrace beauty that understands you — in your language.
+              and embrace beauty that understands you.
             </motion.p>
 
             <motion.div
@@ -75,14 +77,14 @@ export function Hero() {
               className="flex flex-wrap gap-4"
             >
               <Link href={`/${locale}/products`}>
-                <button className="px-8 py-4 bg-primary text-white rounded-full hover:bg-primary/90 transition-all hover:scale-105 flex items-center gap-2 font-medium shadow-lg shadow-primary/30">
-                  Shop Now
+                <button className="px-8 py-4 bg-primary text-white rounded-full hover:bg-primary/95 transition-all hover:scale-105 flex items-center gap-2 font-medium shadow-lg shadow-primary/30 cursor-pointer">
+                  {t('shop_now')}
                   <ShoppingBag size={18} />
                 </button>
               </Link>
               <Link href={`/${locale}/booking`}>
-                <button className="px-8 py-4 bg-accent/10 text-accent-foreground rounded-full hover:bg-accent/20 transition-all hover:scale-105 font-medium border border-accent/30">
-                  Book Appointment
+                <button className="px-8 py-4 bg-accent/10 text-accent-foreground rounded-full hover:bg-accent/20 transition-all hover:scale-105 font-medium border border-accent/30 cursor-pointer">
+                  {t('book_appointment')}
                 </button>
               </Link>
             </motion.div>

@@ -1,30 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
+import createMiddleware from 'next-intl/middleware';
 
-export function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+const intlMiddleware = createMiddleware({
+  // A list of all locales that are supported
+  locales: ['en', 'hi', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml', 'pa'],
+  
+  // Used when no locale matches
+  defaultLocale: 'en',
+  localePrefix: 'always',
+});
 
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/favicon.ico') ||
-    pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|json|woff|woff2|ttf|eot)$/)
-  ) {
-    return NextResponse.next();
-  }
-
-  const locales = ['en', 'hi'];
-  const pathnameHasLocale = locales.some(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-  );
-
-  if (!pathnameHasLocale) {
-    const url = new URL(`/en${pathname}`, request.url);
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
+export function proxy(request: any) {
+  return intlMiddleware(request);
 }
 
 export const config = {
-  matcher: ['/((?!_next|api|favicon.ico).*)'],
+  // Match only internationalized pathnames
+  matcher: [
+    // Match all pathnames except for
+    // - API routes
+    // - Static files (_next/static, _next/image, favicon.ico, etc.)
+    // - Media assets (images, fonts, etc.)
+    '/((?!api|_next/static|_next/image|favicon.ico|images|.*\\..*).*)'
+  ],
 };
