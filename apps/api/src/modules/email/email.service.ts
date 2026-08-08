@@ -1,78 +1,69 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import * as SibApiV3Sdk from '@sendinblue/client';
 
 @Injectable()
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private apiInstance: SibApiV3Sdk.TransactionalEmailsApi;
+  private fromEmail: string;
+  private frontendUrl: string;
 
   constructor(private config: ConfigService) {
-    // ✅ Use nested config keys (matches configuration.ts)
-    const host = this.config.get<string>('email.host') || 'smtp.gmail.com';
-    const port = this.config.get<number>('email.port') || 587;
-    const user = this.config.get<string>('email.user');
-    const pass = this.config.get<string>('email.pass');
-    const from = this.config.get<string>('email.from');
+    const apiKey = process.env.BREVO_API_KEY || '';
+    this.fromEmail = this.config.get<string>('email.from') || 'Beauty Parlé <noreply@beautyparle.com>';
+    this.frontendUrl = this.config.get<string>('frontendUrl') || 'http://localhost:3000';
 
-    console.log('📧 EMAIL CONFIG:', { host, port, user: user ? user.slice(0, 5) + '***' : 'MISSING', from });
+    this.apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    this.apiInstance.setApiKey(
+      SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey,
+      apiKey,
+    );
 
-    this.transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465, // true for 465, false for 587
-      auth: { user, pass },
-      tls: {
-        rejectUnauthorized: false,
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 5000,
-    });
-
-    // ✅ Verify SMTP connection on startup
-    this.transporter.verify((error) => {
-      if (error) {
-        console.error('❌ SMTP Connection failed:', error.message);
-        console.log('⚠️ Emails will fall back to console logs');
-      } else {
-        console.log('✅ SMTP Connection successful — emails ready!');
-      }
-    });
+    if (apiKey) {
+      console.log('✅ Brevo API initialized — transactional emails ready');
+    } else {
+      console.warn('⚠️ BREVO_API_KEY not set — emails will be skipped');
+    }
   }
 
-  // ✅ Test endpoint helper
-  async sendTestEmail(to: string) {
-    const from = this.config.get<string>('email.from');
-    console.log(`📧 Sending test email to: ${to} from: ${from}`);
+  private buildEmail(to: string, subject: string, html: string): SibApiV3Sdk.SendSmtpEmail {
+    const email = new SibApiV3Sdk.SendSmtpEmail();
+    email.sender = { name: 'Beauty Parlé', email: this.fromEmail.replace(/.*<(.+)>/, '$1').trim() || this.fromEmail };
+    email.to = [{ email: to }];
+    email.subject = subject;
+    email.htmlContent = html;
+    return email;
+  }
 
-    await this.transporter.sendMail({
-      from,
+  // ✅ Diagnostic test endpoint
+  async sendTestEmail(to: string) {
+    console.log(`📧 Sending test email to: ${to}`);
+    const email = this.buildEmail(
       to,
-      subject: '✅ Beauty Parlé — SMTP Test',
-      html: `
+      '✅ Beauty Parlé — SMTP Test',
+      `
         <div style="font-family: Arial, sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #FFF8F0; border-radius: 20px;">
           <h1 style="color: #E8A0BF; text-align: center;">💄 Beauty Parlé</h1>
           <div style="background: white; padding: 20px; border-radius: 12px; text-align: center;">
-            <p style="font-size: 18px; color: #2D1B2E;">✅ SMTP is working correctly!</p>
-            <p style="color: #6B4C5A;">This test email confirms your email configuration is set up properly.</p>
+            <p style="font-size: 18px; color: #2D1B2E;">✅ Brevo API is working correctly!</p>
+            <p style="color: #6B4C5A;">Email delivery is now powered by Brevo.</p>
             <p style="font-size: 12px; color: #6B4C5A; margin-top: 20px;">Sent at: ${new Date().toISOString()}</p>
           </div>
         </div>
       `,
-    });
-
-    console.log(`✅ Test email sent successfully to: ${to}`);
+    );
+    await this.apiInstance.sendTransacEmail(email);
+    console.log(`✅ Test email sent to: ${to}`);
   }
 
   async sendOtpEmail(to: string, otp: string) {
-    const from = this.config.get<string>('email.from');
-    await this.transporter.sendMail({
-      from,
+    const email = this.buildEmail(
       to,
-      subject: '🔐 Your OTP for Beauty Parlé',
-      html: `
+      '🔐 Your OTP for Beauty Parlé',
+      `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
           <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #E8A0BF; font-family: 'Playfair Display', serif; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
+            <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
             <p style="color: #6B4C5A; font-size: 14px;">Where Beauty Speaks Your Language</p>
           </div>
           <div style="background: white; padding: 24px; border-radius: 16px;">
@@ -85,49 +76,71 @@ export class EmailService {
           <p style="color: #6B4C5A; font-size: 12px; margin-top: 24px; text-align: center;">If you didn't request this, please ignore this email.</p>
         </div>
       `,
-    });
+    );
+    await this.apiInstance.sendTransacEmail(email);
   }
 
   async sendWelcomeEmail(to: string, name: string) {
-    const from = this.config.get<string>('email.from');
-    const frontendUrl = this.config.get<string>('frontendUrl');
-    await this.transporter.sendMail({
-      from,
+    const email = this.buildEmail(
       to,
-      subject: '✨ Welcome to Beauty Parlé!',
-      html: `
+      '✨ Welcome to Beauty Parlé!',
+      `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
           <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #E8A0BF; font-family: 'Playfair Display', serif; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
+            <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
           </div>
           <div style="background: white; padding: 24px; border-radius: 16px;">
             <h2 style="color: #4A1A2C; font-size: 22px; margin: 0 0 8px 0;">Hello ${name}! 👋</h2>
             <p style="color: #2D1B2E; font-size: 16px; margin: 0 0 16px 0;">Thank you for joining Beauty Parlé. We're so excited to have you!</p>
             <p style="color: #6B4C5A; font-size: 14px; margin: 0 0 16px 0;">Discover premium cosmetics, book professional makeup services, and embrace beauty that understands you.</p>
             <div style="margin: 20px 0; text-align: center;">
-              <a href="${frontendUrl}/en/products" style="background: #E8A0BF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 999px; font-weight: 600; display: inline-block;">Start Shopping 🛍️</a>
+              <a href="${this.frontendUrl}/en/products" style="background: #E8A0BF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 999px; font-weight: 600; display: inline-block;">Start Shopping 🛍️</a>
             </div>
           </div>
           <p style="color: #6B4C5A; font-size: 12px; margin-top: 24px; text-align: center;">Beauty Parlé — Where Beauty Speaks Your Language 🌸</p>
         </div>
       `,
-    });
+    );
+    await this.apiInstance.sendTransacEmail(email);
+  }
+
+  async sendPasswordResetEmail(to: string, resetToken: string) {
+    const resetLink = `${this.frontendUrl}/en/auth/reset-password/${resetToken}`;
+    const email = this.buildEmail(
+      to,
+      '🔑 Reset Your Password — Beauty Parlé',
+      `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px;">
+            <h2 style="color: #4A1A2C; font-size: 22px; margin: 0 0 8px 0;">🔑 Reset Your Password</h2>
+            <p style="color: #2D1B2E; font-size: 16px; margin: 0 0 16px 0;">Click the button below to reset your password. This link expires in <strong>1 hour</strong>.</p>
+            <div style="margin: 20px 0; text-align: center;">
+              <a href="${resetLink}" style="background: #E8A0BF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 999px; font-weight: 600; display: inline-block;">Reset Password 🔐</a>
+            </div>
+            <p style="color: #6B4C5A; font-size: 12px; word-break: break-all;">Or copy this link: ${resetLink}</p>
+            <p style="color: #6B4C5A; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+          </div>
+        </div>
+      `,
+    );
+    await this.apiInstance.sendTransacEmail(email);
   }
 
   async sendOrderConfirmation(to: string, orderId: number, total: number, items: any[]) {
-    const from = this.config.get<string>('email.from');
     const itemsHtml = items.map(i =>
       `<tr><td style="padding: 8px 0; border-bottom: 1px solid #FDF0F0;">${i.name}</td><td style="padding: 8px 0; text-align: center;">${i.quantity}</td><td style="padding: 8px 0; text-align: right;">$${Number(i.price).toFixed(2)}</td></tr>`
     ).join('');
 
-    await this.transporter.sendMail({
-      from,
+    const email = this.buildEmail(
       to,
-      subject: `✅ Order #${orderId} Confirmed!`,
-      html: `
+      `✅ Order #${orderId} Confirmed! — Beauty Parlé`,
+      `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
           <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #E8A0BF; font-family: 'Playfair Display', serif; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
+            <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
           </div>
           <div style="background: white; padding: 24px; border-radius: 16px;">
             <h2 style="color: #4A1A2C; font-size: 22px; margin: 0 0 8px 0;">🎉 Order Confirmed!</h2>
@@ -142,39 +155,11 @@ export class EmailService {
           <p style="color: #6B4C5A; font-size: 12px; margin-top: 24px; text-align: center;">Track your order anytime in your account.</p>
         </div>
       `,
-    });
-  }
-
-  async sendPasswordResetEmail(to: string, resetToken: string) {
-    const from = this.config.get<string>('email.from');
-    const frontendUrl = this.config.get<string>('frontendUrl');
-    const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
-
-    await this.transporter.sendMail({
-      from,
-      to,
-      subject: '🔑 Reset Your Password — Beauty Parlé',
-      html: `
-        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #E8A0BF; font-family: 'Playfair Display', serif; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
-          </div>
-          <div style="background: white; padding: 24px; border-radius: 16px;">
-            <h2 style="color: #4A1A2C; font-size: 22px; margin: 0 0 8px 0;">🔑 Reset Your Password</h2>
-            <p style="color: #2D1B2E; font-size: 16px; margin: 0 0 16px 0;">Click the button below to reset your password. This link expires in <strong>1 hour</strong>.</p>
-            <div style="margin: 20px 0; text-align: center;">
-              <a href="${resetLink}" style="background: #E8A0BF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 999px; font-weight: 600; display: inline-block;">Reset Password 🔐</a>
-            </div>
-            <p style="color: #6B4C5A; font-size: 12px; word-break: break-all;">Or copy this link: ${resetLink}</p>
-            <p style="color: #6B4C5A; font-size: 12px;">If you didn't request this, please ignore this email.</p>
-          </div>
-        </div>
-      `,
-    });
+    );
+    await this.apiInstance.sendTransacEmail(email);
   }
 
   async sendOrderStatusEmail(to: string, orderId: number, status: string) {
-    const from = this.config.get<string>('email.from');
     const statusMap: Record<string, string> = {
       shipped: '📦 Shipped',
       delivered: '✅ Delivered',
@@ -182,11 +167,10 @@ export class EmailService {
     };
     const statusText = statusMap[status] || status;
 
-    await this.transporter.sendMail({
-      from,
+    const email = this.buildEmail(
       to,
-      subject: `📦 Order #${orderId} Status Updated`,
-      html: `
+      `📦 Order #${orderId} Status Updated — Beauty Parlé`,
+      `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
           <div style="background: white; padding: 24px; border-radius: 16px; text-align: center;">
             <h2 style="color: #4A1A2C; font-size: 22px;">Order #${orderId}</h2>
@@ -196,6 +180,7 @@ export class EmailService {
           </div>
         </div>
       `,
-    });
+    );
+    await this.apiInstance.sendTransacEmail(email);
   }
 }
