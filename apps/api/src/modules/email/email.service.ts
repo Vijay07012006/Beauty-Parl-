@@ -7,20 +7,66 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor(private config: ConfigService) {
+    // ✅ Use nested config keys (matches configuration.ts)
+    const host = this.config.get<string>('email.host') || 'smtp.gmail.com';
+    const port = this.config.get<number>('email.port') || 587;
+    const user = this.config.get<string>('email.user');
+    const pass = this.config.get<string>('email.pass');
+    const from = this.config.get<string>('email.from');
+
+    console.log('📧 EMAIL CONFIG:', { host, port, user: user ? user.slice(0, 5) + '***' : 'MISSING', from });
+
     this.transporter = nodemailer.createTransport({
-      host: this.config.get('EMAIL_HOST'),
-      port: this.config.get('EMAIL_PORT'),
-      secure: this.config.get('EMAIL_PORT') == 465, // true for 465, false for 587
-      auth: {
-        user: this.config.get('EMAIL_USER'),
-        pass: this.config.get('EMAIL_PASS'),
+      host,
+      port,
+      secure: port === 465, // true for 465, false for 587
+      auth: { user, pass },
+      tls: {
+        rejectUnauthorized: false,
       },
+      connectionTimeout: 10000,
+      greetingTimeout: 5000,
+    });
+
+    // ✅ Verify SMTP connection on startup
+    this.transporter.verify((error) => {
+      if (error) {
+        console.error('❌ SMTP Connection failed:', error.message);
+        console.log('⚠️ Emails will fall back to console logs');
+      } else {
+        console.log('✅ SMTP Connection successful — emails ready!');
+      }
     });
   }
 
-  async sendOtpEmail(to: string, otp: string) {
+  // ✅ Test endpoint helper
+  async sendTestEmail(to: string) {
+    const from = this.config.get<string>('email.from');
+    console.log(`📧 Sending test email to: ${to} from: ${from}`);
+
     await this.transporter.sendMail({
-      from: this.config.get('email.from'),
+      from,
+      to,
+      subject: '✅ Beauty Parlé — SMTP Test',
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #FFF8F0; border-radius: 20px;">
+          <h1 style="color: #E8A0BF; text-align: center;">💄 Beauty Parlé</h1>
+          <div style="background: white; padding: 20px; border-radius: 12px; text-align: center;">
+            <p style="font-size: 18px; color: #2D1B2E;">✅ SMTP is working correctly!</p>
+            <p style="color: #6B4C5A;">This test email confirms your email configuration is set up properly.</p>
+            <p style="font-size: 12px; color: #6B4C5A; margin-top: 20px;">Sent at: ${new Date().toISOString()}</p>
+          </div>
+        </div>
+      `,
+    });
+
+    console.log(`✅ Test email sent successfully to: ${to}`);
+  }
+
+  async sendOtpEmail(to: string, otp: string) {
+    const from = this.config.get<string>('email.from');
+    await this.transporter.sendMail({
+      from,
       to,
       subject: '🔐 Your OTP for Beauty Parlé',
       html: `
@@ -43,8 +89,10 @@ export class EmailService {
   }
 
   async sendWelcomeEmail(to: string, name: string) {
+    const from = this.config.get<string>('email.from');
+    const frontendUrl = this.config.get<string>('frontendUrl');
     await this.transporter.sendMail({
-      from: this.config.get('email.from'),
+      from,
       to,
       subject: '✨ Welcome to Beauty Parlé!',
       html: `
@@ -55,9 +103,9 @@ export class EmailService {
           <div style="background: white; padding: 24px; border-radius: 16px;">
             <h2 style="color: #4A1A2C; font-size: 22px; margin: 0 0 8px 0;">Hello ${name}! 👋</h2>
             <p style="color: #2D1B2E; font-size: 16px; margin: 0 0 16px 0;">Thank you for joining Beauty Parlé. We're so excited to have you!</p>
-            <p style="color: #6B4C5A; font-size: 14px; margin: 0 0 16px 0;">Discover premium cosmetics, book professional makeup services, and embrace beauty that understands you — in your language.</p>
+            <p style="color: #6B4C5A; font-size: 14px; margin: 0 0 16px 0;">Discover premium cosmetics, book professional makeup services, and embrace beauty that understands you.</p>
             <div style="margin: 20px 0; text-align: center;">
-              <a href="${this.config.get('frontendUrl')}/en/products" style="background: #E8A0BF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 999px; font-weight: 600; display: inline-block;">Start Shopping 🛍️</a>
+              <a href="${frontendUrl}/en/products" style="background: #E8A0BF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 999px; font-weight: 600; display: inline-block;">Start Shopping 🛍️</a>
             </div>
           </div>
           <p style="color: #6B4C5A; font-size: 12px; margin-top: 24px; text-align: center;">Beauty Parlé — Where Beauty Speaks Your Language 🌸</p>
@@ -67,12 +115,13 @@ export class EmailService {
   }
 
   async sendOrderConfirmation(to: string, orderId: number, total: number, items: any[]) {
+    const from = this.config.get<string>('email.from');
     const itemsHtml = items.map(i =>
       `<tr><td style="padding: 8px 0; border-bottom: 1px solid #FDF0F0;">${i.name}</td><td style="padding: 8px 0; text-align: center;">${i.quantity}</td><td style="padding: 8px 0; text-align: right;">$${Number(i.price).toFixed(2)}</td></tr>`
     ).join('');
 
     await this.transporter.sendMail({
-      from: this.config.get('email.from'),
+      from,
       to,
       subject: `✅ Order #${orderId} Confirmed!`,
       html: `
@@ -97,11 +146,14 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(to: string, resetToken: string) {
-    const resetLink = `${this.config.get('frontendUrl')}/en/auth/reset-password/${resetToken}`;
+    const from = this.config.get<string>('email.from');
+    const frontendUrl = this.config.get<string>('frontendUrl');
+    const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
+
     await this.transporter.sendMail({
-      from: this.config.get('email.from'),
+      from,
       to,
-      subject: '🔑 Reset Your Password',
+      subject: '🔑 Reset Your Password — Beauty Parlé',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
           <div style="text-align: center; margin-bottom: 24px;">
@@ -113,6 +165,7 @@ export class EmailService {
             <div style="margin: 20px 0; text-align: center;">
               <a href="${resetLink}" style="background: #E8A0BF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 999px; font-weight: 600; display: inline-block;">Reset Password 🔐</a>
             </div>
+            <p style="color: #6B4C5A; font-size: 12px; word-break: break-all;">Or copy this link: ${resetLink}</p>
             <p style="color: #6B4C5A; font-size: 12px;">If you didn't request this, please ignore this email.</p>
           </div>
         </div>
@@ -121,6 +174,7 @@ export class EmailService {
   }
 
   async sendOrderStatusEmail(to: string, orderId: number, status: string) {
+    const from = this.config.get<string>('email.from');
     const statusMap: Record<string, string> = {
       shipped: '📦 Shipped',
       delivered: '✅ Delivered',
@@ -129,7 +183,7 @@ export class EmailService {
     const statusText = statusMap[status] || status;
 
     await this.transporter.sendMail({
-      from: this.config.get('email.from'),
+      from,
       to,
       subject: `📦 Order #${orderId} Status Updated`,
       html: `
