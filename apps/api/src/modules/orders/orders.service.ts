@@ -17,6 +17,20 @@ export class OrdersService {
     const order = this.orderRepo.create(orderData);
     const saved = await this.orderRepo.save(order);
 
+    // Increment coupon usedCount if coupon code is used
+    if (orderData.couponCode) {
+      try {
+        const couponRepo = this.orderRepo.manager.getRepository('Coupon');
+        const coupon = await couponRepo.findOne({ where: { code: orderData.couponCode.toUpperCase() } });
+        if (coupon) {
+          coupon.usedCount = (coupon.usedCount || 0) + 1;
+          await couponRepo.save(coupon);
+        }
+      } catch (err) {
+        console.error('Failed to increment coupon usedCount:', err);
+      }
+    }
+
     // Send order confirmation
     const email = orderData.guestEmail || (orderData.userId ? await this.getUserEmail(orderData.userId) : null);
     if (email) {

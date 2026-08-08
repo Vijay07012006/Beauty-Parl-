@@ -12,7 +12,8 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Ticket
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -21,6 +22,7 @@ const navItems = [
   { icon: Package, label: 'Products', href: '/en/admin/products' },
   { icon: ShoppingBag, label: 'Orders', href: '/en/admin/orders' },
   { icon: Users, label: 'Users', href: '/en/admin/users' },
+  { icon: Ticket, label: 'Coupons', href: '/en/admin/coupons' },
   { icon: Settings, label: 'Settings', href: '/en/admin/settings' },
 ];
 

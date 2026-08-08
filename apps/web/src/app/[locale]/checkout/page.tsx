@@ -9,6 +9,7 @@ import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
 import Image from 'next/image';
 import Script from 'next/script';
+import { CouponInput } from '@/components/checkout/CouponInput';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -76,11 +77,33 @@ export default function CheckoutPage() {
     }
   }, [user, selectedAddressId]);
 
+  const [coupon, setCoupon] = useState<any>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+
   useEffect(() => {
     if (mounted && items.length === 0) {
       router.push(`/${locale}/cart`);
     }
   }, [items, router, mounted, locale]);
+
+  const getSubtotal = () => useCartStore.getState().subtotal();
+  const getTax = () => getSubtotal() * 0.1;
+  const getShipping = () => (getSubtotal() > 50 ? 0 : 5);
+  const getGrandTotal = () => {
+    const baseTotal = getSubtotal() + getTax() + getShipping();
+    const finalTotal = baseTotal - discountAmount;
+    return finalTotal > 0 ? finalTotal : 0;
+  };
+
+  const handleCouponApplied = (result: any) => {
+    setCoupon(result.coupon);
+    setDiscountAmount(result.discount);
+  };
+
+  const handleCouponRemoved = () => {
+    setCoupon(null);
+    setDiscountAmount(0);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,10 +120,12 @@ export default function CheckoutPage() {
         quantity: i.quantity,
         image: i.image,
       })),
-      subtotal: useCartStore.getState().subtotal(),
-      tax: useCartStore.getState().subtotal() * 0.1,
-      shipping: useCartStore.getState().subtotal() > 50 ? 0 : 5,
-      total: useCartStore.getState().total(),
+      subtotal: getSubtotal(),
+      tax: getTax(),
+      shipping: getShipping(),
+      total: getGrandTotal(),
+      couponCode: coupon?.code || null,
+      discount: discountAmount,
       paymentMethod,
       shippingAddress: form,
       status: 'pending' as const,
@@ -349,46 +374,66 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 bg-primary text-white rounded-full hover:bg-primary/90 transition font-bold disabled:opacity-70 cursor-pointer"
+                className="w-full py-4 bg-primary text-white rounded-full hover:bg-primary/95 transition font-bold disabled:opacity-70 cursor-pointer shadow-md shadow-primary/20"
               >
-                {loading ? 'Processing...' : `Place Order — $${total().toFixed(2)}`}
+                {loading ? 'Processing...' : `Place Order — $${getGrandTotal().toFixed(2)}`}
               </button>
             </div>
 
-            {/* Order Summary */}
-            <div className="lg:col-span-1">
-              <div className="bg-card p-6 rounded-2xl shadow-md border border-border/50 sticky top-24">
-                <h2 className="text-xl font-playfair font-bold mb-4">Order Summary</h2>
+            {/* Order Summary & Coupon */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Coupon Input Block */}
+              <div className="bg-card p-6 rounded-2xl shadow-sm border border-border/50 space-y-4">
+                <h2 className="text-lg font-playfair font-bold text-foreground">Promo Code</h2>
+                <CouponInput
+                  onCouponApplied={handleCouponApplied}
+                  onCouponRemoved={handleCouponRemoved}
+                  orderTotal={getSubtotal()}
+                />
+              </div>
+
+              {/* Summary Card */}
+              <div className="bg-card p-6 rounded-2xl shadow-sm border border-border/50 sticky top-24 space-y-4">
+                <h2 className="text-xl font-playfair font-bold text-foreground">Order Summary</h2>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-muted-foreground font-medium">
                     <span>Items ({useCartStore.getState().totalItems()})</span>
-                    <span>${useCartStore.getState().subtotal().toFixed(2)}</span>
+                    <span>${getSubtotal().toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-muted-foreground font-medium">
                     <span>Shipping</span>
-                    <span>{useCartStore.getState().subtotal() > 50 ? 'Free' : '$5.00'}</span>
+                    <span>{getShipping() === 0 ? 'Free' : `$${getShipping().toFixed(2)}`}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-muted-foreground font-medium">
                     <span>Tax (10%)</span>
-                    <span>${(useCartStore.getState().subtotal() * 0.1).toFixed(2)}</span>
+                    <span>${getTax().toFixed(2)}</span>
                   </div>
-                  <div className="border-t border-border pt-3 flex justify-between font-bold text-lg">
+                  
+                  {coupon && (
+                    <div className="flex justify-between text-emerald-600 font-bold bg-emerald-50/50 px-2 py-1 rounded-lg border border-emerald-100 text-xs items-center">
+                      <span>Promo ({coupon.code})</span>
+                      <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  <div className="border-t border-border/40 pt-3 flex justify-between font-bold text-lg text-foreground">
                     <span>Total</span>
-                    <span>${total().toFixed(2)}</span>
+                    <span className="text-primary">${getGrandTotal().toFixed(2)}</span>
                   </div>
                 </div>
-                <div className="mt-4 max-h-40 overflow-y-auto space-y-2">
+                
+                <div className="mt-4 max-h-40 overflow-y-auto space-y-2 border-t border-border/40 pt-3">
                   {items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2 text-sm" style={{ minHeight: '32px' }}>
-                      <span className="w-8 h-8 relative rounded overflow-hidden flex-shrink-0 bg-secondary/20 block">
+                    <div key={item.id} className="flex items-center gap-2 text-xs text-muted-foreground" style={{ minHeight: '32px' }}>
+                      <span className="w-8 h-8 relative rounded-lg overflow-hidden flex-shrink-0 bg-secondary/20 block">
                         {item.image ? (
                           <Image src={item.image} alt="" fill className="object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs">💄</div>
+                          <div className="w-full h-full flex items-center justify-center text-[10px]">💄</div>
                         )}
                       </span>
-                      <span className="flex-1 truncate">{item.name}</span>
-                      <span className="text-muted-foreground">x{item.quantity}</span>
+                      <span className="flex-1 truncate font-medium text-foreground">{item.name}</span>
+                      <span className="font-semibold">x{item.quantity}</span>
                     </div>
                   ))}
                 </div>

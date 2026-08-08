@@ -26,6 +26,12 @@ export class Order {
   @Column('decimal', { precision: 10, scale: 2 })
   total!: number;
 
+  @Column({ name: 'coupon_code', nullable: true })
+  couponCode?: string;
+
+  @Column('decimal', { name: 'discount', precision: 10, scale: 2, default: 0 })
+  discount!: number;
+
   @Column()
   paymentMethod!: 'cod' | 'razorpay' | 'stripe';
 
