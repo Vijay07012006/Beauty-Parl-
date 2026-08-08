@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Static assets, API routes ko redirect mat karo
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
@@ -13,7 +12,6 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Locale detection
   const locales = ['en', 'hi'];
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
