@@ -132,13 +132,17 @@ export class AuthService {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
 
-      // ✅ Send email with fallback
+      // ✅ ALWAYS PRINT RESET LINK IN CONSOLE (Fallback for email failures)
+      console.log(`🔗 RESET LINK: ${resetLink}`);
+      console.log(`📧 Email: ${email}`);
+
+      // ✅ Try sending email (non-blocking)
       try {
         await this.emailService.sendPasswordResetEmail(email, resetToken);
-        console.log(`✅ Password reset email sent to ${email}`);
+        console.log(`✅ Email sent to ${email}`);
       } catch (emailError: any) {
-        console.log(`⚠️ Email failed for ${email}:`, emailError.message);
-        console.log(`🔗 Fallback reset link: ${resetLink}`);
+        console.log(`⚠️ Email failed: ${emailError.message}`);
+        console.log(`🔗 Use this link: ${resetLink}`);
       }
 
       return { success: true, message: 'If this email exists, a reset link has been sent' };
