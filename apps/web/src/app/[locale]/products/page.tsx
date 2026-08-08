@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
@@ -23,6 +24,8 @@ interface Product {
 }
 
 export default function ProductsPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -159,7 +162,7 @@ export default function ProductsPage() {
                       whileHover={{ y: -5 }}
                       className="group bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-border/50"
                     >
-                      <Link href={`/en/product/${product.id}`}>
+                      <Link href={`/${locale}/product/${product.id}`}>
                         <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden bg-secondary/20">
                           {product.image ? (
                             <Image
@@ -193,9 +196,9 @@ export default function ProductsPage() {
                           <p className="text-xs text-muted-foreground mb-1">{product.category}</p>
                           <h3 className="font-medium text-sm md:text-base line-clamp-1 text-foreground">{product.name}</h3>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="font-bold text-primary text-sm md:text-base">${product.price.toFixed(2)}</span>
+                            <span className="font-bold text-primary text-sm md:text-base">${Number(product.price).toFixed(2)}</span>
                             {discount > 0 && (
-                              <span className="text-xs text-muted-foreground line-through">${displayMrp.toFixed(2)}</span>
+                              <span className="text-xs text-muted-foreground line-through">${Number(displayMrp).toFixed(2)}</span>
                             )}
                           </div>
                           <button

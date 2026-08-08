@@ -85,7 +85,7 @@ export default function CartPage() {
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
                         <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-primary font-bold">${item.price.toFixed(2)}</p>
+                        <p className="text-primary font-bold">${Number(item.price).toFixed(2)}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <button

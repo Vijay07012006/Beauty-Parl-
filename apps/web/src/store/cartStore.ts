@@ -27,13 +27,16 @@ export const useCartStore = create<CartStore>()(
       items: [],
 
       addItem: (item) => {
+        // ✅ Always ensure price is a number — prevents toFixed crash
+        const safePrice = Number(item.price) || 0;
+        const safeMaxStock = Number(item.maxStock) || 99;
         const { items } = get();
         const existing = items.find(i => i.id === item.id);
         if (existing) {
           const newQty = Math.min(existing.quantity + (item.quantity || 1), existing.maxStock);
           set({ items: items.map(i => i.id === item.id ? { ...i, quantity: newQty } : i) });
         } else {
-          set({ items: [...items, { ...item, quantity: item.quantity || 1 }] });
+          set({ items: [...items, { ...item, price: safePrice, maxStock: safeMaxStock, quantity: item.quantity || 1 }] });
         }
       },
 
@@ -59,13 +62,14 @@ export const useCartStore = create<CartStore>()(
       },
 
       subtotal: () => {
-        return get().items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        // ✅ Safe: coerce each item price to number
+        return get().items.reduce((sum, i) => sum + (Number(i.price) || 0) * i.quantity, 0);
       },
 
       total: () => {
         const subtotal = get().subtotal();
-        const shipping = subtotal > 50 ? 0 : 5; // free shipping over $50
-        const tax = subtotal * 0.1; // 10% tax
+        const shipping = subtotal > 50 ? 0 : 5;
+        const tax = subtotal * 0.1;
         return subtotal + tax + shipping;
       },
     }),

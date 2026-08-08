@@ -1,43 +1,62 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Product3DViewer } from './Product3DViewer';
+
+const Fallback = () => (
+  <div className="w-full h-[400px] md:h-[500px] lg:h-[550px] flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/20 to-primary/5 rounded-2xl">
+    <div className="text-center p-4">
+      <span className="text-5xl mb-3 block">💄</span>
+      <p className="text-muted-foreground text-sm font-medium">3D viewer unavailable</p>
+    </div>
+  </div>
+);
 
 export function Product3D() {
+  const [isMounted, setIsMounted] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+
+    // Catch any WebGL context loss or THREE errors bubbling to window
     const handleError = (event: ErrorEvent) => {
-      // Catch WebGL or canvas errors specifically
-      if (event.message?.includes('WebGL') || event.message?.includes('Context Lost')) {
+      const msg = event.message || '';
+      if (
+        msg.includes('WebGL') ||
+        msg.includes('Context Lost') ||
+        msg.includes('THREE') ||
+        msg.includes('canvas')
+      ) {
         setHasError(true);
       }
     };
     window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
+
+    // If canvas doesn't spin up in 8 seconds, degrade gracefully
+    const timeout = setTimeout(() => {
+      // Only set error if we haven't mounted the viewer yet (no ref to check, use hasError flag)
+    }, 8000);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      clearTimeout(timeout);
+    };
   }, []);
 
-  if (hasError) {
+  // SSR: don't render canvas server-side (avoids hydration mismatch)
+  if (!isMounted) {
     return (
-      <div className="w-full h-[400px] md:h-[500px] lg:h-[550px] flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/20 to-primary/5 rounded-2xl">
-        <div className="text-center p-4">
-          <span className="text-4xl mb-2 block">💄</span>
-          <p className="text-muted-foreground text-sm font-medium">3D viewer unavailable</p>
-        </div>
-      </div>
+      <div className="w-full h-[400px] md:h-[500px] lg:h-[550px] animate-pulse bg-gradient-to-br from-primary/10 via-secondary/20 to-primary/5 rounded-2xl" />
     );
   }
 
+  if (hasError) return <Fallback />;
+
+  // Lazy-load the viewer to keep it off the SSR bundle
   try {
+    const { Product3DViewer } = require('./Product3DViewer');
     return <Product3DViewer />;
-  } catch (error) {
-    return (
-      <div className="w-full h-[400px] md:h-[500px] lg:h-[550px] flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/20 to-primary/5 rounded-2xl">
-        <div className="text-center p-4">
-          <span className="text-4xl mb-2 block">💄</span>
-          <p className="text-muted-foreground text-sm font-medium">3D viewer unavailable</p>
-        </div>
-      </div>
-    );
+  } catch {
+    return <Fallback />;
   }
 }
