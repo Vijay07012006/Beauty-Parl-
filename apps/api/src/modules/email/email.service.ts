@@ -28,7 +28,9 @@ export class EmailService {
 
   private buildEmail(to: string, subject: string, html: string): SibApiV3Sdk.SendSmtpEmail {
     const email = new SibApiV3Sdk.SendSmtpEmail();
-    email.sender = { name: 'Beauty Parlé', email: this.fromEmail.replace(/.*<(.+)>/, '$1').trim() || this.fromEmail };
+    // ✅ Extract plain email from "Name <email>" format — Brevo requires plain email only
+    const plainEmail = this.fromEmail.replace(/.*<(.+)>/, '$1').trim() || this.fromEmail;
+    email.sender = { name: 'Beauty Parlé', email: plainEmail };
     email.to = [{ email: to }];
     email.subject = subject;
     email.htmlContent = html;
