@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { OtpModal } from '@/components/auth/OtpModal';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -118,6 +119,8 @@ export default function LoginPage() {
                 Forgot Password?
               </Link>
             </div>
+
+            <SocialLoginButtons redirectPath="/" />
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Don't have an account?{' '}

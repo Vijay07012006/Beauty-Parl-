@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { OtpModal } from '@/components/auth/OtpModal';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -125,6 +126,8 @@ export default function RegisterPage() {
                 {loading ? 'Creating Account...' : 'Create Account'}
               </button>
             </form>
+
+            <SocialLoginButtons redirectPath="/" />
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Already have an account?{' '}

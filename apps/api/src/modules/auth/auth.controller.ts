@@ -1,9 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Get, Put, Request, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Get, Put, Request, Res, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { Roles } from './roles.decorator';
 import { UserRole } from './user.entity';
+import { GoogleAuthGuard } from './google-auth.guard';
+import { FacebookAuthGuard } from './facebook-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -92,5 +94,33 @@ export class AuthController {
   async updatePreferences(@Request() req: any, @Body() preferences: any) {
     const updated = await this.authService.updatePreferences(req.user.id, preferences);
     return { success: true, preferences: updated };
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuth() {
+    // Redirects to Google
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthRedirect(@Request() req: any, @Res() res: any) {
+    const { access_token, user } = req.user;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/en/auth/callback?token=${access_token}&user=${encodeURIComponent(JSON.stringify(user))}`);
+  }
+
+  @Get('facebook')
+  @UseGuards(FacebookAuthGuard)
+  async facebookAuth() {
+    // Redirects to Facebook
+  }
+
+  @Get('facebook/callback')
+  @UseGuards(FacebookAuthGuard)
+  async facebookAuthRedirect(@Request() req: any, @Res() res: any) {
+    const { access_token, user } = req.user;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/en/auth/callback?token=${access_token}&user=${encodeURIComponent(JSON.stringify(user))}`);
   }
 }

@@ -235,4 +235,56 @@ export class AuthService {
     await this.userRepository.update(userId, { emailPreferences });
     return emailPreferences;
   }
+
+  async validateOAuthUser(profile: any, provider: 'google' | 'facebook') {
+    const { email, name, avatar, googleId, facebookId } = profile;
+
+    // Check if user exists
+    let user = await this.userRepository.findOne({ where: { email } });
+
+    if (!user) {
+      // Create new user
+      const hashedPassword = await bcrypt.hash('oauth_temp_' + Date.now(), 10);
+      user = this.userRepository.create({
+        email,
+        name,
+        password: hashedPassword,
+        avatar,
+        isVerified: true,
+        isSocialLogin: true,
+      });
+      if (provider === 'google') user.googleId = googleId;
+      if (provider === 'facebook') user.facebookId = facebookId;
+      await this.userRepository.save(user);
+    } else {
+      // Update social credentials if linking existing account
+      let updated = false;
+      if (provider === 'google' && !user.googleId) {
+        user.googleId = googleId;
+        user.isSocialLogin = true;
+        updated = true;
+      }
+      if (provider === 'facebook' && !user.facebookId) {
+        user.facebookId = facebookId;
+        user.isSocialLogin = true;
+        updated = true;
+      }
+      if (avatar && !user.avatar) {
+        user.avatar = avatar;
+        updated = true;
+      }
+      if (updated) {
+        await this.userRepository.save(user);
+      }
+    }
+
+    // Generate JWT
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const token = this.jwtService.sign(payload);
+
+    return {
+      access_token: token,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar },
+    };
+  }
 }

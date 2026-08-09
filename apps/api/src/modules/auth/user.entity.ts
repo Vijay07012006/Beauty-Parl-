@@ -58,6 +58,18 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   resetTokenExpiry?: Date;
 
+  @Column({ nullable: true })
+  googleId?: string;
+
+  @Column({ nullable: true })
+  facebookId?: string;
+
+  @Column({ nullable: true })
+  avatar?: string;
+
+  @Column({ default: false })
+  isSocialLogin!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 
