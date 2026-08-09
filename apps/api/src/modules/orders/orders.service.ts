@@ -35,7 +35,7 @@ export class OrdersService {
     const email = orderData.guestEmail || (orderData.userId ? await this.getUserEmail(orderData.userId) : null);
     if (email) {
       try {
-        await this.emailService.sendOrderConfirmation(email, saved.id, Number(saved.total), saved.items);
+        await this.emailService.sendOrderConfirmation(email, saved);
       } catch (err) {
         console.error('Failed to send order confirmation email:', err);
       }

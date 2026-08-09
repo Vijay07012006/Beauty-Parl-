@@ -144,5 +144,31 @@
     "page_not_found": "இந்தப் பக்கத்தைக் கண்டறிய முடியவில்லை",
     "go_back": "பின்னால் செல்",
     "reload": "மீண்டும் ஏற்று"
+  },
+  "orders": {
+    "invoice": "இன்வாய்ஸ்",
+    "status": "நிலை",
+    "shipping_address": "ஷிப்பிங் முகவரி",
+    "order_date": "ஆர்டர் தேதி",
+    "payment_method": "பணம் செலுத்தும் முறை",
+    "product": "தயாரிப்பு",
+    "quantity": "அளவு",
+    "price": "விலை",
+    "total": "மொத்தம்",
+    "subtotal": "துணைத்தொகை",
+    "shipping": "ஷிப்பிங்",
+    "tax": "வரி",
+    "discount": "தள்ளுபடி",
+    "scan_to_track": "உங்கள் ஆர்டரைக் கண்காணிக்க ஸ்கேன் செய்யவும்",
+    "thank_you": "பியூட்டி பார்லேயில் ஷாப்பிங் செய்ததற்கு நன்றி!",
+    "support": "ஆதரவுக்கு: support@beautyparle.com | +91 98765 43210",
+    "print": "அச்சிடுக",
+    "download_pdf": "PDF பதிவிறக்கவும்",
+    "share": "பகிர்க",
+    "receipt": "ரசீது",
+    "order_timeline": "ஆர்டர் காலவரிசை",
+    "back_to_orders": "ஆர்டர்களுக்குத் திரும்பு",
+    "order_not_found": "ஆர்டர் கிடைக்கவில்லை",
+    "invoice_receipt": "இன்வாய்ஸ் / ரசீது"
   }
 }

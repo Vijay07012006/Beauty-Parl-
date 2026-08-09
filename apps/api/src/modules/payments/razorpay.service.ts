@@ -101,7 +101,7 @@ export class RazorpayService {
     const email = order.guestEmail || (order.userId ? await this.getUserEmail(order.userId) : null);
     if (email) {
       try {
-        await this.emailService.sendOrderConfirmation(email, order.id, Number(order.total), order.items);
+        await this.emailService.sendOrderConfirmation(email, order);
         console.log(`📧 [Webhook] Confirmation email sent to ${email} for Order #${order.id}`);
       } catch (err) {
         console.error(`❌ [Webhook] Failed to send confirmation email for Order #${order.id}:`, err);

@@ -144,5 +144,31 @@
     "page_not_found": "यह पृष्ठ नहीं मिल सका",
     "go_back": "वापस जाएं",
     "reload": "पुनः लोड करें"
+  },
+  "orders": {
+    "invoice": "इनवॉयस",
+    "status": "स्थिति",
+    "shipping_address": "शिपिंग का पता",
+    "order_date": "ऑर्डर की तारीख",
+    "payment_method": "भुगतान विधि",
+    "product": "उत्पाद",
+    "quantity": "मात्रा",
+    "price": "कीमत",
+    "total": "कुल",
+    "subtotal": "उप-योग",
+    "shipping": "शिपिंग",
+    "tax": "कर",
+    "discount": "छूट",
+    "scan_to_track": "अपने ऑर्डर को ट्रैक करने के लिए स्कैन करें",
+    "thank_you": "ब्यूटी पार्ले के साथ खरीदारी करने के लिए धन्यवाद!",
+    "support": "सहायता के लिए: support@beautyparle.com | +91 98765 43210",
+    "print": "प्रिंट करें",
+    "download_pdf": "पीडीएफ डाउनलोड करें",
+    "share": "शेयर करें",
+    "receipt": "रसीद",
+    "order_timeline": "ऑर्डर टाइमलाइन",
+    "back_to_orders": "ऑर्डर पर वापस जाएं",
+    "order_not_found": "ऑर्डर नहीं मिला",
+    "invoice_receipt": "इनवॉइस / रसीद"
   }
 }

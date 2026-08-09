@@ -10,3 +10,4 @@ allowBuilds:
   "bcryptjs": true
   "esbuild": true
   "msgpackr-extract": true
+  core-js: set this to true or false

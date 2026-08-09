@@ -144,5 +144,31 @@
     "page_not_found": "ఈ పేజీ కనుగొనబడలేదు",
     "go_back": "వెనుకకు వెళ్ళండి",
     "reload": "రీలోడ్ చేయండి"
+  },
+  "orders": {
+    "invoice": "ఇన్‌వాయిస్",
+    "status": "స్థితి",
+    "shipping_address": "షిప్పింగ్ చిరునామా",
+    "order_date": "ఆర్డర్ తేదీ",
+    "payment_method": "చెల్లింపు పద్ధతి",
+    "product": "ఉత్పత్తి",
+    "quantity": "పరిమాణం",
+    "price": "ధర",
+    "total": "మొత్తం",
+    "subtotal": "సబ్ టోటల్",
+    "shipping": "షిప్పింగ్",
+    "tax": "పన్ను",
+    "discount": "తళ్ళూబడి",
+    "scan_to_track": "మీ ఆర్డర్‌ను ట్రాక్ చేయడానికి స్కాన్ చేయండి",
+    "thank_you": "బ్యూటీ పార్లేలో షాపింగ్ చేసినందుకు ధన్యవాదాలు!",
+    "support": "ఆధారానికి: support@beautyparle.com | +91 98765 43210",
+    "print": "ప్రింట్",
+    "download_pdf": "PDF డౌన్‌లోడ్",
+    "share": "షేర్",
+    "receipt": "రశీదు",
+    "order_timeline": "ఆర్డర్ టైమ్‌లైన్",
+    "back_to_orders": "ఆర్డర్లకు తిరిగి వెళ్ళండి",
+    "order_not_found": "ఆర్డర్ కనుగొనబడలేదు",
+    "invoice_receipt": "ఇన్‌వాయిస్ / రశీదు"
   }
 }

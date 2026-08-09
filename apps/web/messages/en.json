@@ -144,5 +144,31 @@
     "page_not_found": "This page could not be found",
     "go_back": "Go Back",
     "reload": "Reload"
+  },
+  "orders": {
+    "invoice": "Invoice",
+    "status": "Status",
+    "shipping_address": "Shipping Address",
+    "order_date": "Order Date",
+    "payment_method": "Payment Method",
+    "product": "Product",
+    "quantity": "Qty",
+    "price": "Price",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "tax": "Tax",
+    "discount": "Discount",
+    "scan_to_track": "Scan to track your order",
+    "thank_you": "Thank you for shopping with Beauty Parlé!",
+    "support": "For support: support@beautyparle.com | +91 98765 43210",
+    "print": "Print",
+    "download_pdf": "Download PDF",
+    "share": "Share",
+    "receipt": "Receipt",
+    "order_timeline": "Order Timeline",
+    "back_to_orders": "Back to Orders",
+    "order_not_found": "Order not found",
+    "invoice_receipt": "Invoice / Receipt"
   }
 }
