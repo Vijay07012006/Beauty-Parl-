@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { User, UserRole } from './user.entity';
@@ -16,6 +17,7 @@ export class AuthService {
     private jwtService: JwtService,
     private emailService: EmailService,
     private otpService: OtpService,
+    private config: ConfigService,
   ) {}
 
   async register(registerDto: any) {
@@ -237,6 +239,13 @@ export class AuthService {
   }
 
   async validateOAuthUser(profile: any, provider: 'google' | 'facebook') {
+    if (provider === 'google' && !process.env.GOOGLE_CLIENT_ID && !this.config.get('GOOGLE_CLIENT_ID')) {
+      throw new InternalServerErrorException('GOOGLE_CLIENT_ID environment variable is missing on the server.');
+    }
+    if (provider === 'facebook' && !process.env.FACEBOOK_APP_ID && !this.config.get('FACEBOOK_APP_ID')) {
+      throw new InternalServerErrorException('FACEBOOK_APP_ID environment variable is missing on the server.');
+    }
+
     const { email, name, avatar, googleId, facebookId } = profile;
 
     // Check if user exists

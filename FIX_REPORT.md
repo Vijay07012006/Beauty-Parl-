@@ -1,110 +1,61 @@
-# Beauty Parlé — Comprehensive System Audit & Fix Report
+# Beauty Parlé — Deployment Fix Report
 
-This report documents the deep scan findings across the Beauty Parlé client-side Next.js web application, NestJS backend API, Neon PostgreSQL database, and deployment configurations, detailing the complete system architecture, active loop-holes, code fixes, and a step-by-step roadmap.
-
----
-
-## Section 1: Executive Summary
-
-| Priority | Count | Description |
-| :--- | :---: | :--- |
-| **Total Issues Found** | **9** | Total system vulnerabilities, CORS blocks, and mail handler flaws. |
-| **Critical Priority (Red)** | **3** | Blockers preventing core operations (CORS, Stats, registration flows). |
-| **High Priority (Yellow)** | **3** | Functional regressions (SMTP crash vectors, OTP triggers, Razorpay keys). |
-| **Medium Priority (Green)** | **2** | Deprecations, static asset loading, and cache build errors. |
-| **Low Priority (Grey)** | **1** | Minor logs cleanup, linting, and warnings. |
+This document reports the details of the diagnostic audit and code updates performed to resolve deployment and runtime failures in the Beauty Parlé backend and frontend applications.
 
 ---
 
-## Section 2: Issue Categories
+## 1. Issues Found
 
-### 🔴 CRITICAL ISSUES (Fix Immediately)
+### 1.1 Unhandled Exceptions & Quiet Rejections
+- **File**: [main.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/main.ts)
+- **Problem**: Node.js v15+ exits with status 1 on unhandled promise rejections or uncaught runtime exceptions without printing descriptive stack traces to the container log when they happen after successful startup.
 
-| # | Issue | File Path | Line Range | Recommendation / Fix |
-|---|---|---|---|---|
-| 1 | CORS Policy Blocking Products | [main.ts](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/api/src/main.ts) | 11 - 20 | Change CORS origins from matching helpers to allow-all (`origin: true`) in debug mode, or map production subdomains explicitly. |
-| 2 | Stats 401 Unauthorized Error | [page.tsx](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/web/src/app/%5Blocale%5D/admin/dashboard/page.tsx) | 31 - 47 | Access local storage bearer token and pass it inside the `Authorization: Bearer <token>` request header. |
-| 3 | Registration Endpoint Failures | [auth.service.ts](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/api/src/modules/auth/auth.service.ts) | 31 - 61 | Inject `OtpService` to generate and write OTP values, and wrap email sending functions in error handlers to prevent API crashes. |
+### 1.2 Uncaught Seeder Failures
+- **File**: [admin-seeder.service.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/modules/auth/admin-seeder.service.ts)
+- **Problem**: Seeding operations on startup had no safety handler. If database queries failed or had sync/unique constraint conflicts, the process crashed during module initialization.
 
-### 🟡 HIGH PRIORITY ISSUES (Fix Soon)
+### 1.3 Missing Strategy Env Safeguards
+- **Files**: [google.strategy.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/modules/auth/google.strategy.ts) and [facebook.strategy.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/modules/auth/facebook.strategy.ts)
+- **Problem**: If `GOOGLE_CLIENT_ID` or `FACEBOOK_APP_ID` are missing/empty in production environment variables, Passport strategies could resolve options incorrectly or crash.
 
-| # | Issue | File Path | Line Range | Recommendation / Fix |
-|---|---|---|---|---|
-| 4 | Forgot Password Crashing SMTP | [auth.service.ts](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/api/src/modules/auth/auth.service.ts) | 122 - 124 | Wrap the `sendPasswordResetEmail()` call inside a `try...catch` block so the endpoint generates links even if the SMTP transporter fails. |
-| 5 | OTP Email Delivery Failures | [otp.service.ts](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/api/src/modules/auth/otp.service.ts) | 38 - 43 | Wrap raw `sendOtpEmail()` inside a `try...catch` block to print the generated OTP to the terminal console if the SMTP credentials fail. |
-| 6 | Razorpay Frontend Key ID Missing | [checkout/page.tsx](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/web/src/app/%5Blocale%5D/checkout/page.tsx) | 88 - 90 | Verify that `NEXT_PUBLIC_RAZORPAY_KEY_ID` environment variable is defined in Vercel. |
-
-### 🟢 MEDIUM PRIORITY ISSUES (Plan)
-
-| # | Issue | File Path | Line Range | Recommendation / Fix |
-|---|---|---|---|---|
-| 7 | Three.js Clock Deprecation warning | [Product3D.tsx](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/web/src/components/3d/Product3D.tsx) | 11 - 17 | Replace `state.clock.getElapsedTime()` call or upgrade react-three-fiber clock states to `THREE.Timer` logic to clear warnings. |
-| 8 | 404 Missing Static Assets | Vercel Build | - | Clean compilation cache and trigger a full rebuild in Vercel to sync output paths. |
-
-### ⚪ LOW PRIORITY ISSUES (Nice to Have)
-
-| # | Issue | File Path | Line Range | Recommendation / Fix |
-|---|---|---|---|---|
-| 9 | Console Debug Logging noise | [api.ts](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/web/src/lib/api.ts) | 5 - 34 | Strip out API request/response console loggers before merging to production workspace. |
+### 1.4 Unsecured Auth Endpoints
+- **File**: [auth.controller.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/modules/auth/auth.controller.ts)
+- **Problem**: Sensitive endpoints (`register`, `login`, and `forgot-password`) did not have explicit rate limiting overrides, exposing them to potential automated brute-force attacks.
 
 ---
 
-## Section 3: Issue Details (With Exact Fix)
+## 2. Fixes Applied
 
-### Issue 1: CORS Blocking Product Fetches
-- **Root Cause**: Next.js client-side requests originating from `https://beauty-parle.vercel.app` were blocked by the API because the allowed origins did not match the browser client exactly.
-- **Fix**: Replaced the origins callback in NestJS `main.ts` with a global debug/development allow-all wildcard flag (`origin: true`) or an origin array incorporating Vercel subdomains.
+### 2.1 Exception Tracking Hooks & Env Auditing
+- **File**: [main.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/main.ts) (Lines 6-20)
+- **Fix**: Added process-level exception and rejection trackers to output runtime errors. Added pre-bootstrap warning loops checking for critical `DATABASE_URL` and `JWT_SECRET` keys.
 
-### Issue 2: Stats 401 Unauthorized
-- **Root Cause**: The Admin Dashboard fetch request to `/admin/stats` was missing the JWT authorization bearer token because it used a raw fetch invocation without applying interceptors.
-- **Fix**: Modified [dashboard/page.tsx](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/web/src/app/%5Blocale%5D/admin/dashboard/page.tsx) to read the token from `localStorage` and manually attach it to the request header.
+### 2.2 Seeder Crash Prevention
+- **File**: [admin-seeder.service.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/modules/auth/admin-seeder.service.ts) (Lines 18-56)
+- **Fix**: Wrapped the database query structure of `seedAdmin` inside a `try...catch` block so seeding issues write a log line instead of crashing application startup.
 
-### Issue 3: Registration SMTP Crashes
-- **Root Cause**: Registration threw a `500 Server Error` whenever Gmail SMTP credentials failed or were unconfigured because the nodemailer send call was not wrapped in an error handler.
-- **Fix**: Wrapped welcome email and OTP email sends in `try...catch` blocks so they log connection errors in the terminal instead of crashing user registration.
+### 2.3 Graceful Strategy Config Fallbacks
+- **Files**: [google.strategy.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/modules/auth/google.strategy.ts) (Lines 9-19) and [facebook.strategy.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/modules/auth/facebook.strategy.ts) (Lines 9-19)
+- **Fix**: Configured explicit fallback checks checking both ConfigService values and direct environment variables (`process.env`). Strategy initialization logs warning flags if credentials are not present but falls back to a development string so application starts up cleanly.
 
----
+### 2.4 Sensitive Endpoint Rate Limiting
+- **File**: [auth.controller.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/modules/auth/auth.controller.ts)
+- **Fix**: Applied `@Throttle({ default: { limit: 5, ttl: 60000 } })` to registration, login, and forgot-password endpoints.
 
-## Section 4: Verification Checklist
-
-| Test Case | Expected Result | Status |
-| :--- | :--- | :---: |
-| **Admin Login** | Redirects to dashboard | ✅ Passed |
-| **Admin Dashboard Stats** | Stats load without 401 unauthorized errors | ✅ Passed |
-| **Products Page** | Loads inventory products without CORS errors | ✅ Passed |
-| **User Registration** | OTP generation succeeds and modal appears | ✅ Passed |
-| **User Login** | Session restores and redirects to homepage | ✅ Passed |
-| **Forgot Password** | Reset link is generated and printed in console | ✅ Passed |
-| **Order Placement** | Payment maps and order records update | ✅ Passed |
+### 2.5 Runtime Configuration Verification
+- **File**: [auth.service.ts](file:///d:/Desktop/Beauty%20Parlé/apps/api/src/modules/auth/auth.service.ts) (Lines 239-246)
+- **Fix**: Added explicit `InternalServerErrorException` throws in `validateOAuthUser` if client attempts to trigger social logins but the server is missing the corresponding OAuth Client ID environment parameters.
 
 ---
 
-## Section 5: Complete Roadmap (Step-by-Step)
-
-### Step 1: CORS Policy Overwrite
-- **Action**: Overwrite NestJS CORS configuration in [main.ts](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/api/src/main.ts) to permit credentials and client requests.
-- **File**: `apps/api/src/main.ts`
-
-### Step 2: Axios Header Hydration
-- **Action**: Add default authorization headers in `authStore.ts` during session restoration and login so all subsequent Axios API calls are pre-authorized.
-- **File**: `apps/web/src/store/authStore.ts`
-
-### Step 3: Admin Dashboard Authorization
-- **Action**: Inject token credentials into `/admin/stats` fetch requests in [dashboard/page.tsx](file:///d:/Desktop/Beauty%20Parl%C3%A9/apps/web/src/app/%5Blocale%5D/admin/dashboard/page.tsx).
-- **File**: `apps/web/src/app/[locale]/admin/dashboard/page.tsx`
-
-### Step 4: OTP and Registration Error-wrapping
-- **Action**: Wrap welcome/OTP email sends in `try...catch` blocks and call `otpService.sendOtp` inside `register`.
-- **Files**: `apps/api/src/modules/auth/auth.service.ts` and `apps/api/src/modules/auth/otp.service.ts`
+## 3. Verification Results
+- **Compile Check**: Ran `pnpm build` in the monorepo root.
+- **Status**: ✅ SUCCESSFUL. Built both Next.js frontend pages and NestJS backend modules cleanly without any compilation warnings.
+- **NestJS Startup Diagnostics**: Verified seeder and strategies initialization logs.
 
 ---
 
-## Section 6: Remaining Features
-
-| Feature | Status | Priority | Description |
-| :--- | :---: | :---: | :--- |
-| **Multi-Language Support** | ⬜ Pending | **High** | Support translation files for 10 Indian languages and a header switcher. |
-| **Reviews & Ratings** | ⬜ Pending | **High** | Allow product ratings (1-5 stars) and moderated text reviews. |
-| **User Wishlist** | ⬜ Pending | **Medium** | Support local storage or DB-backed favorite items catalog. |
-| **SMS OTP Backup** | ⬜ Pending | **Medium** | Connect Twilio SMS gateway for mobile OTP delivery fallback. |
-| **Analytics & Sentry** | ⬜ Pending | **Medium** | Deploy Google Analytics tracking scripts and Sentry error monitoring. |
+## 4. Recommendations
+1. **Render Env Configuration**: Ensure `CORS_ORIGINS` on Render is populated with `https://beauty-parle.vercel.app` (no trailing slash) to allow direct cross-origin credentials routing.
+2. **Brevo Key**: Populate `BREVO_API_KEY` to enable transactional OTP emails.
+3. **Database Constraints**: Run synchronization migrations if database schemas drift.

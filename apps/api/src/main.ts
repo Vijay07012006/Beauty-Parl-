@@ -4,6 +4,21 @@ import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 
 async function bootstrap() {
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
+  process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception thrown:', err);
+  });
+
+  const criticalEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+  for (const envVar of criticalEnvVars) {
+    if (!process.env[envVar]) {
+      console.warn(`⚠️ [Config] Missing critical environment variable: ${envVar}. Application may fail to start or run.`);
+    }
+  }
+
   const app = await NestFactory.create(AppModule);
 
   app.use(helmet());

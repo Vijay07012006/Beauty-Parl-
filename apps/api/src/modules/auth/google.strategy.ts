@@ -10,10 +10,18 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private config: ConfigService,
     private authService: AuthService,
   ) {
+    const clientID = config.get<string>('GOOGLE_CLIENT_ID') || process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = config.get<string>('GOOGLE_CLIENT_SECRET') || process.env.GOOGLE_CLIENT_SECRET;
+    const callbackURL = config.get<string>('GOOGLE_CALLBACK_URL') || process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/auth/google/callback';
+
+    if (!clientID || clientID === 'placeholder_id') {
+      console.warn('⚠️ [GoogleStrategy] Missing GOOGLE_CLIENT_ID. Google OAuth will fail on invocation.');
+    }
+
     super({
-      clientID: config.get('GOOGLE_CLIENT_ID') || 'placeholder_id',
-      clientSecret: config.get('GOOGLE_CLIENT_SECRET') || 'placeholder_secret',
-      callbackURL: config.get('GOOGLE_CALLBACK_URL') || 'http://localhost:3001/auth/google/callback',
+      clientID: clientID || 'placeholder_id',
+      clientSecret: clientSecret || 'placeholder_secret',
+      callbackURL,
       scope: ['email', 'profile'],
     });
   }

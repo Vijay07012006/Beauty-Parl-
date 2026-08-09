@@ -10,10 +10,18 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     private config: ConfigService,
     private authService: AuthService,
   ) {
+    const clientID = config.get<string>('FACEBOOK_APP_ID') || process.env.FACEBOOK_APP_ID;
+    const clientSecret = config.get<string>('FACEBOOK_APP_SECRET') || process.env.FACEBOOK_APP_SECRET;
+    const callbackURL = config.get<string>('FACEBOOK_CALLBACK_URL') || process.env.FACEBOOK_CALLBACK_URL || 'http://localhost:3001/auth/facebook/callback';
+
+    if (!clientID || clientID === 'placeholder_id') {
+      console.warn('⚠️ [FacebookStrategy] Missing FACEBOOK_APP_ID. Facebook OAuth will fail on invocation.');
+    }
+
     super({
-      clientID: config.get('FACEBOOK_APP_ID') || 'placeholder_id',
-      clientSecret: config.get('FACEBOOK_APP_SECRET') || 'placeholder_secret',
-      callbackURL: config.get('FACEBOOK_CALLBACK_URL') || 'http://localhost:3001/auth/facebook/callback',
+      clientID: clientID || 'placeholder_id',
+      clientSecret: clientSecret || 'placeholder_secret',
+      callbackURL,
       profileFields: ['id', 'emails', 'name', 'picture.type(large)'],
     });
   }
