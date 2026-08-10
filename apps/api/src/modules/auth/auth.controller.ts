@@ -132,4 +132,23 @@ export class AuthController {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     res.redirect(`${frontendUrl}/en/auth/callback?token=${access_token}&user=${encodeURIComponent(JSON.stringify(user))}`);
   }
+
+  @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(@Body() body: { email: string; otp: string }) {
+    if (!body.email || !body.otp) {
+      throw new BadRequestException('Email and OTP are required');
+    }
+    return this.authService.verifyOtp(body.email, body.otp);
+  }
+
+  @Post('resend-otp')
+  @HttpCode(HttpStatus.OK)
+  async resendOtp(@Body() body: { email: string }) {
+    if (!body.email) {
+      throw new BadRequestException('Email is required');
+    }
+    await this.authService.resendOtp(body.email);
+    return { success: true };
+  }
 }

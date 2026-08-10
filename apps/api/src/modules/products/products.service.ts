@@ -206,6 +206,22 @@ export class ProductsService {
     });
   }
 
+  async findApprovedReviews(productId: number): Promise<ProductReview[]> {
+    return this.reviewRepository.find({
+      where: { productId, isApproved: true },
+      order: { createdAt: 'DESC' }
+    });
+  }
+
+  async approveReview(reviewId: number): Promise<void> {
+    const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
+    if (!review) {
+      throw new NotFoundException(`Review with ID ${reviewId} not found`);
+    }
+    await this.reviewRepository.update(reviewId, { isApproved: true });
+    await this.recalculateRating(review.productId);
+  }
+
   async createReview(
     productId: number,
     reviewData: { reviewerName: string; rating: number; comment: string }

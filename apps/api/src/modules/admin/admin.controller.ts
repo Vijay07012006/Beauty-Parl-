@@ -60,6 +60,9 @@ export class AdminController {
 
   @Put('users/:id/role')
   async updateUserRole(@Param('id') id: number, @Body() body: { role: UserRole }, @Request() req: any) {
+    if (req.user && req.user.id === Number(id) && body.role !== UserRole.SUPER_ADMIN && body.role !== UserRole.ADMIN) {
+      throw new BadRequestException('You cannot revoke your own admin permissions.');
+    }
     await this.userRepo.update(id, { role: body.role });
     await this.auditLogsService.log('ADMIN_UPDATE_USER_ROLE', req.user?.email, req.user?.id, { targetUserId: id, newRole: body.role });
     return { success: true };
@@ -67,6 +70,9 @@ export class AdminController {
 
   @Put('users/:id/status')
   async updateUserStatus(@Param('id') id: number, @Body() body: { isActive: boolean }, @Request() req: any) {
+    if (req.user && req.user.id === Number(id) && body.isActive === false) {
+      throw new BadRequestException('You cannot deactivate your own account.');
+    }
     await this.userRepo.update(id, { isActive: body.isActive });
     await this.auditLogsService.log('ADMIN_UPDATE_USER_STATUS', req.user?.email, req.user?.id, { targetUserId: id, isActive: body.isActive });
     return { success: true };

@@ -21,6 +21,20 @@ export class UgcController {
     throw new UnauthorizedException('Authentication token signature verification failed');
   }
 
+  private extractAdminUser(authHeader?: string): number {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Authentication token missing or invalid');
+    }
+    try {
+      const token = authHeader.split(' ')[1];
+      const payload = this.jwtService.verify(token);
+      if (payload?.sub && (payload.role === 'admin' || payload.role === 'super_admin')) {
+        return Number(payload.sub);
+      }
+    } catch {}
+    throw new UnauthorizedException('Access denied. Administrator privileges required.');
+  }
+
   @Post()
   async upload(
     @Body() body: { productId: number; imageUrl: string; caption?: string },
@@ -42,20 +56,20 @@ export class UgcController {
 
   @Get('admin/pending')
   async listPending(@Headers('authorization') authHeader?: string) {
-    this.extractUserId(authHeader);
+    this.extractAdminUser(authHeader);
     return this.ugcService.listPending();
   }
 
   @Put('admin/approve/:id')
   async approve(@Param('id') id: string, @Headers('authorization') authHeader?: string) {
-    this.extractUserId(authHeader);
+    this.extractAdminUser(authHeader);
     await this.ugcService.approve(Number(id));
     return { success: true };
   }
 
   @Delete('admin/reject/:id')
   async reject(@Param('id') id: string, @Headers('authorization') authHeader?: string) {
-    this.extractUserId(authHeader);
+    this.extractAdminUser(authHeader);
     await this.ugcService.reject(Number(id));
     return { success: true };
   }

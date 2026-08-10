@@ -322,4 +322,13 @@ export class AuthService {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar },
     };
   }
+
+  async resendOtp(email: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    await this.otpService.resendOtp(email);
+    await this.auditLogsService.log('USER_OTP_RESENT', email, user.id);
+  }
 }

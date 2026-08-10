@@ -13,7 +13,9 @@ import {
   LogOut,
   Menu,
   X,
-  Ticket
+  Ticket,
+  MessageSquare,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -23,6 +25,8 @@ const navItems = [
   { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
   { icon: Users, label: 'Users', href: '/admin/users' },
   { icon: Ticket, label: 'Coupons', href: '/admin/coupons' },
+  { icon: MessageSquare, label: 'Reviews', href: '/admin/reviews' },
+  { icon: ImageIcon, label: 'UGC Photos', href: '/admin/ugc' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 

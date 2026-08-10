@@ -18,6 +18,9 @@ export class ProductReview {
   @Column('text')
   comment!: string;
 
+  @Column({ default: true })
+  isApproved!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 
