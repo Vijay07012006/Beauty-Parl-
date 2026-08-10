@@ -24,6 +24,11 @@ import { Address } from './modules/addresses/address.entity';
 import { Coupon } from './modules/coupons/coupon.entity';
 import { User } from './modules/auth/user.entity';
 import { Order } from './modules/orders/order.entity';
+import { Cart } from './modules/cart/cart.entity';
+import { ScheduleModule } from '@nestjs/schedule';
+import { RecommendationsModule } from './modules/recommendations/recommendations.module';
+import { CartModule } from './modules/cart/cart.module';
+import { ChatModule } from './modules/chat/chat.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -42,7 +47,7 @@ import configuration from './config/configuration';
         username: config.get('database.url') ? undefined : config.get('database.username'),
         password: config.get('database.url') ? undefined : config.get('database.password'),
         database: config.get('database.url') ? undefined : config.get('database.database'),
-        entities: [Product, User, Order, ProductReview, Wishlist, Address, Coupon],
+        entities: [Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart],
         autoLoadEntities: true,
         synchronize: process.env.DB_SYNCHRONIZE !== 'false', // Default to true unless explicitly disabled, ensuring tables are created on startup since there are no migrations
         logging: process.env.NODE_ENV === 'development',
@@ -58,6 +63,7 @@ import configuration from './config/configuration';
       ttl: 60000,
       limit: 10,
     }]),
+    ScheduleModule.forRoot(),
     AuthModule,
     ProductsModule,
     OrdersModule,
@@ -68,6 +74,9 @@ import configuration from './config/configuration';
     WishlistModule,
     AddressesModule,
     CouponsModule,
+    RecommendationsModule,
+    CartModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [

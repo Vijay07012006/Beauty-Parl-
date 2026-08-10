@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/components/home/Hero';
+import { RecommendationsSection } from '@/components/products/RecommendationsSection';
 
 // Lazy load heavy sections
 const Categories = dynamic(() => import('@/components/home/Categories').then(m => m.Categories), { 
@@ -49,6 +50,9 @@ export default function HomePage() {
             <>
               <Categories />
               <FeaturedProducts />
+              <div className="container mx-auto px-4 max-w-6xl pb-16">
+                <RecommendationsSection type="personalized" limit={4} />
+              </div>
             </>
           ) : (
             <div className="py-16 text-center text-muted-foreground">Scroll to load content...</div>

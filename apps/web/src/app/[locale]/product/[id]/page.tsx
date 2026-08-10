@@ -13,6 +13,7 @@ import { RatingStars } from '@/components/products/RatingStars';
 import { DeliveryChecker } from '@/components/products/DeliveryChecker';
 import { WishlistButton } from '@/components/products/WishlistButton';
 import { ProductCard } from '@/components/products/ProductCard';
+import { RecommendationsSection } from '@/components/products/RecommendationsSection';
 import { toast } from 'sonner';
 import { ReviewForm } from '@/components/reviews/ReviewForm';
 import { ReviewList } from '@/components/reviews/ReviewList';
@@ -63,15 +64,6 @@ export default function ProductDetailPage() {
 
       // Trigger review list to load fresh data
       setReviewRefresh(Date.now());
-      // Fetch similar products
-      if (res.data?.category) {
-        const similarRes = await api.get('/products', {
-          params: { limit: 4, category: res.data.category }
-        });
-        const items = similarRes.data?.products || similarRes.data?.data || similarRes.data || [];
-        const itemsArray = Array.isArray(items) ? items : [];
-        setSimilarProducts(itemsArray.filter((item: Product) => item.id !== res.data.id).slice(0, 4));
-      }
     } catch (err) {
       console.error('Failed to load product detail', err);
       setProduct(null);
@@ -388,19 +380,8 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Related Products Slider */}
-          {similarProducts.length > 0 && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold font-playfair flex items-center gap-2">
-                <span>🛍️</span> Customers Also Bought
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {similarProducts.map((simProd) => (
-                  <ProductCard key={simProd.id} product={simProd} />
-                ))}
-              </div>
-            </div>
-          )}
+          {/* AI Product Recommendations */}
+          <RecommendationsSection type="also-bought" productId={product.id} limit={4} />
         </div>
       </main>
       <Footer />

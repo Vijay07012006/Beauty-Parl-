@@ -10,6 +10,7 @@ import { api } from '@/lib/api';
 import Image from 'next/image';
 import Script from 'next/script';
 import { CouponInput } from '@/components/checkout/CouponInput';
+import { toast } from 'sonner';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -38,7 +39,20 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Prefill shipping address from last used address for guest checkout convenience
+    if (!user) {
+      const savedAddress = localStorage.getItem('last_used_address');
+      if (savedAddress) {
+        try {
+          const parsed = JSON.parse(savedAddress);
+          setForm((prev) => ({
+            ...prev,
+            ...parsed,
+          }));
+        } catch {}
+      }
+    }
+  }, [user]);
 
   // Fetch saved addresses if logged in
   useEffect(() => {
@@ -154,6 +168,7 @@ export default function CheckoutPage() {
           order_id: razorpayOrderId,
           handler: function (response: any) {
             // Payment success → redirect to confirmation page with details
+            localStorage.setItem('last_used_address', JSON.stringify(form));
             clearCart();
             router.push(`/${locale}/order-confirmation/${orderId}?payment=success&payment_id=${response.razorpay_payment_id}&email=${form.email}`);
           },
@@ -189,6 +204,7 @@ export default function CheckoutPage() {
       // Cash on Delivery path
       try {
         const res = await api.post('/orders', orderData);
+        localStorage.setItem('last_used_address', JSON.stringify(form));
         clearCart();
         router.push(`/${locale}/order-confirmation/${res.data.id}?email=${form.email}`);
       } catch (err) {
@@ -196,6 +212,104 @@ export default function CheckoutPage() {
       } finally {
         setLoading(false);
       }
+    }
+  };
+
+  const handleExpressCheckout = async () => {
+    // 1. Verify if address is filled. If not, try to prefill from localStorage.
+    let activeForm = { ...form };
+    const hasAddress = activeForm.name && activeForm.email && activeForm.phone && activeForm.address && activeForm.city && activeForm.state && activeForm.pincode;
+
+    if (!hasAddress) {
+      const savedAddress = localStorage.getItem('last_used_address');
+      if (savedAddress) {
+        try {
+          const parsed = JSON.parse(savedAddress);
+          activeForm = { ...activeForm, ...parsed };
+          setForm(activeForm);
+          toast.success('Address auto-completed from your previous order!');
+        } catch {
+          toast.error('Please enter your shipping address details first.');
+          return;
+        }
+      } else {
+        toast.error('Please enter your shipping address details first.');
+        return;
+      }
+    }
+
+    setLoading(true);
+    setError('');
+
+    const orderData = {
+      userId: user?.id || null,
+      guestEmail: user ? null : activeForm.email,
+      items: items.map(i => ({
+        productId: i.id,
+        name: i.name,
+        price: i.price,
+        quantity: i.quantity,
+        image: i.image,
+      })),
+      subtotal: getSubtotal(),
+      tax: getTax(),
+      shipping: getShipping(),
+      total: getGrandTotal(),
+      couponCode: coupon?.code || null,
+      discount: discountAmount,
+      paymentMethod: 'razorpay' as const,
+      shippingAddress: activeForm,
+      status: 'pending' as const,
+    };
+
+    try {
+      // 1. Create order
+      const orderRes = await api.post('/orders', orderData);
+      const orderId = orderRes.data.id;
+
+      // 2. Create Razorpay order
+      const rzpOrderRes = await api.post('/payments/create-order', {
+        amount: orderData.total,
+        orderId,
+      });
+      const { id: rzpOrderId, keyId } = rzpOrderRes.data;
+
+      // 3. Trigger Razorpay modal with UPI prefilled
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || keyId,
+        amount: Math.round(orderData.total * 100),
+        currency: 'INR',
+        name: 'Beauty Parlé',
+        description: `Express Checkout #${orderId}`,
+        order_id: rzpOrderId,
+        handler: function (response: any) {
+          localStorage.setItem('last_used_address', JSON.stringify(activeForm));
+          clearCart();
+          router.push(`/${locale}/order-confirmation/${orderId}?payment=success&payment_id=${response.razorpay_payment_id}&email=${activeForm.email}`);
+        },
+        prefill: {
+          name: activeForm.name,
+          email: activeForm.email,
+          contact: activeForm.phone,
+          method: 'upi', // Pre-fill UPI for express payment methods
+        },
+        theme: {
+          color: '#E8A0BF',
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+            router.push(`/${locale}/checkout`);
+          },
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (err: any) {
+      console.error('Express checkout error:', err);
+      setError(err?.response?.data?.message || 'Express checkout initiation failed. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -377,6 +491,15 @@ export default function CheckoutPage() {
                 className="w-full py-4 bg-primary text-white rounded-full hover:bg-primary/95 transition font-bold disabled:opacity-70 cursor-pointer shadow-md shadow-primary/20"
               >
                 {loading ? 'Processing...' : `Place Order — $${getGrandTotal().toFixed(2)}`}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExpressCheckout}
+                disabled={loading}
+                className="w-full mt-3 py-4 bg-neutral-900 text-white rounded-full hover:bg-neutral-800 transition font-bold disabled:opacity-70 cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-black/25"
+              >
+                ⚡ Express Checkout (GPay / Apple Pay / UPI)
               </button>
             </div>
 

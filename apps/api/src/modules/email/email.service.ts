@@ -332,4 +332,52 @@ export class EmailService {
     );
     await this.apiInstance.sendTransacEmail(email);
   }
+
+  async sendCartReminderEmail(to: string, items: any[], discountCode?: string) {
+    const itemsHtml = items
+      .map(
+        (item: any) => `
+        <div style="display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #FDF0F0;">
+          <img src="${item.image || ''}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 16px;" />
+          <div style="flex-grow: 1;">
+            <p style="margin: 0; font-weight: 600; color: #2D1B2E; font-size: 14px;">${item.name}</p>
+            <p style="margin: 4px 0 0 0; color: #6B4C5A; font-size: 12px;">Qty: ${item.quantity} | Rs. ${item.price}</p>
+          </div>
+        </div>
+      `,
+      )
+      .join('');
+
+    const discountHtml = discountCode
+      ? `
+        <div style="background: #FDF0F0; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;">
+          <p style="margin: 0 0 8px 0; color: #4A1A2C; font-weight: bold; font-size: 16px;">🎁 Special Offer for You!</p>
+          <p style="margin: 0; color: #6B4C5A; font-size: 14px;">Use code <strong style="color: #E8A0BF; font-size: 18px;">${discountCode}</strong> at checkout to get 10% off!</p>
+        </div>
+      `
+      : '';
+
+    const email = this.buildEmail(
+      to,
+      discountCode ? '🎁 Complete your purchase with 10% OFF!' : '💄 Did you forget something in your cart?',
+      `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px;">
+            <h2 style="color: #4A1A2C; font-size: 20px; margin-top: 0;">Items left in your cart:</h2>
+            <div>
+              ${itemsHtml}
+            </div>
+            ${discountHtml}
+            <div style="text-align: center; margin-top: 24px;">
+              <a href="${this.frontendUrl}/en/cart" style="background: #E8A0BF; color: white; padding: 12px 30px; border-radius: 99px; text-decoration: none; font-weight: bold; display: inline-block;">Return to Cart</a>
+            </div>
+          </div>
+        </div>
+      `,
+    );
+    await this.apiInstance.sendTransacEmail(email);
+  }
 }

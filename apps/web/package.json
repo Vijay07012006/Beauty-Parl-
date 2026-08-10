@@ -32,6 +32,7 @@
     "react-error-boundary": "^6.1.2",
     "react-hook-form": "^7.81.0",
     "shared-types": "workspace:*",
+    "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "three": "^0.185.1",

@@ -9,16 +9,50 @@ import { Trash2, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { api } from '@/lib/api';
+import { RecommendationsSection } from '@/components/products/RecommendationsSection';
 
 export default function CartPage() {
   const params = useParams();
   const locale = params?.locale || 'en';
   const { items, removeItem, updateQuantity, subtotal, total, clearCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
+  const [showSavedNotification, setShowSavedNotification] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // Show welcome back banner if items exist on mount
+    if (items.length > 0) {
+      setShowSavedNotification(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
+    // Sync cart state to backend API for recovery tracking
+    const syncCartToBackend = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+        
+        const userStr = localStorage.getItem('user');
+        let email: string | undefined;
+        if (userStr) {
+          try {
+            const parsedUser = JSON.parse(userStr);
+            email = parsedUser.email;
+          } catch {}
+        }
+        await api.post('/cart', { items, email }, { headers });
+      } catch (err) {
+        console.error('Failed to sync cart to backend:', err);
+      }
+    };
+
+    const timer = setTimeout(syncCartToBackend, 1500); // debounce by 1.5s
+    return () => clearTimeout(timer);
+  }, [items, mounted]);
 
   if (!mounted) {
     return (
@@ -56,6 +90,22 @@ export default function CartPage() {
       <main className="py-12">
         <div className="container mx-auto px-4 max-w-5xl">
           <h1 className="text-4xl font-playfair font-bold mb-8">Your Cart</h1>
+
+          {showSavedNotification && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-between text-sm text-foreground"
+            >
+              <span>✨ Welcome back! We saved the items in your cart for you.</span>
+              <button
+                onClick={() => setShowSavedNotification(false)}
+                className="text-primary hover:text-primary/80 font-bold ml-4 cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </motion.div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
@@ -149,6 +199,11 @@ export default function CartPage() {
                 </Link>
               </div>
             </div>
+          </div>
+
+          {/* AI recommendations cross-sell section */}
+          <div className="mt-12">
+            <RecommendationsSection type="similar" limit={4} />
           </div>
         </div>
       </main>

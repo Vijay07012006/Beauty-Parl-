@@ -4,6 +4,7 @@ import { ErrorBoundaryProvider } from '@/components/providers/ErrorBoundaryProvi
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { ChatWidget } from '@/components/chat/ChatWidget';
 
 const locales = ['en', 'hi', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml', 'pa'];
 
@@ -41,6 +42,7 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ErrorBoundaryProvider>
             {children}
+            <ChatWidget />
           </ErrorBoundaryProvider>
         </NextIntlClientProvider>
         <Toaster position="top-center" richColors />

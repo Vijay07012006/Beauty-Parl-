@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Order } from './order.entity';
 import { User } from '../auth/user.entity';
 import { EmailService } from '../email/email.service';
+import { CartService } from '../cart/cart.service';
 
 @Injectable()
 export class OrdersService {
@@ -11,11 +12,20 @@ export class OrdersService {
     @InjectRepository(Order)
     private orderRepo: Repository<Order>,
     private emailService: EmailService,
+    private cartService: CartService,
   ) {}
 
   async create(orderData: Partial<Order>): Promise<Order> {
     const order = this.orderRepo.create(orderData);
     const saved = await this.orderRepo.save(order);
+
+    // Clear or mark cart checked out
+    const email = orderData.guestEmail || (orderData.userId ? await this.getUserEmail(orderData.userId) : null);
+    try {
+      await this.cartService.clearOrMarkCheckedOut(orderData.userId, email || undefined);
+    } catch (err: any) {
+      console.error('Failed to clear cart after order creation:', err.message);
+    }
 
     // Increment coupon usedCount if coupon code is used
     if (orderData.couponCode) {
@@ -32,7 +42,6 @@ export class OrdersService {
     }
 
     // Send order confirmation
-    const email = orderData.guestEmail || (orderData.userId ? await this.getUserEmail(orderData.userId) : null);
     if (email) {
       try {
         await this.emailService.sendOrderConfirmation(email, saved);
