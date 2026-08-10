@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { User } from '../auth/user.entity';
 import { Product } from '../products/product.entity';
 import { Order } from '../orders/order.entity';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -20,6 +21,7 @@ export class AdminController {
     private productRepo: Repository<Product>,
     @InjectRepository(Order)
     private orderRepo: Repository<Order>,
+    private auditLogsService: AuditLogsService,
   ) {}
 
   // Dashboard Stats
@@ -57,14 +59,16 @@ export class AdminController {
   }
 
   @Put('users/:id/role')
-  async updateUserRole(@Param('id') id: number, @Body() body: { role: UserRole }) {
+  async updateUserRole(@Param('id') id: number, @Body() body: { role: UserRole }, @Request() req: any) {
     await this.userRepo.update(id, { role: body.role });
+    await this.auditLogsService.log('ADMIN_UPDATE_USER_ROLE', req.user?.email, req.user?.id, { targetUserId: id, newRole: body.role });
     return { success: true };
   }
 
   @Put('users/:id/status')
-  async updateUserStatus(@Param('id') id: number, @Body() body: { isActive: boolean }) {
+  async updateUserStatus(@Param('id') id: number, @Body() body: { isActive: boolean }, @Request() req: any) {
     await this.userRepo.update(id, { isActive: body.isActive });
+    await this.auditLogsService.log('ADMIN_UPDATE_USER_STATUS', req.user?.email, req.user?.id, { targetUserId: id, isActive: body.isActive });
     return { success: true };
   }
 
@@ -74,25 +78,30 @@ export class AdminController {
       throw new BadRequestException('You cannot delete your own account.');
     }
     await this.userRepo.delete(id);
+    await this.auditLogsService.log('ADMIN_DELETE_USER', req.user?.email, req.user?.id, { targetUserId: id });
     return { success: true };
   }
 
   // Products Management (Admin override)
   @Post('products')
-  async createProduct(@Body() data: Partial<Product>) {
+  async createProduct(@Body() data: Partial<Product>, @Request() req: any) {
     const product = this.productRepo.create(data);
-    return this.productRepo.save(product);
+    const saved = await this.productRepo.save(product);
+    await this.auditLogsService.log('ADMIN_CREATE_PRODUCT', req.user?.email, req.user?.id, { productId: saved.id, name: saved.name });
+    return saved;
   }
 
   @Put('products/:id')
-  async updateProduct(@Param('id') id: number, @Body() data: Partial<Product>) {
+  async updateProduct(@Param('id') id: number, @Body() data: Partial<Product>, @Request() req: any) {
     await this.productRepo.update(id, data);
+    await this.auditLogsService.log('ADMIN_UPDATE_PRODUCT', req.user?.email, req.user?.id, { productId: id });
     return this.productRepo.findOne({ where: { id } });
   }
 
   @Delete('products/:id')
-  async deleteProduct(@Param('id') id: number) {
+  async deleteProduct(@Param('id') id: number, @Request() req: any) {
     await this.productRepo.delete(id);
+    await this.auditLogsService.log('ADMIN_DELETE_PRODUCT', req.user?.email, req.user?.id, { productId: id });
     return { success: true };
   }
 
@@ -108,8 +117,9 @@ export class AdminController {
   }
 
   @Put('orders/:id/status')
-  async updateOrderStatus(@Param('id') id: number, @Body() body: { status: any }) {
+  async updateOrderStatus(@Param('id') id: number, @Body() body: { status: any }, @Request() req: any) {
     await this.orderRepo.update(id, { status: body.status });
+    await this.auditLogsService.log('ADMIN_UPDATE_ORDER_STATUS', req.user?.email, req.user?.id, { orderId: id, newStatus: body.status });
     return { success: true };
   }
 

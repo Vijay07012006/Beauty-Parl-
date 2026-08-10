@@ -9,6 +9,7 @@ import { User, UserRole } from './user.entity';
 import { EmailService } from '../email/email.service';
 import { OtpService } from './otp.service';
 import { ReferralsService } from '../referrals/referrals.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
     private otpService: OtpService,
     private config: ConfigService,
     private referralsService: ReferralsService,
+    private auditLogsService: AuditLogsService,
   ) {}
 
   async register(registerDto: any) {
@@ -84,6 +86,7 @@ export class AuthService {
     }
 
     const { password: _, ...result } = user;
+    await this.auditLogsService.log('USER_REGISTERED', email, user.id);
     return { success: true, user: result, otp };
   }
 
@@ -115,6 +118,7 @@ export class AuthService {
     
     const payload = { sub: user.id, email: user.email, role: user.role };
     const token = this.jwtService.sign(payload);
+    await this.auditLogsService.log('USER_LOGIN', user.email, user.id);
     
     return {
       access_token: token,
@@ -134,8 +138,11 @@ export class AuthService {
       if (!user) {
         // ✅ Security: Don't reveal if user exists
         console.log(`🔍 Forgot password attempt for: ${email} (not found)`);
+        await this.auditLogsService.log('FORGOT_PASSWORD_ATTEMPT_INVALID', email);
         return { success: true, message: 'If this email exists, a reset link has been sent' };
       }
+
+      await this.auditLogsService.log('FORGOT_PASSWORD_REQUESTED', email, user.id);
 
       // ✅ Generate reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
@@ -186,6 +193,8 @@ export class AuthService {
       resetToken: undefined,
       resetTokenExpiry: undefined,
     });
+
+    await this.auditLogsService.log('PASSWORD_RESET', user.email, user.id);
     
     return { success: true, message: 'Password reset successfully' };
   }
@@ -215,6 +224,7 @@ export class AuthService {
 
     user.password = await bcrypt.hash(newPassword, 10);
     await this.userRepository.save(user);
+    await this.auditLogsService.log('PASSWORD_CHANGED', user.email, user.id);
     return { success: true, message: 'Password changed successfully' };
   }
 

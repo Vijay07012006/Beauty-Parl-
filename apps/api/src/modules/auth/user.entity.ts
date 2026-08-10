@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { EncryptionTransformer } from '../security/encryption.transformer';
 
 export enum UserRole {
   USER = 'user',
@@ -26,7 +27,7 @@ export class User {
   @Column({ default: true })
   isActive!: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, transformer: new EncryptionTransformer() })
   phone!: string;
 
   @Column({ default: false })

@@ -13,6 +13,8 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { AuditLog } from './modules/audit-logs/audit-log.entity';
 import { EmailModule } from './modules/email/email.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
@@ -97,7 +99,8 @@ import configuration from './config/configuration';
           RecentlyViewed, WishlistAlert, QuizResponse, UgcPhoto, SkinAnalysis,
           Subscription, BeautyBox, UserRoutine, LiveEvent, LoyaltyTransaction,
           LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
-          ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct
+          ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
+          AuditLog
         ],
         autoLoadEntities: true,
         synchronize: process.env.DB_SYNCHRONIZE !== 'false', // Default to true unless explicitly disabled, ensuring tables are created on startup since there are no migrations
@@ -146,6 +149,7 @@ import configuration from './config/configuration';
     LooksModule,
     BundlesModule,
     TikTokModule,
+    AuditLogsModule,
   ],
   controllers: [AppController],
   providers: [

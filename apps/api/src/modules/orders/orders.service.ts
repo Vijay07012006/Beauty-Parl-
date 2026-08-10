@@ -7,6 +7,7 @@ import { EmailService } from '../email/email.service';
 import { CartService } from '../cart/cart.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { GamificationService } from '../gamification/gamification.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Injectable()
 export class OrdersService {
@@ -17,6 +18,7 @@ export class OrdersService {
     private cartService: CartService,
     private loyaltyService: LoyaltyService,
     private gamificationService: GamificationService,
+    private auditLogsService: AuditLogsService,
   ) {}
 
   async create(orderData: Partial<Order>): Promise<Order> {
@@ -25,6 +27,8 @@ export class OrdersService {
 
     // Clear or mark cart checked out
     const email = orderData.guestEmail || (orderData.userId ? await this.getUserEmail(orderData.userId) : null);
+    await this.auditLogsService.log('ORDER_CREATED', email || undefined, saved.userId || undefined, { orderId: saved.id, total: saved.total });
+    
     try {
       await this.cartService.clearOrMarkCheckedOut(orderData.userId, email || undefined);
     } catch (err: any) {
@@ -107,6 +111,7 @@ export class OrdersService {
 
     if (updated && data.status && originalOrder.status !== data.status) {
       const email = updated.guestEmail || (updated.userId ? await this.getUserEmail(updated.userId) : null);
+      await this.auditLogsService.log('ORDER_STATUS_CHANGED', email || undefined, updated.userId || undefined, { orderId: updated.id, oldStatus: originalOrder.status, newStatus: data.status });
       if (email) {
         try {
           await this.emailService.sendOrderStatusEmail(email, updated.id, data.status);

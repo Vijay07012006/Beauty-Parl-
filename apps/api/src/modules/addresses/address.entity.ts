@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../auth/user.entity';
+import { EncryptionTransformer } from '../security/encryption.transformer';
 
 @Entity('addresses')
 export class Address {
@@ -12,10 +13,10 @@ export class Address {
   @Column()
   name!: string;
 
-  @Column()
+  @Column({ transformer: new EncryptionTransformer() })
   phone!: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', transformer: new EncryptionTransformer() })
   address!: string;
 
   @Column()

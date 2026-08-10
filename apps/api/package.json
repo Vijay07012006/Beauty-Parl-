@@ -56,6 +56,7 @@
     "rxjs": "^7.8.1",
     "shared-types": "workspace:*",
     "socket.io": "^4.8.3",
+    "stripe": "^22.4.0",
     "typeorm": "^0.3.20"
   },
   "devDependencies": {

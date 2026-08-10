@@ -34,7 +34,7 @@ export default function CheckoutPage() {
     state: '',
     pincode: '',
   });
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'razorpay'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'razorpay' | 'stripe'>('cod');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -154,7 +154,30 @@ export default function CheckoutPage() {
       status: 'pending' as const,
     };
 
-    if (paymentMethod === 'razorpay') {
+    if (paymentMethod === 'stripe') {
+      try {
+        // 1. Create order on the database first
+        const orderRes = await api.post('/orders', orderData);
+        const orderId = orderRes.data.id;
+
+        // 2. Create Stripe checkout session
+        const stripeSessionRes = await api.post('/payments/create-stripe-session', {
+          amount: orderData.total,
+          orderId: orderId,
+          currency: 'INR',
+        });
+
+        // 3. Save last used address
+        localStorage.setItem('last_used_address', JSON.stringify(form));
+        clearCart();
+
+        // 4. Redirect user to Stripe Checkout page
+        window.location.href = stripeSessionRes.data.url;
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to initiate Stripe payment. Please try again.');
+        setLoading(false);
+      }
+    } else if (paymentMethod === 'razorpay') {
       try {
         // 1. Create order on the database first (in 'pending' state)
         const orderRes = await api.post('/orders', orderData);
@@ -489,6 +512,17 @@ export default function CheckoutPage() {
                       className="text-primary focus:ring-primary"
                     />
                     <span>Razorpay (UPI / Cards / NetBanking)</span>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-secondary/50 transition cursor-pointer">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="stripe"
+                      checked={paymentMethod === 'stripe'}
+                      onChange={() => setPaymentMethod('stripe')}
+                      className="text-primary focus:ring-primary"
+                    />
+                    <span>Stripe (Card / Apple Pay / Google Pay)</span>
                   </label>
                 </div>
               </div>

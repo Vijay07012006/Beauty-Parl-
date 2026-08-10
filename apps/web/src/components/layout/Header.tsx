@@ -82,7 +82,7 @@ export function Header() {
         </Link>
  
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-5 lg:gap-6 xl:gap-8">
+        <nav className="hidden lg:flex items-center gap-5 lg:gap-6 xl:gap-8">
           <Link href={`/${locale}/products`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
             {t('products')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
@@ -245,7 +245,7 @@ export function Header() {
  
           {/* Mobile Menu Toggle */}
           <button 
-            className="md:hidden p-2 hover:bg-secondary rounded-full transition-colors cursor-pointer text-foreground"
+            className="lg:hidden p-2 hover:bg-secondary rounded-full transition-colors cursor-pointer text-foreground"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -261,7 +261,7 @@ export function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-border/50 bg-card overflow-hidden shadow-lg transition-colors duration-300"
+            className="lg:hidden border-t border-border/50 bg-card overflow-hidden shadow-lg transition-colors duration-300"
           >
             <nav className="container mx-auto px-4 py-4 flex flex-col gap-1.5">
               
@@ -340,6 +340,27 @@ export function Header() {
               </Link>
               <Link href={`/${locale}/about`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
                 {t('about')}
+              </Link>
+              <Link href={`/${locale}/faq`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                FAQ
+              </Link>
+              <Link href={`/${locale}/contact`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                Contact Us
+              </Link>
+              <Link href={`/${locale}/blog`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                Blog
+              </Link>
+              <Link href={`/${locale}/terms`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                Terms of Service
+              </Link>
+              <Link href={`/${locale}/privacy`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                Privacy Policy
+              </Link>
+              <Link href={`/${locale}/shipping`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                Shipping Policy
+              </Link>
+              <Link href={`/${locale}/returns`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                Returns Policy
               </Link>
               
               {user && (
