@@ -30,6 +30,10 @@ import { WishlistAlert } from './modules/wishlist-alerts/wishlist-alert.entity';
 import { QuizResponse } from './modules/quizzes/quiz-response.entity';
 import { UgcPhoto } from './modules/ugc/ugc-photo.entity';
 import { SkinAnalysis } from './modules/skin-analysis/skin-analysis.entity';
+import { Subscription } from './modules/subscriptions/subscription.entity';
+import { BeautyBox } from './modules/beauty-boxes/beauty-box.entity';
+import { UserRoutine } from './modules/routines/user-routine.entity';
+import { LiveEvent } from './modules/live-shopping/live-event.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 import { CartModule } from './modules/cart/cart.module';
@@ -41,6 +45,10 @@ import { WishlistAlertsModule } from './modules/wishlist-alerts/wishlist-alerts.
 import { SocialModule } from './modules/social/social.module';
 import { SkinAnalysisModule } from './modules/skin-analysis/skin-analysis.module';
 import { UgcModule } from './modules/ugc/ugc.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+import { BeautyBoxesModule } from './modules/beauty-boxes/beauty-boxes.module';
+import { RoutinesModule } from './modules/routines/routines.module';
+import { LiveShoppingModule } from './modules/live-shopping/live-shopping.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -59,7 +67,7 @@ import configuration from './config/configuration';
         username: config.get('database.url') ? undefined : config.get('database.username'),
         password: config.get('database.url') ? undefined : config.get('database.password'),
         database: config.get('database.url') ? undefined : config.get('database.database'),
-        entities: [Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart, RecentlyViewed, WishlistAlert, QuizResponse, UgcPhoto, SkinAnalysis],
+        entities: [Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart, RecentlyViewed, WishlistAlert, QuizResponse, UgcPhoto, SkinAnalysis, Subscription, BeautyBox, UserRoutine, LiveEvent],
         autoLoadEntities: true,
         synchronize: process.env.DB_SYNCHRONIZE !== 'false', // Default to true unless explicitly disabled, ensuring tables are created on startup since there are no migrations
         logging: process.env.NODE_ENV === 'development',
@@ -96,6 +104,10 @@ import configuration from './config/configuration';
     SocialModule,
     SkinAnalysisModule,
     UgcModule,
+    SubscriptionsModule,
+    BeautyBoxesModule,
+    RoutinesModule,
+    LiveShoppingModule,
   ],
   controllers: [AppController],
   providers: [

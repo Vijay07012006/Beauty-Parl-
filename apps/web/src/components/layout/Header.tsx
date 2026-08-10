@@ -103,6 +103,18 @@ export function Header() {
             Skin Analysis
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
+          <Link href={`/${locale}/routine-builder`} className="text-sm font-medium hover:text-primary transition-colors relative group">
+            Routine Builder
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
+          <Link href={`/${locale}/beauty-box`} className="text-sm font-medium hover:text-primary transition-colors relative group">
+            Beauty Box
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
+          <Link href={`/${locale}/live-shopping`} className="text-sm font-medium hover:text-primary transition-colors relative group">
+            Live Shopping
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
         </nav>
  
         {/* Right Actions */}
@@ -171,6 +183,9 @@ export function Header() {
               <Link href={`/${locale}/orders`} className="hover:text-primary transition-colors">
                 {t('orders')}
               </Link>
+              <Link href={`/${locale}/subscriptions`} className="hover:text-primary transition-colors">
+                Subscriptions
+              </Link>
               <Link href={`/${locale}/preferences`} className="hover:text-primary transition-colors">
                 {t('preferences')}
               </Link>
@@ -225,6 +240,15 @@ export function Header() {
               <Link href={`/${locale}/skin-analysis`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                 Skin Analysis
               </Link>
+              <Link href={`/${locale}/routine-builder`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                Routine Builder
+              </Link>
+              <Link href={`/${locale}/beauty-box`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                Beauty Box
+              </Link>
+              <Link href={`/${locale}/live-shopping`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                Live Shopping
+              </Link>
               {user ? (
                 <>
                   <Link href={`/${locale}/profile`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
@@ -232,6 +256,9 @@ export function Header() {
                   </Link>
                   <Link href={`/${locale}/orders`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                     {t('orders')}
+                  </Link>
+                  <Link href={`/${locale}/subscriptions`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                    Subscriptions
                   </Link>
                   <Link href={`/${locale}/preferences`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                     {t('preferences')}
