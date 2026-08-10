@@ -6,8 +6,9 @@ import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
-import { Mail, Bell, Megaphone, Send, ArrowLeft } from 'lucide-react';
+import { Mail, Bell, Megaphone, Send, ArrowLeft, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useWishlistStore } from '@/store/wishlistStore';
 import Link from 'next/link';
 
 interface Preferences {
@@ -32,12 +33,35 @@ export default function EmailPreferencesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Wishlist Alerts states
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [alertType, setAlertType] = useState<'price_drop' | 'back_in_stock'>('price_drop');
+  const [threshold, setThreshold] = useState<string>('');
+  const [addingAlert, setAddingAlert] = useState(false);
+
+  const wishlistItems = useWishlistStore((state) => state.items);
+
+  const fetchAlerts = async () => {
+    setLoadingAlerts(true);
+    try {
+      const response = await api.get('/wishlist-alerts');
+      setAlerts(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch wishlist alerts:', error);
+    } finally {
+      setLoadingAlerts(false);
+    }
+  };
+
   useEffect(() => {
     if (!token) {
       router.push(`/${locale}/auth/login`);
       return;
     }
     fetchPreferences();
+    fetchAlerts();
   }, [token, locale]);
 
   const fetchPreferences = async () => {
@@ -67,6 +91,46 @@ export default function EmailPreferencesPage() {
       toast.error('Failed to save preferences. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddAlert = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProductId) {
+      toast.error('Please select an item from your wishlist');
+      return;
+    }
+    if (alertType === 'price_drop' && !threshold) {
+      toast.error('Please specify a target price drop threshold');
+      return;
+    }
+
+    setAddingAlert(true);
+    try {
+      const payload = {
+        productId: Number(selectedProductId),
+        alertType,
+        priceThreshold: alertType === 'price_drop' ? Number(threshold) : undefined,
+      };
+      await api.post('/wishlist-alerts', payload);
+      toast.success('Wishlist alert configured successfully! 🔔');
+      setSelectedProductId('');
+      setThreshold('');
+      fetchAlerts();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to configure alert');
+    } finally {
+      setAddingAlert(false);
+    }
+  };
+
+  const handleDeleteAlert = async (alertId: number) => {
+    try {
+      await api.delete(`/wishlist-alerts/${alertId}`);
+      toast.success('Alert deleted');
+      fetchAlerts();
+    } catch (err) {
+      toast.error('Failed to delete alert');
     }
   };
 
@@ -175,6 +239,108 @@ export default function EmailPreferencesPage() {
             >
               {saving ? 'Saving...' : 'Save Preferences'}
             </button>
+          </div>
+
+          {/* Wishlist Alerts Panel */}
+          <div className="bg-card rounded-3xl p-6 md:p-8 border border-border/50 shadow-sm space-y-6">
+            <div>
+              <h2 className="text-xl font-playfair font-bold text-foreground">Wishlist Price & Stock Alerts</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Set price drop triggers or restock monitors for items in your wishlist. We will notify you via email!
+              </p>
+            </div>
+
+            {/* Create Alert Form */}
+            {wishlistItems.length === 0 ? (
+              <div className="text-center py-4 bg-secondary/15 rounded-2xl border border-dashed border-border text-xs text-muted-foreground">
+                Your wishlist is empty. Add products to wishlist first to set alerts!
+              </div>
+            ) : (
+              <form onSubmit={handleAddAlert} className="space-y-4 bg-secondary/10 p-4 rounded-2xl border border-border/20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Product</label>
+                    <select
+                      value={selectedProductId}
+                      onChange={(e) => setSelectedProductId(e.target.value)}
+                      className="w-full bg-card border border-border/50 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    >
+                      <option value="">-- Choose item --</option>
+                      {wishlistItems.map((item) => (
+                        <option key={item.id} value={item.id}>{item.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Alert Type</label>
+                    <select
+                      value={alertType}
+                      onChange={(e) => setAlertType(e.target.value as any)}
+                      className="w-full bg-card border border-border/50 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    >
+                      <option value="price_drop">Price Drop Trigger</option>
+                      <option value="back_in_stock">Back in Stock Monitor</option>
+                    </select>
+                  </div>
+                </div>
+
+                {alertType === 'price_drop' && (
+                  <div className="space-y-1 max-w-[200px]">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Target Price (Rs.)</label>
+                    <input
+                      type="number"
+                      value={threshold}
+                      onChange={(e) => setThreshold(e.target.value)}
+                      placeholder="e.g. 999"
+                      className="w-full bg-card border border-border/50 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    />
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={addingAlert}
+                  className="w-full py-2.5 bg-neutral-900 text-white rounded-xl font-semibold text-xs hover:bg-neutral-850 transition cursor-pointer"
+                >
+                  {addingAlert ? 'Configuring Alert...' : 'Add Alert Notification'}
+                </button>
+              </form>
+            )}
+
+            {/* Active Alerts List */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active Monitored Alerts ({alerts.length})</h3>
+              {loadingAlerts ? (
+                <div className="text-center text-xs text-muted-foreground animate-pulse">Loading configured alerts...</div>
+              ) : alerts.length === 0 ? (
+                <div className="text-center py-6 text-xs text-muted-foreground">No active price drop or restock alerts configured</div>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {alerts.map((alert) => (
+                    <div
+                      key={alert.id}
+                      className="flex items-center justify-between p-3.5 bg-card border border-border/30 rounded-2xl hover:border-primary/20 transition-all text-xs"
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-foreground truncate max-w-[250px]">{alert.product?.name}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {alert.alertType === 'price_drop'
+                            ? `📩 Price Drop: Notify below Rs. ${Number(alert.priceThreshold).toFixed(2)}`
+                            : '📩 Restock: Notify when back in stock'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteAlert(alert.id)}
+                        className="p-1.5 hover:bg-secondary rounded-lg text-red-500 hover:text-red-700 transition cursor-pointer"
+                        aria-label="Delete alert"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

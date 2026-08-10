@@ -25,10 +25,17 @@ import { Coupon } from './modules/coupons/coupon.entity';
 import { User } from './modules/auth/user.entity';
 import { Order } from './modules/orders/order.entity';
 import { Cart } from './modules/cart/cart.entity';
+import { RecentlyViewed } from './modules/recently-viewed/recently-viewed.entity';
+import { WishlistAlert } from './modules/wishlist-alerts/wishlist-alert.entity';
+import { QuizResponse } from './modules/quizzes/quiz-response.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 import { CartModule } from './modules/cart/cart.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { ComparisonModule } from './modules/comparison/comparison.module';
+import { RecentlyViewedModule } from './modules/recently-viewed/recently-viewed.module';
+import { QuizzesModule } from './modules/quizzes/quizzes.module';
+import { WishlistAlertsModule } from './modules/wishlist-alerts/wishlist-alerts.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -47,7 +54,7 @@ import configuration from './config/configuration';
         username: config.get('database.url') ? undefined : config.get('database.username'),
         password: config.get('database.url') ? undefined : config.get('database.password'),
         database: config.get('database.url') ? undefined : config.get('database.database'),
-        entities: [Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart],
+        entities: [Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart, RecentlyViewed, WishlistAlert, QuizResponse],
         autoLoadEntities: true,
         synchronize: process.env.DB_SYNCHRONIZE !== 'false', // Default to true unless explicitly disabled, ensuring tables are created on startup since there are no migrations
         logging: process.env.NODE_ENV === 'development',
@@ -77,6 +84,10 @@ import configuration from './config/configuration';
     RecommendationsModule,
     CartModule,
     ChatModule,
+    ComparisonModule,
+    RecentlyViewedModule,
+    QuizzesModule,
+    WishlistAlertsModule,
   ],
   controllers: [AppController],
   providers: [

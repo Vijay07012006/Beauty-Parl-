@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/components/home/Hero';
 import { RecommendationsSection } from '@/components/products/RecommendationsSection';
+import { RecentlyViewed } from '@/components/recently-viewed/RecentlyViewed';
 
 // Lazy load heavy sections
 const Categories = dynamic(() => import('@/components/home/Categories').then(m => m.Categories), { 
@@ -52,6 +53,7 @@ export default function HomePage() {
               <FeaturedProducts />
               <div className="container mx-auto px-4 max-w-6xl pb-16">
                 <RecommendationsSection type="personalized" limit={4} />
+                <RecentlyViewed />
               </div>
             </>
           ) : (

@@ -95,6 +95,10 @@ export function Header() {
             {t('wishlist')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
+          <Link href={`/${locale}/quiz`} className="text-sm font-medium hover:text-primary transition-colors relative group">
+            Beauty Quiz
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
         </nav>
  
         {/* Right Actions */}
@@ -210,6 +214,9 @@ export function Header() {
               </Link>
               <Link href={`/${locale}/wishlist`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                 {t('wishlist')}
+              </Link>
+              <Link href={`/${locale}/quiz`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                Beauty Quiz
               </Link>
               {user ? (
                 <>

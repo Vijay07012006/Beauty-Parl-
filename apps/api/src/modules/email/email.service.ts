@@ -380,4 +380,44 @@ export class EmailService {
     );
     await this.apiInstance.sendTransacEmail(email);
   }
+
+  async sendWishlistAlertEmail(to: string, product: any, alertType: 'price_drop' | 'back_in_stock', priceThreshold?: number) {
+    const isPriceDrop = alertType === 'price_drop';
+    const subject = isPriceDrop
+      ? `📉 Price Drop Alert: ${product.name} is now Rs. ${Number(product.price).toFixed(2)}!`
+      : `✨ Back in Stock Alert: ${product.name} is now available!`;
+
+    const descriptionText = isPriceDrop
+      ? `Great news! The price of <strong>${product.name}</strong> has dropped below your threshold of Rs. ${Number(priceThreshold).toFixed(2)}. It is now available for just <strong>Rs. ${Number(product.price).toFixed(2)}</strong>.`
+      : `Great news! <strong>${product.name}</strong> is back in stock and ready to order. Grab yours before it runs out again!`;
+
+    const email = this.buildEmail(
+      to,
+      subject,
+      `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px; text-align: center;">
+            <h2 style="color: #4A1A2C; font-size: 20px; margin-top: 0;">${isPriceDrop ? '📉 Price Dropped!' : '✨ Back in Stock!'}</h2>
+            <div style="margin: 20px 0;">
+              <img src="${product.image || ''}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px;" />
+            </div>
+            <h3 style="color: #2D1B2E; font-size: 18px; margin: 10px 0;">${product.name}</h3>
+            <p style="color: #6B4C5A; font-size: 14px; line-height: 1.6;">
+              ${descriptionText}
+            </p>
+            <p style="font-size: 20px; font-weight: bold; color: #E8A0BF; margin: 16px 0;">
+              Rs. ${Number(product.price).toFixed(2)}
+            </p>
+            <div style="text-align: center; margin-top: 24px;">
+              <a href="${this.frontendUrl}/en/product/${product.id}" style="background: #E8A0BF; color: white; padding: 12px 30px; border-radius: 99px; text-decoration: none; font-weight: bold; display: inline-block;">Shop Now</a>
+            </div>
+          </div>
+        </div>
+      `,
+    );
+    await this.apiInstance.sendTransacEmail(email);
+  }
 }

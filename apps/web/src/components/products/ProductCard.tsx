@@ -7,6 +7,8 @@ import { RatingStars } from './RatingStars';
 import { PriceDisplay } from './PriceDisplay';
 import { WishlistButton } from './WishlistButton';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
+import { useState, useEffect } from 'react';
 
 interface Product {
   id: number;
@@ -29,6 +31,63 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
+  const [isComparing, setIsComparing] = useState(false);
+
+  useEffect(() => {
+    const local = localStorage.getItem('comparison_ids');
+    if (local) {
+      try {
+        const ids = JSON.parse(local) as number[];
+        setIsComparing(ids.includes(product.id));
+      } catch {}
+    }
+  }, [product.id]);
+
+  const handleCompareToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const checked = !isComparing;
+    setIsComparing(checked);
+
+    const local = localStorage.getItem('comparison_ids');
+    let ids: number[] = [];
+    if (local) {
+      try {
+        ids = JSON.parse(local);
+      } catch {}
+    }
+
+    if (checked) {
+      if (ids.length >= 4) {
+        toast.error('You can compare a maximum of 4 products.');
+        setIsComparing(false);
+        return;
+      }
+      ids = [...ids, product.id];
+    } else {
+      ids = ids.filter((id) => id !== product.id);
+    }
+
+    localStorage.setItem('comparison_ids', JSON.stringify(ids));
+
+    try {
+      const token = localStorage.getItem('token');
+      const sessionId = localStorage.getItem('guest_chat_room_id') || 'default';
+      const headers = {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'x-session-id': sessionId,
+      };
+
+      if (checked) {
+        await api.post(`/comparison/add/${product.id}`, {}, { headers });
+        toast.success(`Added ${product.name} to comparison!`);
+      } else {
+        await api.delete(`/comparison/remove/${product.id}`, { headers });
+        toast.success(`Removed ${product.name} from comparison`);
+      }
+    } catch {}
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,6 +113,20 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link href={`/en/product/${product.id}`} className="group block">
       <div className="bg-card rounded-3xl border border-border/50 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full relative">
+        {/* Compare Checkbox Overlay */}
+        <div 
+          onClick={handleCompareToggle}
+          className="absolute top-4 left-4 z-10 bg-white/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-border/30 hover:bg-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+        >
+          <input
+            type="checkbox"
+            checked={isComparing}
+            readOnly
+            className="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+          />
+          <span className="text-[10px] font-bold text-foreground select-none">Compare</span>
+        </div>
+
         {/* Wishlist Button Overlay */}
         <div className="absolute top-4 right-4 z-10">
           <WishlistButton
