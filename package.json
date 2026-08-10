@@ -5,6 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "turbo dev",
     "build": "turbo build",
     "start:prod": "node apps/api/dist/main",
     "migration:run": "pnpm run --filter api migration:run",
