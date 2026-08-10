@@ -15,6 +15,8 @@ import { WishlistButton } from '@/components/products/WishlistButton';
 import { ProductCard } from '@/components/products/ProductCard';
 import { RecommendationsSection } from '@/components/products/RecommendationsSection';
 import { RecentlyViewed } from '@/components/recently-viewed/RecentlyViewed';
+import { SocialShare } from '@/components/social/SocialShare';
+import { UgcGallery } from '@/components/ugc/UgcGallery';
 import { toast } from 'sonner';
 import { ReviewForm } from '@/components/reviews/ReviewForm';
 import { ReviewList } from '@/components/reviews/ReviewList';
@@ -295,6 +297,14 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
+              {/* Social sharing widget */}
+              <SocialShare
+                productId={product.id}
+                productName={product.name}
+                productPrice={Number(product.price)}
+                productImage={product.image}
+              />
+
               <hr className="border-border/50" />
 
               {/* Pincode checker */}
@@ -380,6 +390,9 @@ export default function ProductDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Customer Lookbook UGC Gallery */}
+          <UgcGallery productId={product.id} />
 
           {/* AI Product Recommendations */}
           <RecommendationsSection type="also-bought" productId={product.id} limit={4} />

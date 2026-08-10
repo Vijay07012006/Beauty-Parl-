@@ -37,6 +37,23 @@ export default async function RootLayout({
           rel="stylesheet" 
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" 
         />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#db2777" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('PWA Service Worker registered successfully:', reg.scope);
+                  }).catch(function(err) {
+                    console.warn('PWA Service Worker registration failed:', err);
+                  });
+                });
+              }
+            `
+          }}
+        />
       </head>
       <body suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages}>

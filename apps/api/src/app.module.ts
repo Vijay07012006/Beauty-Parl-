@@ -28,6 +28,8 @@ import { Cart } from './modules/cart/cart.entity';
 import { RecentlyViewed } from './modules/recently-viewed/recently-viewed.entity';
 import { WishlistAlert } from './modules/wishlist-alerts/wishlist-alert.entity';
 import { QuizResponse } from './modules/quizzes/quiz-response.entity';
+import { UgcPhoto } from './modules/ugc/ugc-photo.entity';
+import { SkinAnalysis } from './modules/skin-analysis/skin-analysis.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 import { CartModule } from './modules/cart/cart.module';
@@ -36,6 +38,9 @@ import { ComparisonModule } from './modules/comparison/comparison.module';
 import { RecentlyViewedModule } from './modules/recently-viewed/recently-viewed.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { WishlistAlertsModule } from './modules/wishlist-alerts/wishlist-alerts.module';
+import { SocialModule } from './modules/social/social.module';
+import { SkinAnalysisModule } from './modules/skin-analysis/skin-analysis.module';
+import { UgcModule } from './modules/ugc/ugc.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -54,7 +59,7 @@ import configuration from './config/configuration';
         username: config.get('database.url') ? undefined : config.get('database.username'),
         password: config.get('database.url') ? undefined : config.get('database.password'),
         database: config.get('database.url') ? undefined : config.get('database.database'),
-        entities: [Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart, RecentlyViewed, WishlistAlert, QuizResponse],
+        entities: [Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart, RecentlyViewed, WishlistAlert, QuizResponse, UgcPhoto, SkinAnalysis],
         autoLoadEntities: true,
         synchronize: process.env.DB_SYNCHRONIZE !== 'false', // Default to true unless explicitly disabled, ensuring tables are created on startup since there are no migrations
         logging: process.env.NODE_ENV === 'development',
@@ -88,6 +93,9 @@ import configuration from './config/configuration';
     RecentlyViewedModule,
     QuizzesModule,
     WishlistAlertsModule,
+    SocialModule,
+    SkinAnalysisModule,
+    UgcModule,
   ],
   controllers: [AppController],
   providers: [
