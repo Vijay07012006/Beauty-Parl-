@@ -1,6 +1,7 @@
 import '../globals.css';
 import { Toaster } from 'sonner';
 import { ErrorBoundaryProvider } from '@/components/providers/ErrorBoundaryProvider';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -24,7 +25,7 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -58,8 +59,10 @@ export default async function RootLayout({
       <body suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ErrorBoundaryProvider>
-            {children}
-            <ChatWidget />
+            <ThemeProvider>
+              {children}
+              <ChatWidget />
+            </ThemeProvider>
           </ErrorBoundaryProvider>
         </NextIntlClientProvider>
         <Toaster position="top-center" richColors />

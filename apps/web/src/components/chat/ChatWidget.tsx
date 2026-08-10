@@ -144,7 +144,7 @@ export function ChatWidget() {
                     <div
                       className={`max-w-[75%] rounded-2xl p-3 text-sm shadow-sm ${
                         isMe
-                          ? 'bg-primary text-white rounded-tr-none'
+                          ? 'bg-primary text-primary-foreground font-medium rounded-tr-none'
                           : 'bg-card border border-border/30 text-foreground rounded-tl-none'
                       }`}
                     >
