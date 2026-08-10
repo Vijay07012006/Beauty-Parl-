@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Sparkles, ShoppingBag, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useLocale } from '@/hooks/useLocale';
 
 interface Product {
   id: number;
@@ -43,6 +44,7 @@ interface Params {
 
 export default function LookDetailPage({ params }: { params: Promise<Params> }) {
   const { slug } = use(params);
+  const locale = useLocale();
   const [look, setLook] = useState<LookDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCartStore();
@@ -104,7 +106,7 @@ export default function LookDetailPage({ params }: { params: Promise<Params> }) 
         <Header />
         <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
           <h1 className="text-2xl font-bold">Look not found</h1>
-          <Link href="/en/looks" className="text-primary hover:underline flex items-center gap-1">
+          <Link href={`/${locale}/looks`} className="text-primary hover:underline flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" /> Back to Looks
           </Link>
         </div>
@@ -119,7 +121,7 @@ export default function LookDetailPage({ params }: { params: Promise<Params> }) 
       <main className="min-h-screen bg-gradient-to-b from-background via-secondary/10 to-background pb-20">
         
         {/* Banner Section */}
-        <div className="relative h-[450px] w-full bg-neutral-900 overflow-hidden">
+        <div className="relative h-[280px] sm:h-[360px] md:h-[450px] w-full bg-neutral-900 overflow-hidden">
           {look.imageUrl && (
             <Image
               src={look.imageUrl}
@@ -134,7 +136,7 @@ export default function LookDetailPage({ params }: { params: Promise<Params> }) 
           {/* Breadcrumb / Back Button */}
           <div className="absolute top-8 left-4 md:left-8 z-20">
             <Link 
-              href="/en/looks" 
+              href={`/${locale}/looks`} 
               className="inline-flex items-center gap-2 px-4 py-2 bg-background/80 backdrop-blur-md hover:bg-background text-foreground text-xs font-bold rounded-full transition shadow-md border border-border/20"
             >
               <ArrowLeft className="w-4 h-4" /> Back to Looks

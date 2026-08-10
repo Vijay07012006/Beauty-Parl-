@@ -3,6 +3,7 @@
 import { Link as LinkIcon } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { useLocale } from '@/hooks/useLocale';
 
 interface SocialShareProps {
   productId: number;
@@ -12,9 +13,11 @@ interface SocialShareProps {
 }
 
 export function SocialShare({ productId, productName, productPrice, productImage }: SocialShareProps) {
+  const locale = useLocale();
+
   const getShareUrl = (platform: string) => {
     const base = process.env.NEXT_PUBLIC_SOCIAL_SHARE_BASE || window.location.origin;
-    return `${base}/en/product/${productId}?source=${platform}`;
+    return `${base}/${locale}/product/${productId}?source=${platform}`;
   };
 
   const trackClick = async (platform: string) => {
@@ -52,7 +55,7 @@ export function SocialShare({ productId, productName, productPrice, productImage
   };
 
   return (
-    <div className="space-y-3 bg-card p-4.5 rounded-2xl border border-border/30 shadow-sm">
+    <div className="space-y-3 bg-card p-4 sm:p-5 rounded-2xl border border-border/30 shadow-sm">
       <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
         Share & Earn Rewards
       </span>
@@ -89,7 +92,7 @@ export function SocialShare({ productId, productName, productPrice, productImage
           className="p-2.5 bg-secondary text-foreground hover:bg-secondary/80 rounded-full transition cursor-pointer flex items-center justify-center"
           aria-label="Copy link"
         >
-          <LinkIcon className="w-4.5 h-4.5" />
+          <LinkIcon className="w-4 h-4" />
         </button>
       </div>
     </div>

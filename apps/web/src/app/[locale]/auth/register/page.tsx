@@ -7,9 +7,11 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { OtpModal } from '@/components/auth/OtpModal';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
+import { useLocale } from '@/hooks/useLocale';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const locale = useLocale();
   const { register, loading, error, clearError } = useAuthStore();
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
@@ -53,12 +55,12 @@ export default function RegisterPage() {
 
   const handleOtpVerified = () => {
     setShowOtpModal(false);
-    router.push('/en/auth/login?verified=true');
+    router.push(`/${locale}/auth/login?verified=true`);
   };
 
   const handleOtpClose = () => {
     setShowOtpModal(false);
-    router.push('/en/auth/login?message=Please verify your email before logging in');
+    router.push(`/${locale}/auth/login?message=Please verify your email before logging in`);
   };
 
   return (
@@ -151,7 +153,7 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Already have an account?{' '}
-              <a href="/en/auth/login" className="text-primary hover:underline">
+              <a href={`/${locale}/auth/login`} className="text-primary hover:underline">
                 Sign In
               </a>
             </p>

@@ -104,14 +104,14 @@ export function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 max-w-[calc(100vw-2rem)]">
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="bg-card/95 backdrop-blur-xl border border-border/40 rounded-3xl w-[350px] sm:w-[380px] h-[500px] shadow-2xl flex flex-col overflow-hidden mb-4"
+            className="bg-card/95 backdrop-blur-xl border border-border/40 rounded-3xl w-[min(100vw-2rem,380px)] h-[min(70vh,500px)] sm:h-[min(75vh,520px)] shadow-2xl flex flex-col overflow-hidden mb-3 sm:mb-4"
           >
             {/* Header */}
             <div className="bg-primary p-4 text-white flex items-center justify-between">
@@ -187,7 +187,8 @@ export function ChatWidget() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20 cursor-pointer"
+        aria-label={isOpen ? 'Close chat' : 'Open chat'}
+        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20 cursor-pointer ml-auto"
       >
         {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
       </motion.button>

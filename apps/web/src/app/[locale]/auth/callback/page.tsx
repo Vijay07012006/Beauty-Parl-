@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 
 function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
   const { hydrate } = useAuthStore();
 
   useEffect(() => {
@@ -21,18 +23,18 @@ function CallbackHandler() {
         hydrate();
         
         if (userData.role === 'admin' || userData.role === 'super_admin') {
-          router.push('/en/admin/dashboard');
+          router.push(`/${locale}/admin/dashboard`);
         } else {
-          router.push('/en');
+          router.push(`/${locale}`);
         }
       } catch (error) {
         console.error('Failed to parse user data:', error);
-        router.push('/en/auth/login');
+        router.push(`/${locale}/auth/login`);
       }
     } else {
-      router.push('/en/auth/login');
+      router.push(`/${locale}/auth/login`);
     }
-  }, [searchParams, router, hydrate]);
+  }, [searchParams, router, hydrate, locale]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/10">

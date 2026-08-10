@@ -9,6 +9,7 @@ import { WishlistButton } from './WishlistButton';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
+import { useLocale } from '@/hooks/useLocale';
 
 interface Product {
   id: number;
@@ -31,6 +32,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
+  const locale = useLocale();
   const [isComparing, setIsComparing] = useState(false);
 
   useEffect(() => {
@@ -111,7 +113,7 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <Link href={`/en/product/${product.id}`} className="group block">
+    <Link href={`/${locale}/product/${product.id}`} className="group block">
       <div className="bg-card rounded-3xl border border-border/50 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full relative">
         {/* Compare Checkbox Overlay */}
         <div 

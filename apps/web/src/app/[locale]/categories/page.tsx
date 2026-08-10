@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useLocale } from '@/hooks/useLocale';
 
 interface Category {
   id: number;
@@ -18,6 +19,7 @@ interface Category {
 }
 
 export default function CategoriesPage() {
+  const locale = useLocale();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,10 +57,10 @@ export default function CategoriesPage() {
       <Header />
       <main className="min-h-screen py-12 bg-background">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-playfair font-bold text-center mb-4 text-foreground">Shop by Category</h1>
+          <h1 className="text-fluid-4xl font-playfair font-bold text-center mb-4 text-foreground">Shop by Category</h1>
           <p className="text-muted-foreground text-center mb-12">Find exactly what you need</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 min-[400px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {categories.map((category, index) => (
               <motion.div
                 key={category.id}
@@ -67,7 +69,7 @@ export default function CategoriesPage() {
                 transition={{ delay: index * 0.05 }}
                 whileHover={{ y: -5 }}
               >
-                <Link href={`/en/products?category=${category.slug}`}>
+                <Link href={`/${locale}/products?category=${category.slug}`}>
                   <div className="relative bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-border/50 group h-48 cursor-pointer">
                     {category.image ? (
                       <div className="relative w-full h-full">

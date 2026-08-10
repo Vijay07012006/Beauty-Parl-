@@ -8,10 +8,12 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { OtpModal } from '@/components/auth/OtpModal';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
+import { useLocale } from '@/hooks/useLocale';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const locale = useLocale();
   const { login, loading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,9 +40,9 @@ export default function LoginPage() {
     } else if (result.success && result.user) {
       const user = result.user;
       if (user.role === 'admin' || user.role === 'super_admin') {
-        router.push('/en/admin/dashboard');
+        router.push(`/${locale}/admin/dashboard`);
       } else {
-        router.push('/en');
+        router.push(`/${locale}`);
       }
     }
   };
@@ -51,9 +53,9 @@ export default function LoginPage() {
     if (result.success && result.user) {
       const user = result.user;
       if (user.role === 'admin' || user.role === 'super_admin') {
-        router.push('/en/admin/dashboard');
+        router.push(`/${locale}/admin/dashboard`);
       } else {
-        router.push('/en');
+        router.push(`/${locale}`);
       }
     }
   };
@@ -115,7 +117,7 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-4 text-center">
-              <Link href="/en/auth/forgot-password" className="text-sm text-primary hover:underline">
+              <Link href={`/${locale}/auth/forgot-password`} className="text-sm text-primary hover:underline">
                 Forgot Password?
               </Link>
             </div>
@@ -124,7 +126,7 @@ export default function LoginPage() {
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Don't have an account?{' '}
-              <Link href="/en/auth/register" className="text-primary hover:underline">
+              <Link href={`/${locale}/auth/register`} className="text-primary hover:underline">
                 Sign Up
               </Link>
             </p>

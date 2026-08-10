@@ -62,6 +62,7 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
+  const locale = (params?.locale as string) || 'en';
 
   const [product, setProduct] = useState<Product | null>(null);
   const [productTags, setProductTags] = useState<ProductTag[]>([]);
@@ -125,7 +126,7 @@ export default function ProductDetailPage() {
   const handleBuyNow = () => {
     if (!product) return;
     handleAddToCart();
-    router.push('/en/cart');
+    router.push(`/${locale}/cart`);
   };
 
 
@@ -152,7 +153,7 @@ export default function ProductDetailPage() {
           <div className="text-center space-y-4">
             <p className="text-muted-foreground text-lg">Product not found</p>
             <button
-              onClick={() => router.push('/en/products')}
+              onClick={() => router.push(`/${locale}/products`)}
               className="px-6 py-2 bg-primary text-white rounded-full font-semibold hover:bg-primary/90 transition-colors"
             >
               Back to Catalog

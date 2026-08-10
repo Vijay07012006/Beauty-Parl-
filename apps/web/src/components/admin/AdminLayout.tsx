@@ -18,12 +18,12 @@ import {
 import { useState } from 'react';
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/en/admin/dashboard' },
-  { icon: Package, label: 'Products', href: '/en/admin/products' },
-  { icon: ShoppingBag, label: 'Orders', href: '/en/admin/orders' },
-  { icon: Users, label: 'Users', href: '/en/admin/users' },
-  { icon: Ticket, label: 'Coupons', href: '/en/admin/coupons' },
-  { icon: Settings, label: 'Settings', href: '/en/admin/settings' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
+  { icon: Package, label: 'Products', href: '/admin/products' },
+  { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
+  { icon: Users, label: 'Users', href: '/admin/users' },
+  { icon: Ticket, label: 'Coupons', href: '/admin/coupons' },
+  { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -61,9 +61,20 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-secondary/30">
+      {/* Mobile backdrop */}
+      {isSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          onClick={() => setIsSidebarOpen(false)}
+          className="lg:hidden fixed inset-0 z-30 bg-black/40 backdrop-blur-sm cursor-pointer"
+        />
+      )}
+
       {/* Mobile Sidebar Toggle */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-card rounded-lg shadow-md cursor-pointer"
       >
         {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -72,7 +83,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <div className="flex">
         {/* Sidebar */}
         <aside className={`
-          fixed lg:sticky top-0 z-40 w-64 h-screen bg-card border-r border-border/50 transition-transform duration-300
+          fixed lg:sticky top-0 z-40 w-64 max-w-[85vw] h-screen bg-card border-r border-border/50 transition-transform duration-300
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
           <div className="p-6">
@@ -82,7 +93,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <nav className="px-3 space-y-1">
             {navItems.map((item) => {
-              const hrefWithLocale = item.href.replace(/^\/en\//, `/${locale}/`);
+              const hrefWithLocale = `/${locale}${item.href}`;
               const isActive = pathname === hrefWithLocale || pathname?.startsWith(hrefWithLocale + '/');
               return (
                 <Link
@@ -121,7 +132,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8">
+        <main className="flex-1 p-4 pt-16 sm:p-6 sm:pt-16 lg:p-8 lg:pt-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

@@ -28,6 +28,7 @@ interface ChatMessage {
 export default function AdminChatPage() {
   const params = useParams();
   const router = useRouter();
+  const locale = (params?.locale as string) || 'en';
   const [socket, setSocket] = useState<Socket | null>(null);
   const [activeRooms, setActiveRooms] = useState<ActiveRoom[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -47,16 +48,16 @@ export default function AdminChatPage() {
         if (parsed.role === 'admin' || parsed.role === 'super_admin') {
           setIsAdminUser(true);
         } else {
-          router.push('/en/auth/login');
+          router.push(`/${locale}/auth/login`);
         }
       } catch {
-        router.push('/en/auth/login');
+        router.push(`/${locale}/auth/login`);
       }
     } else {
-      router.push('/en/auth/login');
+      router.push(`/${locale}/auth/login`);
     }
     setLoading(false);
-  }, [router]);
+  }, [router, locale]);
 
   useEffect(() => {
     if (!isAdminUser) return;

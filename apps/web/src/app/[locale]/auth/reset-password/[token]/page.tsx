@@ -10,6 +10,7 @@ export default function ResetPasswordPage() {
   const params = useParams();
   const router = useRouter();
   const token = params?.token as string;
+  const locale = (params?.locale as string) || 'en';
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -41,7 +42,7 @@ export default function ResetPasswordPage() {
     try {
       await api.post('/auth/reset-password', { token, newPassword: password });
       setMessage('✅ Password reset successfully! Redirecting to login...');
-      setTimeout(() => router.push('/en/auth/login?reset=success'), 2000);
+      setTimeout(() => router.push(`/${locale}/auth/login?reset=success`), 2000);
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to reset password. Link may be expired.';
       setError('❌ ' + msg);

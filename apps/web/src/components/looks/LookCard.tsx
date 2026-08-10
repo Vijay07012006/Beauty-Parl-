@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { useLocale } from '@/hooks/useLocale';
 
 interface Look {
   id: number;
@@ -20,8 +21,10 @@ interface LookCardProps {
 }
 
 export function LookCard({ look }: LookCardProps) {
+  const locale = useLocale();
+
   return (
-    <Link href={`/en/looks/${look.slug}`} className="group block h-full">
+    <Link href={`/${locale}/looks/${look.slug}`} className="group block h-full">
       <div className="bg-card rounded-3xl border border-border/40 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col h-full relative group">
         
         {/* Occasion / Badge */}

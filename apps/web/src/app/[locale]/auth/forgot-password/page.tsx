@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
+import { useLocale } from '@/hooks/useLocale';
 
 export default function ForgotPasswordPage() {
+  const locale = useLocale();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -86,9 +89,9 @@ export default function ForgotPasswordPage() {
             </form>
 
             <p className="text-center text-sm text-muted-foreground mt-6">
-              <a href="/en/auth/login" className="text-primary hover:underline">
+              <Link href={`/${locale}/auth/login`} className="text-primary hover:underline">
                 Back to Sign In
-              </a>
+              </Link>
             </p>
           </div>
         </div>
