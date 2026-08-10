@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -14,13 +14,23 @@ export default function RegisterPage() {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [registeredPhone, setRegisteredPhone] = useState('');
+  const searchParams = useSearchParams();
+  const refCode = searchParams?.get('ref') || '';
+
   const [form, setForm] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
+    referralCode: refCode,
   });
+
+  useEffect(() => {
+    if (refCode) {
+      setForm((prev) => ({ ...prev, referralCode: refCode }));
+    }
+  }, [refCode]);
 
   useEffect(() => {
     clearError();
@@ -33,7 +43,7 @@ export default function RegisterPage() {
       return;
     }
 
-    const result = await register(form.name, form.email, form.password, form.phone);
+    const result = await register(form.name, form.email, form.password, form.phone, form.referralCode || undefined);
     if (result.success) {
       setRegisteredEmail(form.email);
       setRegisteredPhone(form.phone);
@@ -116,6 +126,16 @@ export default function RegisterPage() {
                   onChange={(e) => setForm({...form, confirmPassword: e.target.value})}
                   className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Referral Code (Optional)</label>
+                <input
+                  type="text"
+                  value={form.referralCode}
+                  placeholder="REF-XXXX-XXXX"
+                  onChange={(e) => setForm({...form, referralCode: e.target.value})}
+                  className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               <button

@@ -115,6 +115,18 @@ export function Header() {
             Live Shopping
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
+          <Link href={`/${locale}/loyalty`} className="text-sm font-medium hover:text-primary transition-colors relative group">
+            Loyalty
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
+          <Link href={`/${locale}/gamification`} className="text-sm font-medium hover:text-primary transition-colors relative group">
+            Achievements
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
+          <Link href={`/${locale}/referral`} className="text-sm font-medium hover:text-primary transition-colors relative group">
+            Referrals
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
         </nav>
  
         {/* Right Actions */}
@@ -177,6 +189,11 @@ export function Header() {
           {/* Auth Button */}
           {user ? (
             <div className="hidden lg:flex items-center gap-4 text-xs font-semibold">
+              {user.loyaltyPoints !== undefined && (
+                <Link href={`/${locale}/loyalty`} className="px-2 py-0.5 bg-primary/10 border border-primary/20 text-primary rounded-full font-mono font-bold text-[10px]" title="Loyalty Points">
+                  ⭐ {user.loyaltyPoints} pts
+                </Link>
+              )}
               <Link href={`/${locale}/profile`} className="hover:text-primary transition-colors">
                 {t('profile')}
               </Link>
@@ -248,6 +265,15 @@ export function Header() {
               </Link>
               <Link href={`/${locale}/live-shopping`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                 Live Shopping
+              </Link>
+              <Link href={`/${locale}/loyalty`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                Loyalty
+              </Link>
+              <Link href={`/${locale}/gamification`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                Achievements
+              </Link>
+              <Link href={`/${locale}/referral`} className="text-sm font-medium hover:text-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                Referrals
               </Link>
               {user ? (
                 <>

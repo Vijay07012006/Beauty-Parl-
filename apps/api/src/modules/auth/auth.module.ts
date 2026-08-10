@@ -14,6 +14,7 @@ import { User } from './user.entity';
 import { EmailModule } from '../email/email.module';
 import { RedisModule } from '../redis/redis.module';
 import { AdminSeeder } from './admin-seeder.service';
+import { ReferralsModule } from '../referrals/referrals.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AdminSeeder } from './admin-seeder.service';
     }),
     EmailModule,
     RedisModule,
+    ReferralsModule,
   ],
   controllers: [AuthController, OtpController],
   providers: [AuthService, OtpService, JwtStrategy, GoogleStrategy, FacebookStrategy, AdminSeeder],

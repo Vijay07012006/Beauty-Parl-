@@ -57,6 +57,11 @@ export default function CheckoutPage() {
   // Fetch saved addresses if logged in
   useEffect(() => {
     if (user && token) {
+      const headers = { Authorization: `Bearer ${token}` };
+      api.get('/loyalty/points', { headers })
+        .then(res => setPoints(res.data.points || 0))
+        .catch(() => {});
+
       api.get('/addresses')
         .then(res => {
           const list = Array.isArray(res.data) ? res.data : [];
@@ -93,6 +98,8 @@ export default function CheckoutPage() {
 
   const [coupon, setCoupon] = useState<any>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [points, setPoints] = useState(0);
+  const [usePoints, setUsePoints] = useState(false);
 
   useEffect(() => {
     if (mounted && items.length === 0) {
@@ -105,7 +112,8 @@ export default function CheckoutPage() {
   const getShipping = () => (getSubtotal() > 50 ? 0 : 5);
   const getGrandTotal = () => {
     const baseTotal = getSubtotal() + getTax() + getShipping();
-    const finalTotal = baseTotal - discountAmount;
+    const ptsDiscount = usePoints ? Math.min(points, getSubtotal()) : 0;
+    const finalTotal = baseTotal - discountAmount - ptsDiscount;
     return finalTotal > 0 ? finalTotal : 0;
   };
 
@@ -140,6 +148,7 @@ export default function CheckoutPage() {
       total: getGrandTotal(),
       couponCode: coupon?.code || null,
       discount: discountAmount,
+      pointsRedeemed: usePoints ? Math.min(points, Math.round(getSubtotal())) : 0,
       paymentMethod,
       shippingAddress: form,
       status: 'pending' as const,
@@ -257,6 +266,7 @@ export default function CheckoutPage() {
       total: getGrandTotal(),
       couponCode: coupon?.code || null,
       discount: discountAmount,
+      pointsRedeemed: usePoints ? Math.min(points, Math.round(getSubtotal())) : 0,
       paymentMethod: 'razorpay' as const,
       shippingAddress: activeForm,
       status: 'pending' as const,
@@ -515,6 +525,29 @@ export default function CheckoutPage() {
                 />
               </div>
 
+              {/* Redeem Points Card */}
+              {user && points > 0 && (
+                <div className="bg-card p-6 rounded-2xl shadow-sm border border-border/50 space-y-3">
+                  <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    ⭐ Loyalty Points
+                  </h2>
+                  <label className="flex items-center gap-2.5 p-2 bg-secondary/15 rounded-xl border border-border/20 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={usePoints}
+                      onChange={(e) => setUsePoints(e.target.checked)}
+                      className="rounded border-gray-300 text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer"
+                    />
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-foreground">Redeem points for discount</span>
+                      <p className="text-[10px] text-muted-foreground">
+                        Use {Math.min(points, Math.round(getSubtotal()))} of your {points} points to save Rs. {Math.min(points, Math.round(getSubtotal()))}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
               {/* Summary Card */}
               <div className="bg-card p-6 rounded-2xl shadow-sm border border-border/50 sticky top-24 space-y-4">
                 <h2 className="text-xl font-playfair font-bold text-foreground">Order Summary</h2>
@@ -536,6 +569,13 @@ export default function CheckoutPage() {
                     <div className="flex justify-between text-emerald-600 font-bold bg-emerald-50/50 px-2 py-1 rounded-lg border border-emerald-100 text-xs items-center">
                       <span>Promo ({coupon.code})</span>
                       <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {usePoints && (
+                    <div className="flex justify-between text-amber-600 font-bold bg-amber-50/50 px-2 py-1 rounded-lg border border-amber-100 text-xs items-center">
+                      <span>Points Redeemed</span>
+                      <span>-Rs. {Math.min(points, Math.round(getSubtotal())).toFixed(2)}</span>
                     </div>
                   )}
 

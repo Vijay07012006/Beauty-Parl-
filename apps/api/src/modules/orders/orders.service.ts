@@ -5,6 +5,8 @@ import { Order } from './order.entity';
 import { User } from '../auth/user.entity';
 import { EmailService } from '../email/email.service';
 import { CartService } from '../cart/cart.service';
+import { LoyaltyService } from '../loyalty/loyalty.service';
+import { GamificationService } from '../gamification/gamification.service';
 
 @Injectable()
 export class OrdersService {
@@ -13,6 +15,8 @@ export class OrdersService {
     private orderRepo: Repository<Order>,
     private emailService: EmailService,
     private cartService: CartService,
+    private loyaltyService: LoyaltyService,
+    private gamificationService: GamificationService,
   ) {}
 
   async create(orderData: Partial<Order>): Promise<Order> {
@@ -47,6 +51,25 @@ export class OrdersService {
         await this.emailService.sendOrderConfirmation(email, saved);
       } catch (err) {
         console.error('Failed to send order confirmation email:', err);
+      }
+    }
+
+    // Award loyalty points & trigger achievements
+    if (saved.userId) {
+      try {
+        await this.loyaltyService.recordPurchase(saved.userId, saved.total);
+        await this.gamificationService.triggerAchievement(saved.userId, 'purchase');
+      } catch (err: any) {
+        console.error('Failed to credit loyalty points for purchase:', err.message);
+      }
+    }
+
+    // Deduct redeemed points if applicable
+    if (saved.userId && orderData.pointsRedeemed) {
+      try {
+        await this.loyaltyService.addPoints(saved.userId, -Math.abs(orderData.pointsRedeemed), `Redeemed points on checkout order #${saved.id} 🛍️`);
+      } catch (err: any) {
+        console.error('Failed to deduct loyalty points:', err.message);
       }
     }
 

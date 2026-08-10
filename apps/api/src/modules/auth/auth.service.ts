@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 import { User, UserRole } from './user.entity';
 import { EmailService } from '../email/email.service';
 import { OtpService } from './otp.service';
+import { ReferralsService } from '../referrals/referrals.service';
 
 @Injectable()
 export class AuthService {
@@ -18,10 +19,11 @@ export class AuthService {
     private emailService: EmailService,
     private otpService: OtpService,
     private config: ConfigService,
+    private referralsService: ReferralsService,
   ) {}
 
   async register(registerDto: any) {
-    const { email, password, name, phone } = registerDto;
+    const { email, password, name, phone, referralCode } = registerDto;
 
     // ✅ Fast validation (no database calls)
     if (!email || !password || !name) {
@@ -53,6 +55,16 @@ export class AuthService {
       role: UserRole.USER,
     });
     await this.userRepository.save(user);
+
+    // Apply and process referral if exists
+    if (referralCode) {
+      try {
+        await this.referralsService.applyReferralCode(referralCode, email);
+        await this.referralsService.processReferralJoin(email, user.id);
+      } catch (err: any) {
+        console.error('Failed to apply referral code during register:', err.message);
+      }
+    }
 
     // ✅ Generate OTP (non-blocking, fast Redis)
     let otp = '';
@@ -178,8 +190,12 @@ export class AuthService {
     return { success: true, message: 'Password reset successfully' };
   }
 
-  async updateProfile(userId: number, name?: string, phone?: string) {
-    await this.userRepository.update(userId, { name, phone });
+  async updateProfile(userId: number, name?: string, phone?: string, birthday?: Date) {
+    const updateData: any = { name, phone };
+    if (birthday !== undefined) {
+      updateData.birthday = birthday;
+    }
+    await this.userRepository.update(userId, updateData);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
     const { password, ...result } = user;

@@ -8,6 +8,10 @@ interface User {
   role: 'user' | 'admin' | 'super_admin';
   phone?: string;
   isVerified?: boolean;
+  loyaltyPoints?: number;
+  loyaltyTier?: string;
+  totalSpent?: number;
+  birthday?: string;
 }
 
 interface AuthStore {
@@ -16,12 +20,12 @@ interface AuthStore {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; requiresOtp?: boolean; user?: User; error?: string }>;
-  register: (name: string, email: string, password: string, phone: string) => Promise<{ success: boolean; user?: User; error?: string }>;
+  register: (name: string, email: string, password: string, phone: string, referralCode?: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   verifyOtp: (email: string, otp: string) => Promise<{ success: boolean; error?: string }>;
   resendOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
   forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (token: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
-  updateProfile: (name: string, phone: string) => Promise<{ success: boolean; user?: User; error?: string }>;
+  updateProfile: (name: string, phone: string, birthday?: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   logout: () => void;
   hydrate: () => void;
   clearError: () => void;
@@ -68,10 +72,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  register: async (name: string, email: string, password: string, phone: string) => {
+  register: async (name: string, email: string, password: string, phone: string, referralCode?: string) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.post('/auth/register', { name, email, password, phone });
+      const response = await api.post('/auth/register', { name, email, password, phone, referralCode });
       const data = response.data;
       set({ loading: false });
       return { success: true, user: data.user };
@@ -134,10 +138,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  updateProfile: async (name: string, phone: string) => {
+  updateProfile: async (name: string, phone: string, birthday?: string) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.put('/auth/profile', { name, phone });
+      const response = await api.put('/auth/profile', { name, phone, birthday });
       const data = response.data;
       if (data.success && data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));

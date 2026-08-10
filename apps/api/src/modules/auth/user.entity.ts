@@ -70,6 +70,18 @@ export class User {
   @Column({ default: false })
   isSocialLogin!: boolean;
 
+  @Column({ type: 'integer', default: 0 })
+  loyaltyPoints!: number;
+
+  @Column({ type: 'varchar', length: 20, default: 'silver' })
+  loyaltyTier!: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  totalSpent!: number;
+
+  @Column({ type: 'date', nullable: true })
+  birthday?: Date;
+
   @CreateDateColumn()
   createdAt!: Date;
 

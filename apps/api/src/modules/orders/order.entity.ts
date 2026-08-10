@@ -55,6 +55,9 @@ export class Order {
   @Column({ nullable: true })
   razorpayOrderId!: string;
 
+  @Column({ type: 'integer', default: 0, nullable: true })
+  pointsRedeemed?: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 

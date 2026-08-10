@@ -227,6 +227,10 @@ export default function ProductDetailPage() {
                 size="lg"
               />
 
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/25 rounded-full text-[10px] font-bold text-amber-700">
+                ⭐ Earn {Math.round(Number(product.price) * 0.1)} loyalty points on this purchase!
+              </div>
+
               <hr className="border-border/50" />
 
               {/* Shade/Variant Selectors */}

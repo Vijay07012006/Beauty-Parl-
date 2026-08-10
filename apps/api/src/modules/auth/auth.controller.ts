@@ -42,9 +42,14 @@ export class AuthController {
 
   @Put('profile')
   @UseGuards(JwtAuthGuard)
-  async updateProfile(@Request() req: any, @Body() body: { name?: string; phone?: string }) {
+  async updateProfile(@Request() req: any, @Body() body: { name?: string; phone?: string; birthday?: string }) {
     try {
-      const user = await this.authService.updateProfile(req.user.id, body.name, body.phone);
+      const user = await this.authService.updateProfile(
+        req.user.id,
+        body.name,
+        body.phone,
+        body.birthday ? new Date(body.birthday) : undefined
+      );
       return { success: true, user };
     } catch (error: any) {
       throw new BadRequestException(error.message);

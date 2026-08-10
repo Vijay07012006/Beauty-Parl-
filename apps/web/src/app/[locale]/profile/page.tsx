@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { User, Mail, Phone, Shield, Edit2, Save } from 'lucide-react';
+import { User, Mail, Phone, Shield, Edit2, Save, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -20,6 +20,7 @@ export default function ProfilePage() {
     name: '',
     email: '',
     phone: '',
+    birthday: '',
   });
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export default function ProfilePage() {
         name: user.name || '',
         email: user.email || '',
         phone: user.phone || '',
+        birthday: user.birthday ? new Date(user.birthday).toISOString().split('T')[0] : '',
       });
     }
   }, [user]);
@@ -41,7 +43,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const handleSave = async () => {
-    const result = await updateProfile(form.name, form.phone);
+    const result = await updateProfile(form.name, form.phone, form.birthday || undefined);
     if (result.success) {
       toast.success('Profile updated successfully!');
       setIsEditing(false);
@@ -114,6 +116,23 @@ export default function ProfilePage() {
                     />
                   ) : (
                     <p className="font-medium">{user.phone || 'Not provided'}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-secondary/20 rounded-xl">
+                <Calendar size={20} className="text-primary" />
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Birthday</p>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={form.birthday}
+                      onChange={(e) => setForm({...form, birthday: e.target.value})}
+                      className="bg-transparent border-b border-primary/30 focus:outline-none px-1 w-full text-foreground"
+                    />
+                  ) : (
+                    <p className="font-medium">{user.birthday ? new Date(user.birthday).toLocaleDateString() : 'Not provided'}</p>
                   )}
                 </div>
               </div>
