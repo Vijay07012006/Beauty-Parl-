@@ -21,6 +21,10 @@ import { toast } from 'sonner';
 import { ReviewForm } from '@/components/reviews/ReviewForm';
 import { ReviewList } from '@/components/reviews/ReviewList';
 
+// Phase 5C imports
+import { TikTokShopButton } from '@/components/products/TikTokShopButton';
+import { BundleCard } from '@/components/products/BundleCard';
+
 interface Product {
   id: number;
   name: string;
@@ -36,7 +40,23 @@ interface Product {
   ratingCount?: number;
 }
 
+interface ProductTag {
+  id: number;
+  name: string;
+  icon?: string;
+  category?: string;
+}
 
+interface Bundle {
+  id: number;
+  name: string;
+  description?: string;
+  discountPercentage?: number;
+  originalTotal: number;
+  finalTotal: number;
+  discountValue: number;
+  products: any[];
+}
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -44,6 +64,8 @@ export default function ProductDetailPage() {
   const id = params?.id as string;
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [productTags, setProductTags] = useState<ProductTag[]>([]);
+  const [recommendedBundles, setRecommendedBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'desc' | 'ingredients' | 'how-to' | 'reviews'>('desc');
@@ -54,16 +76,20 @@ export default function ProductDetailPage() {
   // Reviews state
   const [reviewRefresh, setReviewRefresh] = useState(0);
 
-  // Similar Products state
-  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
-
   const { addItem } = useCartStore();
 
   const fetchProductData = async () => {
     if (!id) return;
     try {
-      const res = await api.get(`/products/${id}`);
-      setProduct(res.data);
+      const [prodRes, tagsRes, bundlesRes] = await Promise.all([
+        api.get(`/products/${id}`),
+        api.get(`/product-tags/product/${id}`).catch(() => ({ data: [] })),
+        api.get(`/bundles/recommended?cart_ids=${id}`).catch(() => ({ data: [] })),
+      ]);
+
+      setProduct(prodRes.data);
+      setProductTags(tagsRes.data);
+      setRecommendedBundles(bundlesRes.data);
 
       // Trigger review list to load fresh data
       setReviewRefresh(Date.now());
@@ -204,9 +230,26 @@ export default function ProductDetailPage() {
                 <h1 className="text-3xl md:text-4xl font-playfair font-bold leading-tight">
                   {product.name}
                 </h1>
-                <p className="text-xs text-muted-foreground font-semibold">
-                  Category: {product.category}
-                </p>
+                <div className="flex flex-col gap-2 pt-1">
+                  <p className="text-xs text-muted-foreground font-semibold">
+                    Category: {product.category}
+                  </p>
+                  
+                  {/* Clean Beauty Tag Badges */}
+                  {productTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {productTags.map((tag) => (
+                        <span 
+                          key={tag.id} 
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-100/50 shadow-sm"
+                        >
+                          {tag.icon && <span>{tag.icon}</span>}
+                          <span>{tag.name}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Rating stars display */}
@@ -301,6 +344,14 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
+              {/* TikTok Shop Integration */}
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Also Available on TikTok</span>
+                <TikTokShopButton />
+              </div>
+
+              <hr className="border-border/50" />
+
               {/* Social sharing widget */}
               <SocialShare
                 productId={product.id}
@@ -315,6 +366,18 @@ export default function ProductDetailPage() {
               <DeliveryChecker />
             </div>
           </div>
+
+          {/* Buy Together & Save (Bundles) */}
+          {recommendedBundles.length > 0 && (
+            <div className="space-y-6">
+              <h3 className="font-playfair font-bold text-2xl tracking-tight">Buy Together & Save</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {recommendedBundles.map((bundle) => (
+                  <BundleCard key={bundle.id} bundle={bundle} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Description & Reviews Tabs Section */}
           <div className="bg-card rounded-3xl border border-border/50 p-6 md:p-8 shadow-sm">

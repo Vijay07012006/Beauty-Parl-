@@ -40,6 +40,15 @@ import { Referral } from './modules/referrals/referral.entity';
 import { ReferralTracking } from './modules/referrals/referral-tracking.entity';
 import { Achievement } from './modules/gamification/achievement.entity';
 import { UserAchievement } from './modules/gamification/user-achievement.entity';
+
+// Phase 5C Entities
+import { ProductTag } from './modules/product-tags/product-tag.entity';
+import { ProductTagMapping } from './modules/product-tags/product-tag-mapping.entity';
+import { Look } from './modules/looks/look.entity';
+import { LookProduct } from './modules/looks/look-product.entity';
+import { Bundle } from './modules/bundles/bundle.entity';
+import { BundleProduct } from './modules/bundles/bundle-product.entity';
+
 import { ScheduleModule } from '@nestjs/schedule';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 import { CartModule } from './modules/cart/cart.module';
@@ -58,6 +67,13 @@ import { LiveShoppingModule } from './modules/live-shopping/live-shopping.module
 import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
+
+// Phase 5C Modules
+import { ProductTagsModule } from './modules/product-tags/product-tags.module';
+import { LooksModule } from './modules/looks/looks.module';
+import { BundlesModule } from './modules/bundles/bundles.module';
+import { TikTokModule } from './modules/tiktok/tiktok.module';
+
 import configuration from './config/configuration';
 
 @Module({
@@ -76,7 +92,13 @@ import configuration from './config/configuration';
         username: config.get('database.url') ? undefined : config.get('database.username'),
         password: config.get('database.url') ? undefined : config.get('database.password'),
         database: config.get('database.url') ? undefined : config.get('database.database'),
-        entities: [Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart, RecentlyViewed, WishlistAlert, QuizResponse, UgcPhoto, SkinAnalysis, Subscription, BeautyBox, UserRoutine, LiveEvent, LoyaltyTransaction, LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement],
+        entities: [
+          Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart,
+          RecentlyViewed, WishlistAlert, QuizResponse, UgcPhoto, SkinAnalysis,
+          Subscription, BeautyBox, UserRoutine, LiveEvent, LoyaltyTransaction,
+          LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
+          ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct
+        ],
         autoLoadEntities: true,
         synchronize: process.env.DB_SYNCHRONIZE !== 'false', // Default to true unless explicitly disabled, ensuring tables are created on startup since there are no migrations
         logging: process.env.NODE_ENV === 'development',
@@ -120,6 +142,10 @@ import configuration from './config/configuration';
     LoyaltyModule,
     GamificationModule,
     ReferralsModule,
+    ProductTagsModule,
+    LooksModule,
+    BundlesModule,
+    TikTokModule,
   ],
   controllers: [AppController],
   providers: [

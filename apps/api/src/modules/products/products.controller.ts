@@ -24,6 +24,7 @@ export class ProductsController {
     @Query('maxPrice') maxPrice?: string,
     @Query('minRating') minRating?: string,
     @Query('sort') sort?: string,
+    @Query('tags') tags?: string,
   ) {
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 12;
@@ -38,6 +39,7 @@ export class ProductsController {
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
       minRating: minRating ? parseFloat(minRating) : undefined,
       sort,
+      tags,
     });
 
     return {

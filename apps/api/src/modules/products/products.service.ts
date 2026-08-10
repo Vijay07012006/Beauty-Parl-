@@ -31,8 +31,9 @@ export class ProductsService {
     maxPrice?: number;
     minRating?: number;
     sort?: string;
+    tags?: string;
   }) {
-    const { skip, take, category, search, minPrice, maxPrice, minRating, sort } = options;
+    const { skip, take, category, search, minPrice, maxPrice, minRating, sort, tags } = options;
 
     const queryBuilder = this.productRepository.createQueryBuilder('product');
 
@@ -63,6 +64,21 @@ export class ProductsService {
 
     if (minRating !== undefined && !isNaN(minRating)) {
       queryBuilder.andWhere('product.rating >= :minRating', { minRating });
+    }
+
+    if (tags) {
+      const tagList = tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      if (tagList.length > 0) {
+        const subQuery = queryBuilder.subQuery()
+          .select('ptm.productId')
+          .from('product_tag_mapping', 'ptm')
+          .innerJoin('product_tags', 'pt', 'pt.id = ptm.tagId')
+          .where('LOWER(pt.name) IN (:...tagList)', { tagList })
+          .groupBy('ptm.productId')
+          .having('COUNT(ptm.tagId) >= :tagCount', { tagCount: tagList.length })
+          .getQuery();
+        queryBuilder.andWhere(`product.id IN ${subQuery}`);
+      }
     }
 
     // Sorting
