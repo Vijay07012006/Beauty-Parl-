@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { UserSession } from './user-session.entity';
+import { User } from './user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -13,6 +14,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     config: ConfigService,
     @InjectRepository(UserSession)
     private userSessionRepository: Repository<UserSession>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {
     const jwtSecret = config.get<string>('jwt.secret') || process.env.JWT_SECRET;
     if (!jwtSecret) {
@@ -22,6 +25,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
+      algorithms: ['HS256'],
+      issuer: 'beauty-parle-api',
+      audience: 'beauty-parle-web',
       passReqToCallback: true,
     });
   }
@@ -40,6 +46,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!session) {
       throw new UnauthorizedException('Session has been revoked');
+    }
+
+    // Reject deactivated accounts even with a valid, un-revoked token (H2)
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub },
+      select: { id: true, isActive: true },
+    });
+    if (!user || user.isActive === false) {
+      throw new UnauthorizedException('Account has been deactivated');
     }
 
     await this.userSessionRepository.update(

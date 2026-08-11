@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus, NotFoundException, Request } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -20,11 +20,13 @@ export class ReviewsController {
   }
 
   @Post('product/:productId')
+  @UseGuards(JwtAuthGuard)
   async addReview(
+    @Request() req: any,
     @Param('productId') productId: number,
     @Body() body: { reviewerName: string; rating: number; comment: string }
   ) {
-    return this.productsService.createReview(productId, body);
+    return this.productsService.createReview(productId, body, req.user?.id);
   }
 
   @Get('admin')

@@ -41,7 +41,7 @@ export function OtpModal({ email, phone, onVerified, onClose }: OtpModalProps) {
     setError('');
     setOtp('');
     try {
-      await api.post('/auth/send-otp', { email, phone });
+      await api.post('/auth/resend-otp', { email });
       setResendMessage('✅ New OTP sent! Check your terminal.');
     } catch {
       setError('Failed to resend OTP. Please try again.');

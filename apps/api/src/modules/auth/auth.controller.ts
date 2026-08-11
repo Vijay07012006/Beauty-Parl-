@@ -26,8 +26,13 @@ export class AuthController {
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: { email: string; password: string }, @Request() req: any) {
-    const user = await this.authService.validateUser(loginDto.email, loginDto.password);
+  async login(@Body() loginDto: { email?: string; password?: string }, @Request() req: any) {
+    const email = typeof loginDto?.email === 'string' ? loginDto.email.trim().toLowerCase() : '';
+    const password = typeof loginDto?.password === 'string' ? loginDto.password : '';
+    if (!email || !password) {
+      throw new BadRequestException('Email and password are required');
+    }
+    const user = await this.authService.validateUser(email, password);
     if (!user) {
       throw new BadRequestException('Invalid credentials');
     }
@@ -69,7 +74,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async changePassword(@Request() req: any, @Body() body: { currentPassword: string; newPassword: string }) {
     try {
-      return await this.authService.changePassword(req.user.id, body.currentPassword, body.newPassword);
+      return await this.authService.changePassword(req.user.id, body.currentPassword, body.newPassword, req.user?.sessionId);
     } catch (error: any) {
       throw new BadRequestException(error.message);
     }
@@ -86,6 +91,7 @@ export class AuthController {
   }
 
   @Post('reset-password')
+  @Throttle({ default: { limit: 10, ttl: 600000 } })
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() body: { token: string; newPassword: string }) {
     if (!body.token || !body.newPassword) {
@@ -142,8 +148,10 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   async googleAuthRedirect(@Request() req: any, @Res() res: any) {
     const { access_token, user } = req.user;
+    // Pass a short-lived one-time code, never the JWT, in the URL (H3)
+    const code = await this.authService.issueOauthCode(access_token, user);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/en/auth/callback?token=${access_token}&user=${encodeURIComponent(JSON.stringify(user))}`);
+    res.redirect(`${frontendUrl}/en/auth/callback?code=${code}`);
   }
 
   @Get('facebook')
@@ -156,27 +164,17 @@ export class AuthController {
   @UseGuards(FacebookAuthGuard)
   async facebookAuthRedirect(@Request() req: any, @Res() res: any) {
     const { access_token, user } = req.user;
+    // Pass a short-lived one-time code, never the JWT, in the URL (H3)
+    const code = await this.authService.issueOauthCode(access_token, user);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/en/auth/callback?token=${access_token}&user=${encodeURIComponent(JSON.stringify(user))}`);
+    res.redirect(`${frontendUrl}/en/auth/callback?code=${code}`);
   }
 
-  @Post('verify-otp')
+  @Post('oauth/exchange')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async verifyOtp(@Body() body: { email: string; otp: string }) {
-    if (!body.email || !body.otp) {
-      throw new BadRequestException('Email and OTP are required');
-    }
-    return this.authService.verifyOtp(body.email, body.otp);
-  }
-
-  @Post('resend-otp')
-  @HttpCode(HttpStatus.OK)
-  async resendOtp(@Body() body: { email: string }) {
-    if (!body.email) {
-      throw new BadRequestException('Email is required');
-    }
-    await this.authService.resendOtp(body.email);
-    return { success: true };
+  async exchangeOauthCode(@Body() body: { code: string }) {
+    return this.authService.exchangeOauthCode(body.code);
   }
 
   @Get('2fa/generate')
@@ -190,17 +188,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async verifyAndEnableTwoFactor(
     @Request() req: any,
-    @Body() body: { token: string; secret: string; backupCodes: string[] },
+    @Body() body: { token: string },
   ) {
-    if (!body.token || !body.secret || !body.backupCodes) {
-      throw new BadRequestException('token, secret, and backupCodes are required');
+    if (!body.token) {
+      throw new BadRequestException('token is required');
     }
-    return this.authService.verifyAndEnableTwoFactor(
-      req.user.id,
-      body.token,
-      body.secret,
-      body.backupCodes,
-    );
+    return this.authService.verifyAndEnableTwoFactor(req.user.id, body.token);
   }
 
   @Post('2fa/disable')

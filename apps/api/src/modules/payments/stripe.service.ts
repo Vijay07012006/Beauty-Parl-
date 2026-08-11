@@ -27,7 +27,7 @@ export class StripeService {
     }
   }
 
-  async createCheckoutSession(amount: number, orderId: number, currency = 'inr'): Promise<any> {
+  async createCheckoutSession(amount: number, orderId: number): Promise<any> {
     if (!this.stripe) {
       throw new InternalServerErrorException('Stripe service is not configured. Payments are disabled.');
     }
@@ -42,17 +42,18 @@ export class StripeService {
     try {
       const frontendUrl = this.configService.get<string>('frontendUrl') || 'http://localhost:3000';
       const locale = 'en'; // Default locale
-      
+
+      // Currency is fixed server-side (INR) — the client cannot influence it (O10)
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
           {
             price_data: {
-              currency: currency.toLowerCase(),
+              currency: 'inr',
               product_data: {
                 name: `Beauty Parlé Order #${orderId}`,
               },
-              unit_amount: Math.round(Number(dbOrder.total) * 100), // in cents
+              unit_amount: Math.round(Number(dbOrder.total) * 100), // in paise/cents
             },
             quantity: 1,
           },
@@ -100,21 +101,47 @@ export class StripeService {
       return;
     }
 
-    // Server-side: verify the paid amount matches the order total (Stripe amount_total is in cents)
-    if (typeof session.amount_total === 'number') {
-      const expectedAmountCents = Math.round(Number(order.total) * 100);
-      if (session.amount_total !== expectedAmountCents) {
-        console.warn(
-          `[Stripe Webhook] Amount mismatch for order #${order.id}: expected ${expectedAmountCents} cents, received ${session.amount_total} cents. Skipping.`,
-        );
-        return;
-      }
+    // Fail closed: only accept fully-paid sessions (O10)
+    if (session.payment_status !== 'paid') {
+      console.warn(`[Stripe Webhook] Session for order #${order.id} has payment_status '${session.payment_status}'. Skipping.`);
+      return;
     }
 
-    // Update order status to paid and assign the Stripe payment ID
+    // Server-side: currency must match INR (O10)
+    if (session.currency && session.currency.toLowerCase() !== 'inr') {
+      console.warn(`[Stripe Webhook] Currency mismatch for order #${order.id}: ${session.currency}. Skipping.`);
+      return;
+    }
+
+    // Fail closed: if amount_total is absent we cannot verify — reject (O10)
+    if (typeof session.amount_total !== 'number') {
+      console.warn(`[Stripe Webhook] Missing amount_total for order #${order.id}. Skipping.`);
+      return;
+    }
+
+    // Server-side: verify the paid amount matches the order total (Stripe amount_total is in cents)
+    const expectedAmountCents = Math.round(Number(order.total) * 100);
+    if (session.amount_total !== expectedAmountCents) {
+      console.warn(
+        `[Stripe Webhook] Amount mismatch for order #${order.id}: expected ${expectedAmountCents} cents, received ${session.amount_total} cents. Skipping.`,
+      );
+      return;
+    }
+
+    // Idempotent transition — only mark paid once (prevents duplicate processing)
+    const updated = await this.orderRepo
+      .createQueryBuilder()
+      .update(Order)
+      .set({ status: 'paid', paymentId: (session.payment_intent as string) || session.id })
+      .where('id = :id AND status != :paid', { id: order.id, paid: 'paid' })
+      .execute();
+
+    if (!updated.affected || updated.affected === 0) {
+      console.log(`[Stripe Webhook] Order #${order.id} already processed. Skipping.`);
+      return;
+    }
     order.status = 'paid';
     order.paymentId = (session.payment_intent as string) || session.id;
-    await this.orderRepo.save(order);
     console.log(`✅ [Stripe Webhook] Order #${order.id} updated to 'paid'.`);
 
     // Send confirmation email

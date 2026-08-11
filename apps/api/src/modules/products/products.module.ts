@@ -7,10 +7,11 @@ import { ReviewsController } from './reviews.controller';
 import { ProductsService } from './products.service';
 import { Product } from './product.entity';
 import { ProductReview } from './review.entity';
+import { Order } from '../orders/order.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, ProductReview]),
+    TypeOrmModule.forFeature([Product, ProductReview, Order]),
     CacheModule.register(),
   ],
   controllers: [ProductsController, CategoriesController, ReviewsController],

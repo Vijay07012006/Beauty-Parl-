@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './product.entity';
 import { ProductReview } from './review.entity';
+import { Order } from '../orders/order.entity';
 
 @Injectable()
 export class ProductsService {
@@ -11,6 +12,8 @@ export class ProductsService {
     private productRepository: Repository<Product>,
     @InjectRepository(ProductReview)
     private reviewRepository: Repository<ProductReview>,
+    @InjectRepository(Order)
+    private orderRepository: Repository<Order>,
   ) {}
 
   async findAll(category?: string): Promise<Product[]> {
@@ -224,18 +227,58 @@ export class ProductsService {
 
   async createReview(
     productId: number,
-    reviewData: { reviewerName: string; rating: number; comment: string }
+    reviewData: { reviewerName: string; rating: number; comment: string },
+    userId?: number,
   ): Promise<ProductReview> {
     const product = await this.findOne(productId);
     if (!product) {
       throw new NotFoundException(`Product with ID ${productId} not found`);
     }
 
+    // Authenticated users required to leave reviews (P1)
+    if (!userId) {
+      throw new BadRequestException('You must be logged in to leave a review');
+    }
+
+    // Rating must be 1-5 (P3) — prevents corrupting the product average
+    const rating = Number(reviewData.rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new BadRequestException('Rating must be an integer between 1 and 5');
+    }
+
+    // Content caps (P1)
+    const comment = String(reviewData.comment || '').trim();
+    if (!comment) {
+      throw new BadRequestException('Review comment is required');
+    }
+    if (comment.length > 1000) {
+      throw new BadRequestException('Review comment must be at most 1000 characters');
+    }
+    const reviewerName = String(reviewData.reviewerName || '').trim().slice(0, 60);
+
+    // Only verified purchasers may review (P1)
+    const purchased = await this.orderRepository
+      .createQueryBuilder('o')
+      .where('o.userId = :userId', { userId })
+      .andWhere('o.status IN (:...statuses)', { statuses: ['paid', 'processing', 'shipped', 'delivered'] })
+      .andWhere('o.items @> :filter', { filter: JSON.stringify([{ productId }]) })
+      .getCount();
+    if (purchased === 0) {
+      throw new BadRequestException('You can only review a product you have purchased');
+    }
+
+    // One review per user per product (P1)
+    const existing = await this.reviewRepository.findOne({ where: { userId, productId } });
+    if (existing) {
+      throw new BadRequestException('You have already reviewed this product');
+    }
+
     const review = this.reviewRepository.create({
       productId,
-      reviewerName: reviewData.reviewerName,
-      rating: reviewData.rating,
-      comment: reviewData.comment
+      userId,
+      reviewerName,
+      rating,
+      comment
     });
     await this.reviewRepository.save(review);
 

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { Subscription } from './subscription.entity';
+import { CronLock } from './cron-lock.entity';
 import { Product } from '../products/product.entity';
 import { Order } from '../orders/order.entity';
 import { Address } from '../addresses/address.entity';
@@ -12,6 +13,8 @@ export class SubscriptionsService {
   constructor(
     @InjectRepository(Subscription)
     private readonly subRepo: Repository<Subscription>,
+    @InjectRepository(CronLock)
+    private readonly lockRepo: Repository<CronLock>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
     @InjectRepository(Order)
@@ -76,6 +79,14 @@ export class SubscriptionsService {
   async checkSubscriptions() {
     console.log('⏰ Running Subscriptions Auto-Replenishment Cron Job...');
     const now = new Date();
+
+    // CRON-2: distributed lock — only one instance may run the job within the
+    // lease window. If another instance just ran it, skip this tick.
+    if (!(await this.acquireLock('subscriptions:auto-replenish', 60 * 60 * 1000))) {
+      console.log('⏭️ Subscriptions cron skipped — lock held by another instance.');
+      return;
+    }
+
     const dueSubs = await this.subRepo.find({
       where: {
         isActive: true,
@@ -88,18 +99,32 @@ export class SubscriptionsService {
       if (!sub.product || !sub.user) continue;
 
       try {
+        // CRON-1: freshness + integrity validation before charging the customer.
+        // Skip stale rows (user deactivated / product gone) and never auto-charge
+        // more than the available stock.
+        if (sub.user.isActive === false) continue;
+        if (Number(sub.product.stock) <= 0) continue;
+        if (sub.quantity > Number(sub.product.stock)) continue;
+
         const userAddress = await this.addressRepo.findOne({
           where: { userId: sub.userId },
         });
 
+        // If no address is on file, do not fabricate one and bill the customer —
+        // defer the delivery instead.
+        if (!userAddress) {
+          console.warn(`Skipping subscription #${sub.id}: no shipping address on file`);
+          continue;
+        }
+
         const addressPayload = {
-          name: userAddress?.name || sub.user.name || 'Replenish Customer',
+          name: userAddress.name || sub.user.name || 'Replenish Customer',
           email: sub.user.email,
-          phone: userAddress?.phone || '0000000000',
-          address: userAddress?.address || 'Beauty Parlé Subscription Address',
-          city: userAddress?.city || 'Delhi',
-          state: userAddress?.state || 'Delhi',
-          pincode: userAddress?.pincode || '110001',
+          phone: userAddress.phone || '0000000000',
+          address: userAddress.address || '',
+          city: userAddress.city || '',
+          state: userAddress.state || '',
+          pincode: userAddress.pincode || '',
         };
 
         const totalAmount = Number(sub.product.price) * sub.quantity;
@@ -127,6 +152,14 @@ export class SubscriptionsService {
 
         await this.orderRepo.save(mockOrder);
 
+        // CRON-1: decrement stock atomically so over-selling can't happen
+        await this.productRepo
+          .createQueryBuilder()
+          .update(Product)
+          .set({ stock: () => 'stock - ' + Number(sub.quantity) })
+          .where('id = :id AND stock >= :qty', { id: sub.product.id, qty: sub.quantity })
+          .execute();
+
         sub.nextDeliveryDate = this.calculateNextDelivery(now, sub.frequency);
         await this.subRepo.save(sub);
 
@@ -134,6 +167,35 @@ export class SubscriptionsService {
       } catch (err: any) {
         console.error(`Failed to auto-replenish subscription #${sub.id}:`, err.message);
       }
+    }
+
+    await this.releaseLock('subscriptions:auto-replenish');
+  }
+
+  private async acquireLock(name: string, ttlMs: number): Promise<boolean> {
+    const now = new Date();
+    try {
+      const existing = await this.lockRepo.findOne({ where: { name } });
+      if (existing) {
+        if (existing.expiresAt > now) return false;
+        existing.expiresAt = new Date(now.getTime() + ttlMs);
+        await this.lockRepo.save(existing);
+        return true;
+      }
+      const lock = this.lockRepo.create({ name, expiresAt: new Date(now.getTime() + ttlMs) });
+      await this.lockRepo.save(lock);
+      return true;
+    } catch {
+      // Race between instances — the other one won, skip.
+      return false;
+    }
+  }
+
+  private async releaseLock(name: string): Promise<void> {
+    try {
+      await this.lockRepo.delete({ name });
+    } catch {
+      // Non-fatal — the lease expiry will clear it eventually.
     }
   }
 }

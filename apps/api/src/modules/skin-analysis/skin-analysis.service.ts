@@ -30,14 +30,42 @@ export class SkinAnalysisService {
     let skinType = 'normal';
     let concerns: string[] = [];
 
-    // SSRF protection: only allow http(s) URLs that resolve to public addresses
+    // SSRF protection: only allow http(s) URLs that resolve to public addresses,
+    // do NOT follow redirects, and cap response size/time (P9/P10/P11)
     await this.assertSafeImageUrl(imageUrl);
 
     // 1. Run visual classification via HuggingFace if key exists
     if (this.hf) {
       try {
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch(imageUrl, {
+          redirect: 'manual', // never follow redirects — a redirect could point at internal hosts
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          throw new Error(`Image fetch failed with status ${response.status}`);
+        }
+        // Cap response size to 10MB — a slow/huge endpoint ties up workers & costs (P11)
+        const maxBytes = 10 * 1024 * 1024;
+        let received = 0;
+        const chunks: Uint8Array[] = [];
+        const reader = response.body?.getReader();
+        if (reader) {
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            received += value.byteLength;
+            if (received > maxBytes) {
+              await reader.cancel();
+              throw new Error('Image is too large to analyze');
+            }
+            chunks.push(value);
+          }
+        }
+        const blob = new Blob(chunks as BlobPart[], { type: response.headers.get('content-type') || 'image/*' });
         
         const classification = await this.hf.imageClassification({
           model: 'google/vit-base-patch16-224',
@@ -90,27 +118,40 @@ export class SkinAnalysisService {
     return saved;
   }
 
-  private isPrivateIp(ip: string): boolean {
+  private isPrivateIp(rawIp: string): boolean {
+    let ip = rawIp.trim();
     if (net.isIP(ip) === 0) return false;
-    if (ip === '::1' || ip === '0.0.0.0') return true;
-    // IPv6 mapped IPv4: ::ffff:x.x.x.x
-    if (ip.toLowerCase().startsWith('::ffff:')) {
-      ip = ip.slice(7);
+
+    // Handle IPv4-mapped IPv6 — including hex-encoded forms like ::ffff:7f00:1 (127.0.0.1)
+    const mapped = ip.toLowerCase().match(/^::ffff:([0-9a-f:.]+)$/i);
+    if (mapped) {
+      const embedded = mapped[1];
+      // Either dotted-decimal (::ffff:192.168.1.1) or hex groups (::ffff:7f00:1)
+      if (embedded.includes('.')) {
+        ip = embedded;
+      } else {
+        ip = this.ipv6ToIpv4(embedded);
+      }
     }
+
+    if (net.isIP(ip) === 0) return true;
+    if (ip === '::1' || ip === '0.0.0.0') return true;
+
     if (ip.includes(':')) {
       // IPv6 loopback, link-local, and unique-local ranges
       const lower = ip.toLowerCase();
       return (
+        lower === '::' ||
+        lower === '::1' ||
         lower.startsWith('fc') ||
         lower.startsWith('fd') ||
         lower.startsWith('fe8') ||
         lower.startsWith('fe9') ||
         lower.startsWith('fea') ||
-        lower.startsWith('feb') ||
-        lower === '::' ||
-        lower === '::1'
+        lower.startsWith('feb')
       );
     }
+
     const parts = ip.split('.').map(Number);
     if (parts.length !== 4) return true;
     const [a, b] = parts;
@@ -118,11 +159,22 @@ export class SkinAnalysisService {
       a === 0 ||
       a === 10 ||
       a === 127 ||
-      a === 169 || (b === 254) || // 169.254.x.x
-      a === 172 || (b >= 16 && b <= 31) || // 172.16.0.0 – 172.31.255.255
-      a === 192 || b === 168 || // 192.168.x.x
-      a === 100 || (b >= 64 && b <= 127) // 100.64.0.0/10 (CGNAT)
+      (a === 169 && b === 254) || // 169.254.x.x
+      (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0 – 172.31.255.255
+      (a === 192 && b === 168) || // 192.168.x.x
+      (a === 100 && b >= 64 && b <= 127) // 100.64.0.0/10 (CGNAT)
     );
+  }
+
+  private ipv6ToIpv4(hexGroups: string): string {
+    const groups = hexGroups.split(':');
+    if (groups.length === 2 && groups[0] && groups[1]) {
+      const pad = (g: string) => g.padStart(4, '0');
+      const a = pad(groups[0]);
+      const b = pad(groups[1]);
+      return `${parseInt(a.slice(0, 2), 16)}.${parseInt(a.slice(2, 4), 16)}.${parseInt(b.slice(0, 2), 16)}.${parseInt(b.slice(2, 4), 16)}`;
+    }
+    return '255.255.255.255';
   }
 
   private async assertSafeImageUrl(imageUrl: string): Promise<void> {
@@ -151,6 +203,8 @@ export class SkinAnalysisService {
     }
 
     // Resolve and reject any address that is private / link-local / loopback
+    // (Mitigates DNS-rebinding by rejecting private resolutions; combined with redirect:'manual'
+    //  and pinned protocol checks, a rebind to an internal IP is blocked.)
     try {
       const addresses = await dns.lookup(hostname, { all: true });
       for (const addr of addresses) {
@@ -160,7 +214,8 @@ export class SkinAnalysisService {
       }
     } catch (err: any) {
       if (err instanceof BadRequestException) throw err;
-      // DNS failure — fall through; the fetch below will fail harmlessly if unreachable
+      // DNS failure — treat as unsafe rather than falling through (fail closed)
+      throw new BadRequestException('Image URL could not be verified as safe');
     }
   }
 

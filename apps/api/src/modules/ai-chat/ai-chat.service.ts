@@ -18,6 +18,8 @@ export class AiChatService {
   private readonly SYSTEM_PROMPT = `You are Beauty Parlé AI assistant, a friendly expert in cosmetics, skincare, haircare and beauty products. Answer customer questions concisely, help with product recommendations, skin concerns, ingredients, order status inquiries, loyalty program questions, and general beauty tips. Keep answers under 150 words. If user asks about order/cart/account without providing ID, politely ask for details.`;
   private readonly MODEL_NAME = 'microsoft/Phi-3-mini-4k-instruct';
   private readonly MAX_HISTORY = 5;
+  // Cap the number of in-memory sessions to prevent memory-flood via arbitrary sessionIds
+  private readonly MAX_SESSIONS = 500;
 
   constructor(private configService: ConfigService) {
     const apiKey = this.configService.get<string>('HUGGINGFACE_API_KEY');
@@ -79,6 +81,11 @@ export class AiChatService {
 
   private getContext(sessionId: string): SessionContext {
     if (!this.sessionHistory.has(sessionId)) {
+      // Reject new sessions once the cap is reached — old ones are dropped LRU-style
+      if (this.sessionHistory.size >= this.MAX_SESSIONS) {
+        const oldest = this.sessionHistory.keys().next().value;
+        if (oldest !== undefined) this.sessionHistory.delete(oldest);
+      }
       this.sessionHistory.set(sessionId, { messages: [] });
     }
     return this.sessionHistory.get(sessionId)!;

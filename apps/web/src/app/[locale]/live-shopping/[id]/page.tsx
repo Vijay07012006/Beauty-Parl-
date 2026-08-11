@@ -110,9 +110,9 @@ export default function LiveShoppingRoomPage() {
     }
 
     if (socketRef.current) {
+      // name is derived server-side from the verified JWT (LS-1)
       socketRef.current.emit('send_live_chat', {
         eventId: id,
-        name: user.name || 'Anonymous',
         text: inputMessage,
       });
       setInputMessage('');

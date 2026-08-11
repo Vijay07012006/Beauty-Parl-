@@ -16,7 +16,8 @@ export class LiveShoppingController {
     try {
       const token = authHeader.split(' ')[1];
       const payload = this.jwtService.verify(token);
-      if (payload?.role === 'admin') return;
+      // LS-4: super_admin was missing — both admin roles may manage live events
+      if (payload?.role === 'admin' || payload?.role === 'super_admin') return;
     } catch {}
     throw new UnauthorizedException('Admin privileges required');
   }

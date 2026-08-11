@@ -25,52 +25,43 @@ export function ChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 1. Resolve user profile or generate guest UUID
+    // Resolve user profile. Guest room id is now SERVER-ISSUED on connect,
+    // so we no longer generate one locally.
     const storedUser = localStorage.getItem('user');
-    let uId = '';
-    let uName = 'Guest';
-
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        uId = `user_${parsed.id}`;
-        uName = parsed.name || 'Customer';
-        setUserProfile({ id: uId, name: uName });
+        setUserProfile({ id: `user_${parsed.id}`, name: parsed.name || 'Customer' });
+        return;
       } catch {}
     }
-
-    if (!uId) {
-      // Guest: check or generate local room ID
-      let guestRoomId = localStorage.getItem('guest_chat_room_id');
-      if (!guestRoomId) {
-        guestRoomId = 'guest_' + (crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).substring(2, 11));
-        localStorage.setItem('guest_chat_room_id', guestRoomId);
-      }
-      uId = guestRoomId;
-      setUserProfile({ id: uId, name: 'Guest' });
-    }
-
-    setRoomId(uId);
+    setUserProfile({ id: '', name: 'Guest' });
   }, []);
 
   useEffect(() => {
-    if (!isOpen || !roomId || !userProfile) return;
+    if (!isOpen || !userProfile) return;
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://beauty-parl-api.onrender.com';
     const token = localStorage.getItem('token');
     const newSocket = io(baseUrl, {
       auth: {
         token: token || undefined,
-        guestId: !token ? roomId : undefined,
       },
     });
     setSocket(newSocket);
 
-    // Join room
-    newSocket.emit('join_room', {
-      roomId,
-      guestEmail: userProfile.name === 'Guest' ? undefined : userProfile.id,
-    });
+    // Authenticated users are bound to their own room server-side (user_<id>).
+    // Guests receive a server-assigned room before we can join it (CHAT-2).
+    if (token) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('user') || 'null');
+        if (stored?.id) setRoomId(`user_${stored.id}`);
+      } catch {}
+    } else {
+      newSocket.on('assigned_room', (assigned: string) => {
+        setRoomId(assigned);
+      });
+    }
 
     // Event handlers
     newSocket.on('receive_message', (msg: ChatMessage) => {
@@ -87,7 +78,13 @@ export function ChatWidget() {
     return () => {
       newSocket.disconnect();
     };
-  }, [isOpen, roomId, userProfile]);
+  }, [isOpen, userProfile]);
+
+  // Join the room once we know its id (server-issued for guests, user_<id> for authed)
+  useEffect(() => {
+    if (!socket || !roomId || !userProfile) return;
+    socket.emit('join_room', { roomId });
+  }, [socket, roomId, userProfile]);
 
   useEffect(() => {
     // Scroll to bottom on new message

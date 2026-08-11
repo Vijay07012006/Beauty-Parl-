@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, HttpStatus, UseInterceptors, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, HttpStatus, UseInterceptors, UseGuards, Query, Request } from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ProductsService } from './products.service';
 import { Product } from './product.entity';
@@ -84,7 +84,8 @@ export class ProductsController {
 
   @Get(':id/reviews')
   async getReviews(@Param('id') id: number) {
-    return this.productsService.findReviews(id);
+    // Public listing only shows approved (moderated) reviews (P2)
+    return this.productsService.findApprovedReviews(id);
   }
 
   @Get(':id/reviews/stats')
@@ -93,12 +94,14 @@ export class ProductsController {
   }
 
   @Post(':id/reviews')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async postReview(
+    @Request() req: any,
     @Param('id') id: number,
     @Body() body: { reviewerName: string; rating: number; comment: string }
   ) {
-    return this.productsService.createReview(id, body);
+    return this.productsService.createReview(id, body, req.user?.id);
   }
 
   // ========== 🔧 ADMIN REVIEW ENDPOINTS ==========

@@ -27,6 +27,11 @@ async function bootstrap() {
 
   app.use(helmet());
 
+  // Trust the first hop so req.ip reflects the real client behind the Render/Vercel proxy
+  // (required for per-IP rate limiting — otherwise every request shares the proxy IP bucket)
+  const httpAdapter = app.getHttpAdapter().getInstance();
+  (httpAdapter as any).set('trust proxy', 1);
+
   // 🔐 SECURE CORS — Parse origins from env
   const corsOriginsEnv = process.env.CORS_ORIGINS || '';
   const allowedOrigins = corsOriginsEnv

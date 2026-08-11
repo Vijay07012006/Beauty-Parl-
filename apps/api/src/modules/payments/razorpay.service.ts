@@ -70,7 +70,12 @@ export class RazorpayService {
 
   // Verify webhook signature against the RAW request body
   async verifyWebhook(body: Buffer | string, signature: string): Promise<boolean> {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || this.configService.get<string>('razorpay.keySecret') || '';
+    // Webhook secret must be its own dedicated secret — never silently fall back to the API keySecret (O10)
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+    if (!webhookSecret) {
+      console.error('[Webhook] RAZORPAY_WEBHOOK_SECRET is not configured. Webhooks will be rejected.');
+      return false;
+    }
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
       .update(body)
@@ -109,10 +114,20 @@ export class RazorpayService {
       return;
     }
 
-    // Update order status to paid and assign the Razorpay payment ID
+    // Idempotent transition — only mark paid once (prevents duplicate processing on retries)
+    const updated = await this.orderRepo
+      .createQueryBuilder()
+      .update(Order)
+      .set({ status: 'paid', paymentId })
+      .where('id = :id AND status != :paid', { id: order.id, paid: 'paid' })
+      .execute();
+
+    if (!updated.affected || updated.affected === 0) {
+      console.log(`✅ [Webhook] Order #${order.id} already marked paid. Skipping.`);
+      return;
+    }
     order.status = 'paid';
     order.paymentId = paymentId;
-    await this.orderRepo.save(order);
     console.log(`✅ [Webhook] Order #${order.id} updated to 'paid'.`);
 
     // Send confirmation email

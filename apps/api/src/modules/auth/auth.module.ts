@@ -25,7 +25,11 @@ import { AuditLogsModule } from '../audit-logs/audit-logs.module';
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get('jwt.secret'),
-        signOptions: { expiresIn: config.get('jwt.expiresIn') },
+        signOptions: {
+          expiresIn: config.get('jwt.expiresIn'),
+          issuer: 'beauty-parle-api',
+          audience: 'beauty-parle-web',
+        },
       }),
       inject: [ConfigService],
     }),

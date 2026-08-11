@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
+import * as crypto from 'crypto';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 
 const FAQ_BOT_ANSWERS = [
@@ -66,20 +67,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwtService: JwtService,
   ) {}
 
+  // Simple per-socket token-bucket rate limiter for send_message (CHAT-3)
+  private rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+  private isRateLimited(clientId: string): boolean {
+    const now = Date.now();
+    const entry = this.rateLimitMap.get(clientId);
+    if (!entry || entry.resetAt < now) {
+      this.rateLimitMap.set(clientId, { count: 1, resetAt: now + 10_000 });
+      return false;
+    }
+    entry.count += 1;
+    return entry.count > 10; // max 10 messages per 10s
+  }
+
   handleConnection(client: Socket) {
     const user = this.authenticate(client);
     if (!user) {
-      // Allow anonymous guests but bind them to their own generated room id
-      const guestId =
-        (client.handshake.auth?.guestId as string) ||
-        (client.handshake.query?.guestId as string) ||
-        '';
+      // Guests get a SERVER-ISSUED random room id — a client cannot pick/impersonate
+      // another guest's room (CHAT-2)
+      const guestId = `guest_${crypto.randomBytes(12).toString('hex')}`;
       client.data.user = null;
       client.data.guestId = guestId;
-      console.log(`🔌 Guest client connected: ${client.id}`);
+      client.data.roomId = guestId;
+      // Tell the guest which room the server assigned so it can join its own room
+      client.emit('assigned_room', guestId);
+      console.log(`🔌 Guest client connected: ${client.id} (server-assigned room ${guestId})`);
       return;
     }
     client.data.user = user;
+    // Authenticated customers are bound to their own room id server-side (CHAT-1)
+    client.data.roomId = `user_${user.id}`;
+    client.join(`user_${user.id}`);
     if (this.isAdminUser(user)) {
       client.join(ADMIN_ROOM);
     }
@@ -87,20 +106,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
+    // Best-effort cleanup of rate-limit state for the socket
+    this.rateLimitMap.delete(client.id);
     console.log(`❌ Client disconnected: ${client.id}`);
   }
 
   private authenticate(client: Socket): AuthedUser | null {
-    let token: string | undefined =
-      client.handshake.auth?.token ||
-      (client.handshake.query?.token as string) ||
-      undefined;
+    let token: string | undefined = client.handshake.auth?.token as string | undefined;
     if (!token) {
       const authHeader = client.handshake.headers?.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.slice(7);
       }
     }
+    // Token via query string is NOT accepted — avoids leakage in logs/referrers (M7)
     if (!token) return null;
     try {
       const payload = this.jwtService.verify<{ sub: number; email: string; role: string }>(token);
@@ -122,13 +141,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const user: AuthedUser | null = client.data.user;
     const { roomId } = payload || {};
-    if (!roomId) return;
+    if (typeof roomId !== 'string' || !roomId) return;
 
     const isAdmin = !!user && this.isAdminUser(user);
 
-    // Guests may only join their own room — prevents cross-room eavesdropping
-    if (!user) {
-      if (roomId !== client.data.guestId) return;
+    // Non-admins may ONLY join their server-assigned room (CHAT-1) —
+    // guests get their generated id, authed users get `user_<id>`. Cross-room
+    // joins are rejected, closing the room-hopping/spoofing hole.
+    const allowedRoom = client.data.roomId as string;
+    if (!isAdmin) {
+      if (roomId !== allowedRoom) return;
     }
 
     client.join(roomId);
@@ -176,13 +198,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const user: AuthedUser | null = client.data.user;
     const { roomId, content } = payload || {};
-    if (!roomId || !content) return;
+    if (typeof roomId !== 'string' || typeof content !== 'string') return;
+    const trimmed = content.trim();
+    if (!roomId || !trimmed) return;
 
-    // Guests may only send to their own room
-    if (!user && roomId !== client.data.guestId) return;
+    // Content bound so a single message cannot bloat memory (CHAT-3)
+    if (trimmed.length > 1000) return;
+
+    // Per-socket token bucket rate limit (CHAT-3)
+    if (this.isRateLimited(client.id)) return;
 
     const isAdmin = !!user && this.isAdminUser(user);
-    const senderId = user ? String(user.id) : client.data.guestId || 'guest';
+
+    // Non-admins may only send to their own server-assigned room (CHAT-1)
+    const allowedRoom = client.data.roomId as string;
+    if (!isAdmin && roomId !== allowedRoom) return;
+
+    const senderId = user ? String(user.id) : (client.data.guestId as string) || 'guest';
     const senderName = user
       ? isAdmin
         ? 'Support Agent'
@@ -193,7 +225,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       id: 'msg_' + Date.now(),
       senderId,
       senderName,
-      content,
+      content: trimmed,
       isAdmin,
       createdAt: new Date(),
     };
@@ -215,7 +247,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(roomId).emit('receive_message', message);
 
     if (!isAdmin) {
-      const lowerContent = content.toLowerCase().trim();
+      const lowerContent = trimmed.toLowerCase();
       let answerFound = false;
 
       for (const faq of FAQ_BOT_ANSWERS) {
@@ -247,11 +279,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           room.adminResponded = false;
           room.pendingAiTimeout = setTimeout(() => {
             if (!room.adminResponded) {
-              this.sendAiReply(roomId, content, senderId);
+              this.sendAiReply(roomId, trimmed, senderId);
             }
           }, 2000);
         } else {
-          this.sendAiReply(roomId, content, senderId);
+          this.sendAiReply(roomId, trimmed, senderId);
         }
       }
     }

@@ -3,6 +3,7 @@
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { api } from '@/lib/api';
 
 function CallbackHandler() {
   const router = useRouter();
@@ -12,28 +13,33 @@ function CallbackHandler() {
   const { hydrate } = useAuthStore();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const user = searchParams.get('user');
+    const code = searchParams.get('code');
 
-    if (token && user) {
+    if (!code) {
+      router.push(`/${locale}/auth/login`);
+      return;
+    }
+
+    (async () => {
       try {
-        const userData = JSON.parse(decodeURIComponent(user));
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
+        // Exchange the one-time code for a token server-side — never logs the JWT in the URL (H3)
+        const { data } = await api.post('/auth/oauth/exchange', { code });
+        const { access_token, user } = data;
+        if (!access_token || !user) throw new Error('Invalid exchange response');
+        localStorage.setItem('token', access_token);
+        localStorage.setItem('user', JSON.stringify(user));
         hydrate();
-        
-        if (userData.role === 'admin' || userData.role === 'super_admin') {
+
+        if (user.role === 'admin' || user.role === 'super_admin') {
           router.push(`/${locale}/admin/dashboard`);
         } else {
           router.push(`/${locale}`);
         }
       } catch (error) {
-        console.error('Failed to parse user data:', error);
+        console.error('OAuth exchange failed:', error);
         router.push(`/${locale}/auth/login`);
       }
-    } else {
-      router.push(`/${locale}/auth/login`);
-    }
+    })();
   }, [searchParams, router, hydrate, locale]);
 
   return (

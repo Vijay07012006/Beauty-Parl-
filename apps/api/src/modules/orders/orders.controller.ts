@@ -11,8 +11,11 @@ export class OrdersController {
   constructor(private ordersService: OrdersService) {}
 
   @Post()
-  async create(@Body() orderData: Partial<Order>): Promise<Order> {
-    return this.ordersService.create(orderData);
+  @UseGuards(OptionalJwtAuthGuard)
+  async create(@Request() req: any, @Body() orderData: any): Promise<Order> {
+    // userId is derived from the verified JWT — never from the request body (O1)
+    const userId = req.user?.id ? Number(req.user.id) : undefined;
+    return this.ordersService.create(orderData, userId);
   }
 
   @Get()

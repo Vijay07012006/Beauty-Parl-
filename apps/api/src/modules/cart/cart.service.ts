@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, In } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { Cart } from './cart.entity';
+import { Product } from '../products/product.entity';
 import { EmailService } from '../email/email.service';
 
 @Injectable()
@@ -10,11 +11,55 @@ export class CartService {
   constructor(
     @InjectRepository(Cart)
     private cartRepo: Repository<Cart>,
+    @InjectRepository(Product)
+    private productRepo: Repository<Product>,
     private emailService: EmailService,
   ) {}
 
+  /**
+   * Server-side cart item validation (P5): client prices/names/images are discarded —
+   * every item is re-resolved from the DB, quantities are clamped to stock & capped.
+   */
+  private async validateItems(items: any[]): Promise<any[]> {
+    if (!Array.isArray(items)) return [];
+
+    const qtyMap = new Map<number, number>();
+    for (const item of items) {
+      const pid = Number(item?.productId ?? item?.id);
+      const qty = Math.floor(Number(item?.quantity) || 1);
+      if (!Number.isInteger(pid) || pid <= 0 || qty <= 0) continue;
+      // cap per-product quantity at stock (resolved below) or 100
+      qtyMap.set(pid, (qtyMap.get(pid) || 0) + Math.min(qty, 100));
+    }
+
+    if (qtyMap.size === 0) return [];
+
+    const products = await this.productRepo.find({ where: { id: In([...qtyMap.keys()]) } });
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const validated: any[] = [];
+    for (const [pid, qty] of qtyMap.entries()) {
+      const product = productMap.get(pid);
+      if (!product) continue;
+      const stock = Number(product.stock);
+      const finalQty = !isNaN(stock) && stock < qty ? Math.max(1, stock) : qty;
+      validated.push({
+        productId: product.id,
+        name: product.name,
+        price: Number(product.price),
+        quantity: finalQty,
+        image: product.image,
+        maxStock: stock,
+      });
+    }
+    return validated;
+  }
+
   async syncCart(userId: number | undefined, email: string | undefined, items: any[]): Promise<Cart> {
-    if (items.length === 0) {
+    // Client-supplied prices/quantities/names are NEVER trusted — re-resolve from DB (P5)
+    const validatedItems = await this.validateItems(items);
+
+    if (validatedItems.length === 0) {
       const cart = await this.findActiveCart(userId, email);
       if (cart) {
         cart.items = [];
@@ -28,13 +73,13 @@ export class CartService {
       cart = this.cartRepo.create({
         userId,
         email,
-        items,
+        items: validatedItems,
         isAbandoned: true,
         reminderSent: false,
         followUpSent: false,
       });
     } else {
-      cart.items = items;
+      cart.items = validatedItems;
       cart.isAbandoned = true;
       cart.reminderSent = false;
       cart.followUpSent = false;

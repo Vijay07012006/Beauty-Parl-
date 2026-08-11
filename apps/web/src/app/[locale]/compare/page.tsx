@@ -20,26 +20,33 @@ function ComparePageContent() {
   const [differences, setDifferences] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
+  // Comparison list identity: authenticated users are scoped server-side by their
+  // JWT; guests get a dedicated, cryptographically-random session id (F4).
   const getSessionId = () => {
-    let id = localStorage.getItem('guest_chat_room_id');
+    const token = localStorage.getItem('token');
+    if (token) return undefined;
+
+    let id = localStorage.getItem('guest_compare_session_id');
     if (!id) {
       id = 'sess_' + (crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).substring(2, 11));
-      localStorage.setItem('guest_chat_room_id', id);
+      localStorage.setItem('guest_compare_session_id', id);
     }
     return id;
+  };
+
+  const getHeaders = () => {
+    const token = localStorage.getItem('token');
+    const sessionId = getSessionId();
+    return {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(sessionId ? { 'x-session-id': sessionId } : {}),
+    };
   };
 
   const fetchCompareData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const sessionId = getSessionId();
-      const headers = {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        'x-session-id': sessionId,
-      };
-
-      const res = await api.get('/comparison/compare', { headers });
+      const res = await api.get('/comparison/compare', { headers: getHeaders() });
       setProducts(res.data.products || []);
       setDifferences(res.data.differences || {});
     } catch (err) {
@@ -54,16 +61,9 @@ function ComparePageContent() {
     if (seedIds) {
       const idsArray = seedIds.split(',').map(Number).filter(Boolean);
       const seedList = async () => {
-        const token = localStorage.getItem('token');
-        const sessionId = getSessionId();
-        const headers = {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          'x-session-id': sessionId,
-        };
-
         try {
           for (const id of idsArray) {
-            await api.post(`/comparison/add/${id}`, {}, { headers });
+            await api.post(`/comparison/add/${id}`, {}, { headers: getHeaders() });
           }
           router.replace(`/${locale}/compare`);
         } catch (err) {
@@ -79,14 +79,7 @@ function ComparePageContent() {
 
   const handleRemove = async (productId: number) => {
     try {
-      const token = localStorage.getItem('token');
-      const sessionId = getSessionId();
-      const headers = {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        'x-session-id': sessionId,
-      };
-
-      await api.delete(`/comparison/remove/${productId}`, { headers });
+      await api.delete(`/comparison/remove/${productId}`, { headers: getHeaders() });
       toast.success('Product removed from comparison');
       fetchCompareData();
     } catch (err) {
@@ -96,14 +89,7 @@ function ComparePageContent() {
 
   const handleClear = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const sessionId = getSessionId();
-      const headers = {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        'x-session-id': sessionId,
-      };
-
-      await api.delete('/comparison/clear', { headers });
+      await api.delete('/comparison/clear', { headers: getHeaders() });
       toast.success('Comparison list cleared');
       setProducts([]);
       setDifferences({});

@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { EncryptionTransformer } from '../security/encryption.transformer';
+import { JsonEncryptionTransformer } from '../security/json-encryption.transformer';
 
 export enum UserRole {
   USER = 'user',
@@ -81,7 +82,7 @@ export class User {
   @Column({ name: 'two_factor_secret', nullable: true, transformer: new EncryptionTransformer() })
   twoFactorSecret?: string;
 
-  @Column({ name: 'two_factor_backup_codes', type: 'jsonb', nullable: true })
+  @Column({ name: 'two_factor_backup_codes', type: 'jsonb', nullable: true, transformer: new JsonEncryptionTransformer() })
   twoFactorBackupCodes?: string[];
 
   @Column({ nullable: true })

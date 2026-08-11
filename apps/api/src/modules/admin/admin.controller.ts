@@ -7,6 +7,7 @@ import { Roles } from '../auth/roles.decorator';
 import { User, UserRole, sanitizeUser } from '../auth/user.entity';
 import { Product } from '../products/product.entity';
 import { Order } from '../orders/order.entity';
+import { OrdersService } from '../orders/orders.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Controller('admin')
@@ -20,6 +21,7 @@ export class AdminController {
     private productRepo: Repository<Product>,
     @InjectRepository(Order)
     private orderRepo: Repository<Order>,
+    private ordersService: OrdersService,
     private auditLogsService: AuditLogsService,
   ) {}
 
@@ -48,41 +50,85 @@ export class AdminController {
 
   // Users Management
   @Get('users')
-  async getUsers(@Query('page') page = 1, @Query('limit') limit = 10) {
+  async getUsers(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const pageNum = Math.max(1, parseInt(page || '', 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit || '', 10) || 10));
     const [users, total] = await this.userRepo.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (pageNum - 1) * limitNum,
+      take: limitNum,
       order: { createdAt: 'DESC' },
     });
-    return { users: users.map((u) => sanitizeUser(u)), total, page, limit };
+    return { users: users.map((u) => sanitizeUser(u)), total, page: pageNum, limit: limitNum };
   }
 
   @Put('users/:id/role')
   async updateUserRole(@Param('id') id: number, @Body() body: { role: UserRole }, @Request() req: any) {
-    if (req.user && req.user.id === Number(id) && body.role !== UserRole.SUPER_ADMIN && body.role !== UserRole.ADMIN) {
-      throw new BadRequestException('You cannot revoke your own admin permissions.');
+    // Validate role is a real enum value (prevents arbitrary string injection)
+    const validRoles = Object.values(UserRole);
+    if (!validRoles.includes(body?.role)) {
+      throw new BadRequestException('Invalid role');
     }
-    await this.userRepo.update(id, { role: body.role });
+
+    const targetId = Number(id);
+    if (!Number.isInteger(targetId)) {
+      throw new BadRequestException('Invalid user id');
+    }
+
+    // No one may change their own role — blocks self-promotion to super_admin (C2)
+    if (req.user && req.user.id === targetId) {
+      throw new BadRequestException('You cannot change your own role.');
+    }
+
+    const actorRole: UserRole = req.user?.role;
+
+    // Only SUPER_ADMIN may grant ADMIN or SUPER_ADMIN
+    if ((body.role === UserRole.ADMIN || body.role === UserRole.SUPER_ADMIN) && actorRole !== UserRole.SUPER_ADMIN) {
+      throw new BadRequestException('Only super admins can grant admin roles');
+    }
+
+    // ADMIN cannot demote another admin/super admin; SUPER_ADMIN can manage anyone
+    const target = await this.userRepo.findOne({ where: { id: targetId } });
+    if (target && actorRole === UserRole.ADMIN && (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN)) {
+      throw new BadRequestException('Admins cannot modify other admin accounts');
+    }
+
+    await this.userRepo.update(targetId, { role: body.role });
     await this.auditLogsService.log('ADMIN_UPDATE_USER_ROLE', req.user?.email, req.user?.id, { targetUserId: id, newRole: body.role });
     return { success: true };
   }
 
   @Put('users/:id/status')
   async updateUserStatus(@Param('id') id: number, @Body() body: { isActive: boolean }, @Request() req: any) {
-    if (req.user && req.user.id === Number(id) && body.isActive === false) {
-      throw new BadRequestException('You cannot deactivate your own account.');
+    const targetId = Number(id);
+    if (!Number.isInteger(targetId)) {
+      throw new BadRequestException('Invalid user id');
     }
-    await this.userRepo.update(id, { isActive: body.isActive });
-    await this.auditLogsService.log('ADMIN_UPDATE_USER_STATUS', req.user?.email, req.user?.id, { targetUserId: id, isActive: body.isActive });
+    if (req.user && req.user.id === targetId) {
+      throw new BadRequestException('You cannot change your own account status.');
+    }
+    const target = await this.userRepo.findOne({ where: { id: targetId } });
+    if (req.user?.role === UserRole.ADMIN && target && (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN)) {
+      throw new BadRequestException('Admins cannot modify other admin accounts');
+    }
+    await this.userRepo.update(targetId, { isActive: !!body.isActive });
+    await this.auditLogsService.log('ADMIN_UPDATE_USER_STATUS', req.user?.email, req.user?.id, { targetUserId: id, isActive: !!body.isActive });
     return { success: true };
   }
 
   @Delete('users/:id')
   async deleteUser(@Param('id') id: number, @Request() req: any) {
-    if (req.user && req.user.id === Number(id)) {
+    const targetId = Number(id);
+    if (!Number.isInteger(targetId)) {
+      throw new BadRequestException('Invalid user id');
+    }
+    if (req.user && req.user.id === targetId) {
       throw new BadRequestException('You cannot delete your own account.');
     }
-    await this.userRepo.delete(id);
+    const target = await this.userRepo.findOne({ where: { id: targetId } });
+    if (req.user?.role === UserRole.ADMIN && target && (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN)) {
+      throw new BadRequestException('Admins cannot delete other admin accounts');
+    }
+    await this.userRepo.delete(targetId);
     await this.auditLogsService.log('ADMIN_DELETE_USER', req.user?.email, req.user?.id, { targetUserId: id });
     return { success: true };
   }
@@ -112,18 +158,28 @@ export class AdminController {
 
   // Orders Management
   @Get('orders')
-  async getOrders(@Query('page') page = 1, @Query('limit') limit = 10) {
+  async getOrders(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const pageNum = Math.max(1, parseInt(page || '', 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit || '', 10) || 10));
     const [orders, total] = await this.orderRepo.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (pageNum - 1) * limitNum,
+      take: limitNum,
       order: { createdAt: 'DESC' },
     });
-    return { orders, total, page, limit };
+    return { orders, total, page: pageNum, limit: limitNum };
   }
 
   @Put('orders/:id/status')
   async updateOrderStatus(@Param('id') id: number, @Body() body: { status: any }, @Request() req: any) {
-    await this.orderRepo.update(id, { status: body.status });
+    const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!allowedStatuses.includes(body?.status)) {
+      throw new BadRequestException(`Invalid status: ${body?.status}`);
+    }
+    // Route through OrdersService so cancelled orders restore stock
+    const order = await this.ordersService.update(id, { status: body.status });
+    if (!order) {
+      throw new BadRequestException('Order not found');
+    }
     await this.auditLogsService.log('ADMIN_UPDATE_ORDER_STATUS', req.user?.email, req.user?.id, { orderId: id, newStatus: body.status });
     return { success: true };
   }

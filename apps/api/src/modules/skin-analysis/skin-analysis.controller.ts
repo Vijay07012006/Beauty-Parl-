@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Headers, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { SkinAnalysisService } from './skin-analysis.service';
 
@@ -16,6 +16,14 @@ export class SkinAnalysisController {
   ) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('Authentication token missing or invalid');
+    }
+
+    // imageUrl is required, a string, and bounded (entity column is varchar(500))
+    if (typeof body?.imageUrl !== 'string' || body.imageUrl.length === 0) {
+      throw new BadRequestException('imageUrl is required');
+    }
+    if (body.imageUrl.length > 500) {
+      throw new BadRequestException('imageUrl is too long');
     }
 
     let userId: number;

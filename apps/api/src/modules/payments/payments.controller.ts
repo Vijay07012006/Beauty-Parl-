@@ -44,14 +44,14 @@ export class PaymentsController {
 
   @Post('create-stripe-session')
   @HttpCode(HttpStatus.OK)
-  async createStripeSession(@Body() body: { amount: number; orderId: number; currency?: string }) {
+  async createStripeSession(@Body() body: { amount: number; orderId: number }) {
     if (!body.amount || body.amount <= 0) {
       throw new BadRequestException('Amount must be a positive number');
     }
     if (!body.orderId) {
       throw new BadRequestException('OrderId is required');
     }
-    return this.stripeService.createCheckoutSession(body.amount, body.orderId, body.currency);
+    return this.stripeService.createCheckoutSession(body.amount, body.orderId);
   }
 
   @Post('stripe-webhook')

@@ -4,11 +4,13 @@ import { AdminController } from './admin.controller';
 import { User } from '../auth/user.entity';
 import { Product } from '../products/product.entity';
 import { Order } from '../orders/order.entity';
+import { OrdersModule } from '../orders/orders.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Product, Order]),
+    OrdersModule,
     AuditLogsModule,
   ],
   controllers: [AdminController],

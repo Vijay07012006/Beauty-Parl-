@@ -30,14 +30,16 @@ export class OtpController {
     if (!body.email) {
       throw new BadRequestException('Email is required');
     }
-    const user = await this.userRepo.findOne({ where: { email: body.email } });
-    if (!user) {
-      throw new BadRequestException('User not found');
+    // Do NOT reveal whether the account exists — generic success (M6)
+    try {
+      // resendOtp already generates AND emails the OTP (handles the 60s cooldown)
+      await this.otpService.resendOtp(body.email.trim().toLowerCase());
+    } catch (err: any) {
+      if (err?.response?.message?.includes('wait')) {
+        throw err; // still surface the cooldown to the legit user
+      }
+      // swallow unknown-email / send errors — keep enumeration closed
     }
-    const otp = await this.otpService.resendOtp(body.email);
-    setImmediate(() => {
-      this.otpService.sendOtpViaEmail(body.email, otp).catch(() => {});
-    });
-    return { success: true, message: 'OTP resent successfully' };
+    return { success: true, message: 'If this account exists, a new OTP has been sent' };
   }
 }

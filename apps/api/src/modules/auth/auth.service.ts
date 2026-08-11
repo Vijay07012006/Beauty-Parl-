@@ -16,6 +16,27 @@ import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Injectable()
 export class AuthService {
+  // One-time OAuth exchange codes — the JWT is never placed in a URL query string (H3)
+  private oauthCodes = new Map<string, { token: string; user: any; expiresAt: number }>();
+
+  issueOauthCode(token: string, user: any): string {
+    const code = crypto.randomBytes(24).toString('hex');
+    this.oauthCodes.set(code, { token, user, expiresAt: Date.now() + 60_000 });
+    return code;
+  }
+
+  async exchangeOauthCode(code: string): Promise<{ access_token: string; user: any }> {
+    if (!code) {
+      throw new BadRequestException('Invalid exchange code');
+    }
+    const entry = this.oauthCodes.get(code);
+    if (!entry || entry.expiresAt < Date.now()) {
+      throw new BadRequestException('Invalid or expired exchange code');
+    }
+    this.oauthCodes.delete(code); // single-use
+    return { access_token: entry.token, user: entry.user };
+  }
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -81,7 +102,11 @@ export class AuthService {
   }
 
   async register(registerDto: any) {
-    const { email, password, name, phone, referralCode } = registerDto;
+    const email = typeof registerDto?.email === 'string' ? registerDto.email.trim().toLowerCase() : '';
+    const password = typeof registerDto?.password === 'string' ? registerDto.password : '';
+    const name = registerDto?.name;
+    const phone = registerDto?.phone;
+    const referralCode = registerDto?.referralCode;
 
     // âœ… Fast validation (no database calls)
     if (!email || !password || !name) {
@@ -90,18 +115,22 @@ export class AuthService {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new BadRequestException('Invalid email format');
     }
-    if (password.length < 6) {
-      throw new BadRequestException('Password must be at least 6 characters');
+    // OWASP 2026 recommendation: minimum 8 chars with complexity
+    if (password.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters');
+    }
+    if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      throw new BadRequestException('Password must contain both letters and numbers');
     }
 
-    // âœ… Check if user exists (indexed query)
+    // âœ… Check if user exists (indexed query) — generic error to prevent account enumeration (M6)
     const existing = await this.userRepository.findOne({ where: { email } });
     if (existing) {
-      throw new BadRequestException('Email already registered');
+      throw new BadRequestException('Registration failed. Please try again.');
     }
 
-    // âœ… Fast bcrypt (8 rounds instead of 10 for speed)
-    const hashedPassword = await bcrypt.hash(password, 8);
+    // OWASP recommends >= 10 rounds for bcrypt in 2026
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // âœ… Create user (single query)
     const user = this.userRepository.create({
@@ -146,8 +175,16 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.userRepository.findOne({ where: { email } });
+    // Reject empty/missing values BEFORE they reach the where clause (TypeORM silently
+    // drops undefined/null where-values, which would otherwise auth against the first user)
+    if (!email || !password) {
+      return null;
+    }
+    const user = await this.userRepository.findOne({ where: { email: email.trim().toLowerCase() } });
     if (!user) {
+      return null;
+    }
+    if (user.isActive === false) {
       return null;
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -158,6 +195,9 @@ export class AuthService {
   }
 
   async login(user: any, metadata?: { ipAddress?: string; userAgent?: string }) {
+    if (user.isActive === false) {
+      throw new UnauthorizedException('Account has been deactivated');
+    }
     if (!user.isVerified) {
       return {
         requiresOtp: true,
@@ -218,11 +258,11 @@ export class AuthService {
 
       await this.auditLogsService.log('FORGOT_PASSWORD_REQUESTED', email, user.id);
 
-      // âœ… Generate reset token
+      // âœ… Generate reset token — only the SHA-256 hash is stored at rest (M1)
       const resetToken = crypto.randomBytes(32).toString('hex');
       const expiry = new Date(Date.now() + 3600000); // 1 hour
 
-      await this.userRepository.update(user.id, { resetToken, resetTokenExpiry: expiry });
+      await this.userRepository.update(user.id, { resetToken: this.hashToken(resetToken), resetTokenExpiry: expiry });
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
@@ -245,7 +285,7 @@ export class AuthService {
 
   async resetPassword(token: string, newPassword: string) {
     const user = await this.userRepository.findOne({ 
-      where: { resetToken: token },
+      where: { resetToken: this.hashToken(token) },
     });
     
     if (!user) {
@@ -256,12 +296,19 @@ export class AuthService {
       throw new BadRequestException('Reset token has expired');
     }
     
+    if (typeof newPassword !== 'string' || newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      throw new BadRequestException('Password must be at least 8 characters and contain both letters and numbers');
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.userRepository.update(user.id, { 
       password: hashedPassword,
       resetToken: undefined,
       resetTokenExpiry: undefined,
     });
+
+    // Revoke all existing sessions — password reset must invalidate previously issued JWTs
+    await this.userSessionRepository.delete({ userId: user.id });
 
     await this.auditLogsService.log('PASSWORD_RESET', user.email, user.id);
     
@@ -279,7 +326,7 @@ export class AuthService {
     return sanitizeUser(user);
   }
 
-  async changePassword(userId: number, currentPassword: string, newPassword: string) {
+  async changePassword(userId: number, currentPassword: string, newPassword: string, currentSessionId?: number) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error('User not found');
@@ -290,8 +337,22 @@ export class AuthService {
       throw new BadRequestException('Current password is incorrect.');
     }
 
+    if (typeof newPassword !== 'string' || newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      throw new BadRequestException('Password must be at least 8 characters and contain both letters and numbers');
+    }
+
     user.password = await bcrypt.hash(newPassword, 10);
     await this.userRepository.save(user);
+
+    // Revoke all sessions except the current one so other devices log out
+    const qb = this.userSessionRepository.createQueryBuilder()
+      .delete()
+      .where('"userId" = :userId', { userId });
+    if (currentSessionId) {
+      qb.andWhere('id != :sessionId', { sessionId: currentSessionId });
+    }
+    await qb.execute();
+
     await this.auditLogsService.log('PASSWORD_CHANGED', user.email, user.id);
     return { success: true, message: 'Password changed successfully' };
   }
@@ -439,6 +500,12 @@ export class AuthService {
     const qrCode = await QRCode.toDataURL(otpAuthUrl);
     const backupCodes = this.generateBackupCodes();
 
+    // Persist the secret + backup codes NOW (encrypted at rest) so "verify" can only
+    // pass against the secret we generated — the client can no longer inject its own secret (M3)
+    user.twoFactorSecret = secret;
+    user.twoFactorBackupCodes = backupCodes;
+    await this.userRepository.save(user);
+
     await this.auditLogsService.log('TWO_FACTOR_GENERATED', user.email, user.id);
 
     return {
@@ -451,8 +518,6 @@ export class AuthService {
   async verifyAndEnableTwoFactor(
     userId: number,
     token: string,
-    secret: string,
-    backupCodes: string[],
   ) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -461,14 +526,15 @@ export class AuthService {
     if (user.isTwoFactorEnabled) {
       throw new BadRequestException('2FA is already enabled');
     }
+    if (!user.twoFactorSecret) {
+      throw new BadRequestException('No pending 2FA secret found. Generate one first.');
+    }
 
-    const isValid = verifySync({ token, secret }).valid;
+    const isValid = verifySync({ token, secret: user.twoFactorSecret }).valid;
     if (!isValid) {
       throw new BadRequestException('Invalid 2FA token');
     }
 
-    user.twoFactorSecret = secret;
-    user.twoFactorBackupCodes = backupCodes;
     user.isTwoFactorEnabled = true;
     await this.userRepository.save(user);
 

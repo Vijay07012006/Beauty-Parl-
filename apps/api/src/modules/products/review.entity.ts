@@ -1,11 +1,17 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Unique, Index } from 'typeorm';
 import { Product } from './product.entity';
 
 @Entity('product_reviews')
+@Unique(['userId', 'productId']) // one review per user per product (P1)
 export class ProductReview {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Index()
+  @Column({ nullable: true })
+  userId!: number;
+
+  @Index()
   @Column()
   productId!: number;
 

@@ -5,13 +5,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionsController } from './subscriptions.controller';
 import { Subscription } from './subscription.entity';
+import { CronLock } from './cron-lock.entity';
 import { Product } from '../products/product.entity';
 import { Order } from '../orders/order.entity';
 import { Address } from '../addresses/address.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Subscription, Product, Order, Address]),
+    TypeOrmModule.forFeature([Subscription, Product, Order, Address, CronLock]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
