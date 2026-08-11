@@ -63,7 +63,10 @@ export default function AdminChatPage() {
     if (!isAdminUser) return;
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://beauty-parl-api.onrender.com';
-    const newSocket = io(baseUrl);
+    const token = localStorage.getItem('token');
+    const newSocket = io(baseUrl, {
+      auth: { token: token || undefined },
+    });
     setSocket(newSocket);
 
     // Get active rooms list

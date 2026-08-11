@@ -1,11 +1,10 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query, Request, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../auth/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../auth/user.entity';
+import { User, UserRole, sanitizeUser } from '../auth/user.entity';
 import { Product } from '../products/product.entity';
 import { Order } from '../orders/order.entity';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
@@ -55,7 +54,7 @@ export class AdminController {
       take: limit,
       order: { createdAt: 'DESC' },
     });
-    return { users: users.map(({ password, ...u }) => u), total, page, limit };
+    return { users: users.map((u) => sanitizeUser(u)), total, page, limit };
   }
 
   @Put('users/:id/role')

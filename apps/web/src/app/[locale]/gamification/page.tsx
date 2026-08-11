@@ -8,7 +8,7 @@ import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Trophy, Shield, Award, Sparkles, User, RefreshCw, Zap } from 'lucide-react';
+import { Trophy, Shield, Award, Sparkles, User, RefreshCw } from 'lucide-react';
 
 interface Achievement {
   id: number;
@@ -59,21 +59,6 @@ export default function GamificationPage() {
       console.error('Failed to load gamification stats:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleTriggerAction = async (actionType: string) => {
-    try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.post(`/gamification/trigger/${actionType}`, {}, { headers });
-      if (res.data.unlocked) {
-        toast.success(`🎉 Achievement Unlocked: ${res.data.unlocked.name}! Earned ${res.data.unlocked.pointsReward} points.`);
-      } else {
-        toast.info('Action performed! Achievement was already unlocked.');
-      }
-      fetchData();
-    } catch {
-      toast.error('Failed to trigger mock action');
     }
   };
 
@@ -138,35 +123,15 @@ export default function GamificationPage() {
               </div>
             </div>
 
-            {/* Quests Testing Actions */}
+            {/* Achievements earned automatically as you shop */}
             <div className="bg-neutral-900 text-white p-6 rounded-3xl flex flex-col justify-between space-y-4">
               <div className="space-y-1">
                 <h3 className="font-bold text-sm flex items-center gap-1.5 uppercase tracking-wide text-primary">
-                  <Zap className="w-4 h-4" /> Quest Testing Box
+                  <Award className="w-4 h-4" /> How It Works
                 </h3>
                 <p className="text-[10px] text-white/55 leading-relaxed">
-                  Trigger mock activities directly to unlock pending achievement badges instantly.
+                  Achievements unlock automatically when you shop, review products, refer friends, and engage with Beauty Parlé.
                 </p>
-              </div>
-              <div className="space-y-2">
-                <button
-                  onClick={() => handleTriggerAction('daily_visit')}
-                  className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-white hover:bg-white/10 transition cursor-pointer"
-                >
-                  🧪 Simulate Skin Quiz
-                </button>
-                <button
-                  onClick={() => handleTriggerAction('social_share')}
-                  className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-white hover:bg-white/10 transition cursor-pointer"
-                >
-                  📢 Simulate Social Share
-                </button>
-                <button
-                  onClick={() => handleTriggerAction('review')}
-                  className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-white hover:bg-white/10 transition cursor-pointer"
-                >
-                  ✍️ Simulate Product Review
-                </button>
               </div>
             </div>
           </div>

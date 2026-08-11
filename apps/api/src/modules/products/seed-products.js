@@ -1,6 +1,11 @@
 const { Client } = require('pg');
 
-const connectionString = 'postgresql://neondb_owner:npg_UvCBr62dQNXc@ep-fancy-forest-aoczkmqc-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require';
+// Never hardcode credentials. Read from environment variables instead.
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('❌ Missing DATABASE_URL environment variable. Set it before running the seed script.');
+  process.exit(1);
+}
 
 const categoriesData = [
   { name: 'Makeup', slug: 'makeup', desc: 'Lipsticks, foundations, mascara & more', img: '/images/categories/makeup.jpg' },

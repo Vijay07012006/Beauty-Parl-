@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HuggingFaceInference } from '@huggingface/inference';
+import { HfInference } from '@huggingface/inference';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -13,7 +13,7 @@ interface SessionContext {
 
 @Injectable()
 export class AiChatService {
-  private hf: HuggingFaceInference | null = null;
+  private hf: HfInference | null = null;
   private sessionHistory = new Map<string, SessionContext>();
   private readonly SYSTEM_PROMPT = `You are Beauty Parlé AI assistant, a friendly expert in cosmetics, skincare, haircare and beauty products. Answer customer questions concisely, help with product recommendations, skin concerns, ingredients, order status inquiries, loyalty program questions, and general beauty tips. Keep answers under 150 words. If user asks about order/cart/account without providing ID, politely ask for details.`;
   private readonly MODEL_NAME = 'microsoft/Phi-3-mini-4k-instruct';
@@ -22,7 +22,7 @@ export class AiChatService {
   constructor(private configService: ConfigService) {
     const apiKey = this.configService.get<string>('HUGGINGFACE_API_KEY');
     if (apiKey) {
-      this.hf = new HuggingFaceInference({ apiKey });
+      this.hf = new HfInference(apiKey);
     }
   }
 
@@ -60,7 +60,7 @@ export class AiChatService {
           modelUsed = this.MODEL_NAME;
         }
       } catch (err) {
-        console.warn('HuggingFace chatCompletion failed, falling back to rule-based:', err?.message || err);
+        console.warn('HuggingFace chatCompletion failed, falling back to rule-based:', (err as any)?.message || err);
       }
     }
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
+import * as crypto from 'crypto';
 import { RecentlyViewed } from './recently-viewed.entity';
 import { Product } from '../products/product.entity';
 import { RedisService } from '../redis/redis.service';
@@ -8,6 +9,8 @@ import { RedisService } from '../redis/redis.service';
 @Injectable()
 export class RecentlyViewedService {
   private memoryStore = new Map<string, string>();
+  // Random per-boot fallback key — anonymous users WITHOUT a session id never share each other's data
+  private readonly anonFallbackKey = `anon-${crypto.randomBytes(16).toString('hex')}`;
 
   constructor(
     @InjectRepository(RecentlyViewed)
@@ -19,7 +22,7 @@ export class RecentlyViewedService {
 
   private getCacheKey(userId?: number, sessionId?: string): string {
     if (userId) return `user:${userId}`;
-    return `session:${sessionId || 'default'}`;
+    return `session:${sessionId || this.anonFallbackKey}`;
   }
 
   async trackView(productId: number, userId?: number, sessionId?: string): Promise<void> {

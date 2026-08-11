@@ -25,6 +25,7 @@ export class SubscriptionsService {
     frequency: 'monthly' | 'quarterly' | 'bi-monthly',
     quantity: number,
     userId: number,
+    paymentMethod?: string,
   ): Promise<Subscription> {
     const nextDeliveryDate = this.calculateNextDelivery(new Date(), frequency);
     const sub = this.subRepo.create({
@@ -33,6 +34,7 @@ export class SubscriptionsService {
       frequency,
       quantity,
       nextDeliveryDate,
+      paymentMethod: paymentMethod || 'card',
       isActive: true,
     });
     return this.subRepo.save(sub);
@@ -117,7 +119,7 @@ export class SubscriptionsService {
           tax: 0,
           shipping: 0,
           total: totalAmount,
-          paymentMethod: 'cod',
+          paymentMethod: (sub.paymentMethod && sub.paymentMethod !== 'cod' ? sub.paymentMethod : 'razorpay') as any, // never COD
           status: 'processing',
           shippingAddress: addressPayload,
           paymentId: 'sub_auto_' + Math.random().toString(36).substring(2, 9),

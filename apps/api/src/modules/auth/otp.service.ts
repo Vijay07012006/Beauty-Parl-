@@ -1,8 +1,11 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Optional, BadRequestException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { EmailService } from '../email/email.service';
+import * as crypto from 'crypto';
 
 const otpStore = new Map<string, { otp: string; expiresAt: number }>();
+const resendCooldown = new Map<string, number>(); // email -> last sent timestamp (ms)
+const RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds
 
 @Injectable()
 export class OtpService {
@@ -12,7 +15,8 @@ export class OtpService {
   ) {}
 
   async generateAndStoreOtp(email: string): Promise<string> {
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Cryptographically secure OTP — NOT Math.random()
+    const otp = String(crypto.randomInt(100000, 1000000)); // 6 digits
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
     const key = `otp:${email}`;
 
@@ -30,7 +34,6 @@ export class OtpService {
       otpStore.set(email, { otp, expiresAt });
     }
 
-    console.log('🔐 OTP generated for', email, ':', otp);
     return otp;
   }
 
@@ -75,6 +78,12 @@ export class OtpService {
   }
 
   async resendOtp(email: string): Promise<string> {
+    const lastSent = resendCooldown.get(email) || 0;
+    if (Date.now() - lastSent < RESEND_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((RESEND_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
+      throw new BadRequestException(`Please wait ${waitSeconds}s before requesting another OTP`);
+    }
+    resendCooldown.set(email, Date.now());
     const otp = await this.generateAndStoreOtp(email);
     setImmediate(() => {
       this.emailService.sendOtpEmail(email, otp).catch(() => {});

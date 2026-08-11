@@ -27,7 +27,8 @@ export class PaymentsController {
       return res.status(HttpStatus.BAD_REQUEST).send('Missing signature header');
     }
 
-    const isValid = await this.razorpayService.verifyWebhook(body, signature);
+    // Verify against the RAW body — re-serializing the parsed JSON would break the signature (Fix 15)
+    const isValid = await this.razorpayService.verifyWebhook(req.rawBody, signature);
     if (!isValid) {
       return res.status(HttpStatus.BAD_REQUEST).send('Invalid signature');
     }

@@ -45,6 +45,16 @@ export class EmailService {
     return email;
   }
 
+  // ✅ Escape user-controlled strings before interpolating into HTML (prevents email HTML injection)
+  private escapeHtml(value: any): string {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // ✅ Diagnostic test endpoint
   async sendTestEmail(to: string) {
     console.log(`📧 Sending test email to: ${to}`);
@@ -100,7 +110,7 @@ export class EmailService {
             <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
           </div>
           <div style="background: white; padding: 24px; border-radius: 16px;">
-            <h2 style="color: #4A1A2C; font-size: 22px; margin: 0 0 8px 0;">Hello ${name}! 👋</h2>
+            <h2 style="color: #4A1A2C; font-size: 22px; margin: 0 0 8px 0;">Hello ${this.escapeHtml(name)}! 👋</h2>
             <p style="color: #2D1B2E; font-size: 16px; margin: 0 0 16px 0;">Thank you for joining Beauty Parlé. We're so excited to have you!</p>
             <p style="color: #6B4C5A; font-size: 14px; margin: 0 0 16px 0;">Discover premium cosmetics, book professional makeup services, and embrace beauty that understands you.</p>
             <div style="margin: 20px 0; text-align: center;">
@@ -148,7 +158,7 @@ export class EmailService {
     }
 
     const itemsHtml = order.items.map((i: any) =>
-      `<tr><td style="padding: 8px 0; border-bottom: 1px solid #FDF0F0;">${i.name}</td><td style="padding: 8px 0; text-align: center;">${i.quantity}</td><td style="padding: 8px 0; text-align: right;">$${Number(i.price).toFixed(2)}</td></tr>`
+      `<tr><td style="padding: 8px 0; border-bottom: 1px solid #FDF0F0;">${this.escapeHtml(i.name)}</td><td style="padding: 8px 0; text-align: center;">${this.escapeHtml(i.quantity)}</td><td style="padding: 8px 0; text-align: right;">$${Number(i.price).toFixed(2)}</td></tr>`
     ).join('');
 
     const email = this.buildEmail(
@@ -338,10 +348,10 @@ export class EmailService {
       .map(
         (item: any) => `
         <div style="display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #FDF0F0;">
-          <img src="${item.image || ''}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 16px;" />
+          <img src="${this.escapeHtml(item.image)}" alt="${this.escapeHtml(item.name)}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 16px;" />
           <div style="flex-grow: 1;">
-            <p style="margin: 0; font-weight: 600; color: #2D1B2E; font-size: 14px;">${item.name}</p>
-            <p style="margin: 4px 0 0 0; color: #6B4C5A; font-size: 12px;">Qty: ${item.quantity} | Rs. ${item.price}</p>
+            <p style="margin: 0; font-weight: 600; color: #2D1B2E; font-size: 14px;">${this.escapeHtml(item.name)}</p>
+            <p style="margin: 4px 0 0 0; color: #6B4C5A; font-size: 12px;">Qty: ${this.escapeHtml(item.quantity)} | Rs. ${this.escapeHtml(item.price)}</p>
           </div>
         </div>
       `,
@@ -352,7 +362,7 @@ export class EmailService {
       ? `
         <div style="background: #FDF0F0; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;">
           <p style="margin: 0 0 8px 0; color: #4A1A2C; font-weight: bold; font-size: 16px;">🎁 Special Offer for You!</p>
-          <p style="margin: 0; color: #6B4C5A; font-size: 14px;">Use code <strong style="color: #E8A0BF; font-size: 18px;">${discountCode}</strong> at checkout to get 10% off!</p>
+          <p style="margin: 0; color: #6B4C5A; font-size: 14px;">Use code <strong style="color: #E8A0BF; font-size: 18px;">${this.escapeHtml(discountCode)}</strong> at checkout to get 10% off!</p>
         </div>
       `
       : '';
@@ -383,13 +393,15 @@ export class EmailService {
 
   async sendWishlistAlertEmail(to: string, product: any, alertType: 'price_drop' | 'back_in_stock', priceThreshold?: number) {
     const isPriceDrop = alertType === 'price_drop';
+    const safeName = this.escapeHtml(product.name);
+    const safeImage = this.escapeHtml(product.image);
     const subject = isPriceDrop
-      ? `📉 Price Drop Alert: ${product.name} is now Rs. ${Number(product.price).toFixed(2)}!`
-      : `✨ Back in Stock Alert: ${product.name} is now available!`;
+      ? `📉 Price Drop Alert: ${safeName} is now Rs. ${Number(product.price).toFixed(2)}!`
+      : `✨ Back in Stock Alert: ${safeName} is now available!`;
 
     const descriptionText = isPriceDrop
-      ? `Great news! The price of <strong>${product.name}</strong> has dropped below your threshold of Rs. ${Number(priceThreshold).toFixed(2)}. It is now available for just <strong>Rs. ${Number(product.price).toFixed(2)}</strong>.`
-      : `Great news! <strong>${product.name}</strong> is back in stock and ready to order. Grab yours before it runs out again!`;
+      ? `Great news! The price of <strong>${safeName}</strong> has dropped below your threshold of Rs. ${Number(priceThreshold).toFixed(2)}. It is now available for just <strong>Rs. ${Number(product.price).toFixed(2)}</strong>.`
+      : `Great news! <strong>${safeName}</strong> is back in stock and ready to order. Grab yours before it runs out again!`;
 
     const email = this.buildEmail(
       to,
@@ -402,9 +414,9 @@ export class EmailService {
           <div style="background: white; padding: 24px; border-radius: 16px; text-align: center;">
             <h2 style="color: #4A1A2C; font-size: 20px; margin-top: 0;">${isPriceDrop ? '📉 Price Dropped!' : '✨ Back in Stock!'}</h2>
             <div style="margin: 20px 0;">
-              <img src="${product.image || ''}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px;" />
+              <img src="${safeImage}" alt="${safeName}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px;" />
             </div>
-            <h3 style="color: #2D1B2E; font-size: 18px; margin: 10px 0;">${product.name}</h3>
+            <h3 style="color: #2D1B2E; font-size: 18px; margin: 10px 0;">${safeName}</h3>
             <p style="color: #6B4C5A; font-size: 14px; line-height: 1.6;">
               ${descriptionText}
             </p>

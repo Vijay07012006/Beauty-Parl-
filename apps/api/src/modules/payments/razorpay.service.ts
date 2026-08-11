@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -35,18 +35,27 @@ export class RazorpayService {
     if (!this.razorpay) {
       throw new InternalServerErrorException('Razorpay service is not configured. Payments are disabled.');
     }
+    if (!orderId) {
+      throw new BadRequestException('Order ID is required to create a payment order');
+    }
+    // Server-side: verify the order exists and the amount matches the order total (prevents price tampering)
+    const dbOrder = await this.orderRepo.findOne({ where: { id: orderId } });
+    if (!dbOrder) {
+      throw new BadRequestException(`Order with ID ${orderId} not found`);
+    }
+    if (Math.abs(Number(dbOrder.total) - Number(amount)) > 0.01) {
+      throw new BadRequestException('Amount does not match the order total');
+    }
     try {
       const options = {
-        amount: Math.round(amount * 100), // paise
+        amount: Math.round(Number(dbOrder.total) * 100), // paise
         currency,
-        receipt: `receipt_order_${orderId || Date.now()}`,
+        receipt: `receipt_order_${orderId}`,
       };
       const order = await this.razorpay.orders.create(options);
 
       // Save the generated razorpayOrderId in the database order record
-      if (orderId) {
-        await this.orderRepo.update(orderId, { razorpayOrderId: order.id });
-      }
+      await this.orderRepo.update(orderId, { razorpayOrderId: order.id });
 
       return {
         id: order.id,
@@ -59,12 +68,12 @@ export class RazorpayService {
     }
   }
 
-  // Verify webhook signature
-  async verifyWebhook(body: any, signature: string): Promise<boolean> {
+  // Verify webhook signature against the RAW request body
+  async verifyWebhook(body: Buffer | string, signature: string): Promise<boolean> {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || this.configService.get<string>('razorpay.keySecret') || '';
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
-      .update(JSON.stringify(body))
+      .update(body)
       .digest('hex');
     return expectedSignature === signature;
   }
@@ -88,6 +97,15 @@ export class RazorpayService {
 
     if (order.status === 'paid') {
       console.log(`[Webhook] Order #${order.id} is already paid. Skipping.`);
+      return;
+    }
+
+    // Server-side: verify the paid amount matches the order total (amount is in paise)
+    const expectedAmountPaise = Math.round(Number(order.total) * 100);
+    if (payment.amount !== expectedAmountPaise) {
+      console.warn(
+        `[Webhook] Amount mismatch for order #${order.id}: expected ${expectedAmountPaise} paise, received ${payment.amount} paise. Skipping.`,
+      );
       return;
     }
 

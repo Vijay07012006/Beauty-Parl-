@@ -1,13 +1,13 @@
-import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException, NotFoundException, ForbiddenException } from '@nestjs/common';
+﻿import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import * as otplib from 'otplib';
+import { generateSecret, generateURI, verifySync } from 'otplib';
 import * as QRCode from 'qrcode';
-import { User, UserRole } from './user.entity';
+import { User, UserRole, sanitizeUser } from './user.entity';
 import { UserSession } from './user-session.entity';
 import { EmailService } from '../email/email.service';
 import { OtpService } from './otp.service';
@@ -83,7 +83,7 @@ export class AuthService {
   async register(registerDto: any) {
     const { email, password, name, phone, referralCode } = registerDto;
 
-    // ✅ Fast validation (no database calls)
+    // âœ… Fast validation (no database calls)
     if (!email || !password || !name) {
       throw new BadRequestException('All fields are required');
     }
@@ -94,16 +94,16 @@ export class AuthService {
       throw new BadRequestException('Password must be at least 6 characters');
     }
 
-    // ✅ Check if user exists (indexed query)
+    // âœ… Check if user exists (indexed query)
     const existing = await this.userRepository.findOne({ where: { email } });
     if (existing) {
       throw new BadRequestException('Email already registered');
     }
 
-    // ✅ Fast bcrypt (8 rounds instead of 10 for speed)
+    // âœ… Fast bcrypt (8 rounds instead of 10 for speed)
     const hashedPassword = await bcrypt.hash(password, 8);
 
-    // ✅ Create user (single query)
+    // âœ… Create user (single query)
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
@@ -124,26 +124,25 @@ export class AuthService {
       }
     }
 
-    // ✅ Generate OTP (non-blocking, fast Redis)
+    // âœ… Generate OTP (non-blocking, fast Redis)
     let otp = '';
     try {
       otp = await this.otpService.generateAndStoreOtp(email);
-      console.log('📧 OTP for', email, ':', otp);
     } catch (err: any) {
-      console.log('⚠️ OTP generation failed:', err.message);
-      // Still return success — user can resend OTP later
+      console.log('âš ï¸ OTP generation failed:', err.message);
+      // Still return success â€” user can resend OTP later
     }
 
-    // ✅ Send OTP via email (non-blocking)
+    // âœ… Send OTP via email (non-blocking)
     if (otp) {
       setImmediate(() => {
         this.emailService.sendOtpEmail(email, otp).catch(() => {});
       });
     }
 
-    const { password: _, ...result } = user;
+    const result = sanitizeUser(user);
     await this.auditLogsService.log('USER_REGISTERED', email, user.id);
-    return { success: true, user: result, otp };
+    return { success: true, user: result };
   }
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -208,18 +207,18 @@ export class AuthService {
 
   async forgotPassword(email: string) {
     try {
-      // ✅ Find user
+      // âœ… Find user
       const user = await this.userRepository.findOne({ where: { email } });
       if (!user) {
-        // ✅ Security: Don't reveal if user exists
-        console.log(`🔍 Forgot password attempt for: ${email} (not found)`);
+        // âœ… Security: Don't reveal if user exists
+        console.log(`ðŸ” Forgot password attempt for: ${email} (not found)`);
         await this.auditLogsService.log('FORGOT_PASSWORD_ATTEMPT_INVALID', email);
         return { success: true, message: 'If this email exists, a reset link has been sent' };
       }
 
       await this.auditLogsService.log('FORGOT_PASSWORD_REQUESTED', email, user.id);
 
-      // ✅ Generate reset token
+      // âœ… Generate reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
       const expiry = new Date(Date.now() + 3600000); // 1 hour
 
@@ -228,23 +227,18 @@ export class AuthService {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
 
-      // ✅ ALWAYS PRINT RESET LINK IN CONSOLE (Fallback for email failures)
-      console.log(`🔗 RESET LINK: ${resetLink}`);
-      console.log(`📧 Email: ${email}`);
-
-      // ✅ Try sending email (non-blocking)
+      // Try sending email (non-blocking)
       try {
         await this.emailService.sendPasswordResetEmail(email, resetToken);
-        console.log(`✅ Email sent to ${email}`);
+        console.log(`âœ… Password reset email sent to ${email}`);
       } catch (emailError: any) {
-        console.log(`⚠️ Email failed: ${emailError.message}`);
-        console.log(`🔗 Use this link: ${resetLink}`);
+        console.log(`âš ï¸ Password reset email failed for ${email}: ${emailError.message}`);
       }
 
       return { success: true, message: 'If this email exists, a reset link has been sent' };
     } catch (error: any) {
-      console.error('❌ Forgot password error:', error.message);
-      // ✅ Always return success (security)
+      console.error('âŒ Forgot password error:', error.message);
+      // âœ… Always return success (security)
       return { success: true, message: 'If this email exists, a reset link has been sent' };
     }
   }
@@ -282,8 +276,7 @@ export class AuthService {
     await this.userRepository.update(userId, updateData);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
-    const { password, ...result } = user;
-    return result;
+    return sanitizeUser(user);
   }
 
   async changePassword(userId: number, currentPassword: string, newPassword: string) {
@@ -440,9 +433,9 @@ export class AuthService {
       throw new BadRequestException('2FA is already enabled');
     }
 
-    const secret = otplib.authenticator.generateSecret();
+    const secret = generateSecret();
     const appName = process.env.APP_NAME || 'Beauty Parle';
-    const otpAuthUrl = otplib.authenticator.keyuri(user.email, appName, secret);
+    const otpAuthUrl = generateURI({ strategy: 'totp', issuer: appName, label: user.email, secret });
     const qrCode = await QRCode.toDataURL(otpAuthUrl);
     const backupCodes = this.generateBackupCodes();
 
@@ -469,7 +462,7 @@ export class AuthService {
       throw new BadRequestException('2FA is already enabled');
     }
 
-    const isValid = otplib.authenticator.verify({ token, secret });
+    const isValid = verifySync({ token, secret }).valid;
     if (!isValid) {
       throw new BadRequestException('Invalid 2FA token');
     }
@@ -524,7 +517,7 @@ export class AuthService {
 
     if (user.twoFactorSecret) {
       try {
-        verified = otplib.authenticator.verify({ token, secret: user.twoFactorSecret });
+        verified = verifySync({ token, secret: user.twoFactorSecret }).valid;
       } catch {
         verified = false;
       }

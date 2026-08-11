@@ -7,6 +7,22 @@ export enum UserRole {
   SUPER_ADMIN = 'super_admin',
 }
 
+/**
+ * Removes sensitive/internal fields before sending a user entity to the client.
+ */
+export function sanitizeUser(user: any): any {
+  if (!user || typeof user !== 'object') return user;
+  const {
+    password,
+    resetToken,
+    resetTokenExpiry,
+    twoFactorSecret,
+    twoFactorBackupCodes,
+    ...safe
+  } = user;
+  return safe;
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()

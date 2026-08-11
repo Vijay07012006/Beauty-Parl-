@@ -2,11 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
+import * as crypto from 'crypto';
 import { Product } from '../products/product.entity';
 
 @Injectable()
 export class ComparisonService {
   private memoryStore = new Map<string, string>();
+  // Random per-boot fallback key — anonymous users WITHOUT a session id never share each other's data
+  private readonly anonFallbackKey = `anon-${crypto.randomBytes(16).toString('hex')}`;
 
   constructor(
     private readonly redis: RedisService,
@@ -16,7 +19,7 @@ export class ComparisonService {
 
   private getStoreKey(userId?: number, sessionId?: string): string {
     if (userId) return `user:${userId}`;
-    return `session:${sessionId || 'default'}`;
+    return `session:${sessionId || this.anonFallbackKey}`;
   }
 
   async add(productId: number, userId?: number, sessionId?: string): Promise<number[]> {

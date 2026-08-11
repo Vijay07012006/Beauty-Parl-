@@ -10,17 +10,30 @@ export class AddressesService {
     private addressRepo: Repository<Address>,
   ) {}
 
+  // Whitelist user-controlled address fields — blocks mass-assignment of id/userId/etc.
+  private sanitizeInput(data: Record<string, any>): Partial<Address> {
+    const allowed = ['name', 'phone', 'address', 'city', 'state', 'pincode', 'isDefault'];
+    const clean: Record<string, any> = {};
+    for (const key of allowed) {
+      if (data?.[key] !== undefined) {
+        clean[key] = data[key];
+      }
+    }
+    return clean as Partial<Address>;
+  }
+
   async createAddress(userId: number, data: Partial<Address>) {
+    const clean = this.sanitizeInput(data);
     const count = await this.addressRepo.count({ where: { userId } });
     if (count === 0) {
-      data.isDefault = true;
+      clean.isDefault = true;
     }
 
-    if (data.isDefault) {
+    if (clean.isDefault) {
       await this.addressRepo.update({ userId, isDefault: true }, { isDefault: false });
     }
 
-    const address = this.addressRepo.create({ ...data, userId });
+    const address = this.addressRepo.create({ ...clean, userId });
     await this.addressRepo.save(address);
     return address;
   }
@@ -42,12 +55,13 @@ export class AddressesService {
 
   async updateAddress(userId: number, addressId: number, data: Partial<Address>) {
     const address = await this.getAddress(userId, addressId);
-    
-    if (data.isDefault) {
+    const clean = this.sanitizeInput(data);
+
+    if (clean.isDefault) {
       await this.addressRepo.update({ userId, isDefault: true }, { isDefault: false });
     }
 
-    Object.assign(address, data);
+    Object.assign(address, clean);
     await this.addressRepo.save(address);
     return address;
   }

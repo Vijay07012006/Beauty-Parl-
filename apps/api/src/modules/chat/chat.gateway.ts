@@ -8,6 +8,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { JwtService } from '@nestjs/jwt';
 import { AiChatService } from '../ai-chat/ai-chat.service';
 
 const FAQ_BOT_ANSWERS = [
@@ -33,12 +34,20 @@ const FAQ_BOT_ANSWERS = [
   },
 ];
 
+const ADMIN_ROOM = 'admins_room';
+
 interface RoomState {
   guestEmail?: string;
   messages: any[];
   hasAdmin: boolean;
   adminResponded: boolean;
   pendingAiTimeout?: NodeJS.Timeout;
+}
+
+interface AuthedUser {
+  id: number;
+  email: string;
+  role: string;
 }
 
 @WebSocketGateway({
@@ -52,30 +61,84 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private activeRooms = new Map<string, RoomState>();
 
-  constructor(private readonly aiChatService: AiChatService) {}
+  constructor(
+    private readonly aiChatService: AiChatService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   handleConnection(client: Socket) {
-    console.log(`🔌 Client connected: ${client.id}`);
+    const user = this.authenticate(client);
+    if (!user) {
+      // Allow anonymous guests but bind them to their own generated room id
+      const guestId =
+        (client.handshake.auth?.guestId as string) ||
+        (client.handshake.query?.guestId as string) ||
+        '';
+      client.data.user = null;
+      client.data.guestId = guestId;
+      console.log(`🔌 Guest client connected: ${client.id}`);
+      return;
+    }
+    client.data.user = user;
+    if (this.isAdminUser(user)) {
+      client.join(ADMIN_ROOM);
+    }
+    console.log(`🔌 Authenticated client connected: ${client.id} (role: ${user.role})`);
   }
 
   handleDisconnect(client: Socket) {
     console.log(`❌ Client disconnected: ${client.id}`);
   }
 
+  private authenticate(client: Socket): AuthedUser | null {
+    let token: string | undefined =
+      client.handshake.auth?.token ||
+      (client.handshake.query?.token as string) ||
+      undefined;
+    if (!token) {
+      const authHeader = client.handshake.headers?.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.slice(7);
+      }
+    }
+    if (!token) return null;
+    try {
+      const payload = this.jwtService.verify<{ sub: number; email: string; role: string }>(token);
+      if (!payload?.sub) return null;
+      return { id: Number(payload.sub), email: payload.email, role: payload.role };
+    } catch {
+      return null;
+    }
+  }
+
+  private isAdminUser(user: AuthedUser): boolean {
+    return user.role === 'admin' || user.role === 'super_admin';
+  }
+
   @SubscribeMessage('join_room')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { roomId: string; guestEmail?: string; isAdmin?: boolean },
+    @MessageBody() payload: { roomId: string },
   ) {
-    const { roomId, guestEmail, isAdmin } = payload;
+    const user: AuthedUser | null = client.data.user;
+    const { roomId } = payload || {};
+    if (!roomId) return;
+
+    const isAdmin = !!user && this.isAdminUser(user);
+
+    // Guests may only join their own room — prevents cross-room eavesdropping
+    if (!user) {
+      if (roomId !== client.data.guestId) return;
+    }
+
     client.join(roomId);
-    console.log(`👥 Client ${client.id} joined room: ${roomId} (admin: ${isAdmin || false})`);
+    console.log(`👥 Client ${client.id} joined room: ${roomId} (admin: ${isAdmin})`);
 
     if (!this.activeRooms.has(roomId)) {
       this.activeRooms.set(roomId, {
-        guestEmail,
+        guestEmail: user && !isAdmin ? user.email : undefined,
         messages: [],
-        hasAdmin: !!isAdmin,
+        hasAdmin: isAdmin,
         adminResponded: false,
       });
     } else if (isAdmin) {
@@ -109,12 +172,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: {
       roomId: string;
       content: string;
-      senderId: string;
-      senderName: string;
-      isAdmin: boolean;
     },
   ) {
-    const { roomId, content, senderId, senderName, isAdmin } = payload;
+    const user: AuthedUser | null = client.data.user;
+    const { roomId, content } = payload || {};
+    if (!roomId || !content) return;
+
+    // Guests may only send to their own room
+    if (!user && roomId !== client.data.guestId) return;
+
+    const isAdmin = !!user && this.isAdminUser(user);
+    const senderId = user ? String(user.id) : client.data.guestId || 'guest';
+    const senderName = user
+      ? isAdmin
+        ? 'Support Agent'
+        : (user.email?.split('@')[0] || 'Customer')
+      : 'Guest';
+
     const message = {
       id: 'msg_' + Date.now(),
       senderId,
@@ -211,7 +285,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(roomId).emit('receive_message', botMessage);
       }
     } catch (err) {
-      console.warn('AI chat reply failed:', err?.message || err);
+      console.warn('AI chat reply failed:', (err as any)?.message || err);
       const fallbackMessage = {
         id: 'bot_fallback_' + Date.now(),
         senderId: 'beauty_bot',
@@ -229,22 +303,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('get_active_rooms')
   handleGetActiveRooms(@ConnectedSocket() client: Socket) {
-    const list = Array.from(this.activeRooms.entries()).map(([roomId, data]) => ({
+    const user: AuthedUser = client.data.user;
+    if (!user || !this.isAdminUser(user)) return;
+    client.emit('active_rooms_list', this.buildActiveRoomsList());
+  }
+
+  private buildActiveRoomsList() {
+    return Array.from(this.activeRooms.entries()).map(([roomId, data]) => ({
       roomId,
       guestEmail: data.guestEmail,
       lastMessage: data.messages[data.messages.length - 1],
       hasAdmin: data.hasAdmin,
     }));
-    client.emit('active_rooms_list', list);
   }
 
   private broadcastActiveRooms() {
-    const list = Array.from(this.activeRooms.entries()).map(([roomId, data]) => ({
-      roomId,
-      guestEmail: data.guestEmail,
-      lastMessage: data.messages[data.messages.length - 1],
-      hasAdmin: data.hasAdmin,
-    }));
-    this.server.emit('active_rooms_list', list);
+    // Only admins may see the list of active rooms + guest emails (prevents data leak)
+    this.server.to(ADMIN_ROOM).emit('active_rooms_list', this.buildActiveRoomsList());
   }
 }

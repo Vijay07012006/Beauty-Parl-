@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { HuggingFaceInference } from '@huggingface/inference';
+import { HfInference } from '@huggingface/inference';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../products/product.entity';
@@ -14,7 +14,7 @@ interface ScoredProduct {
 
 @Injectable()
 export class SemanticSearchService {
-  private hf: HuggingFaceInference | null = null;
+  private hf: HfInference | null = null;
   private readonly CACHE_TTL = 120000;
   private readonly EMBEDDING_MODEL = 'Supabase/gte-small';
 
@@ -26,7 +26,7 @@ export class SemanticSearchService {
   ) {
     const apiKey = this.configService.get<string>('HUGGINGFACE_API_KEY');
     if (apiKey) {
-      this.hf = new HuggingFaceInference({ apiKey });
+      this.hf = new HfInference(apiKey);
     }
   }
 
@@ -66,7 +66,7 @@ export class SemanticSearchService {
         scoredProducts = await this.semanticSearch(query, limit);
         usedSemantic = scoredProducts.length > 0;
       } catch (err) {
-        console.warn('Semantic search failed, falling back to keyword search:', err?.message || err);
+        console.warn('Semantic search failed, falling back to keyword search:', (err as any)?.message || err);
       }
     }
 

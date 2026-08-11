@@ -23,7 +23,7 @@ function ComparePageContent() {
   const getSessionId = () => {
     let id = localStorage.getItem('guest_chat_room_id');
     if (!id) {
-      id = 'sess_' + Math.random().toString(36).substring(2, 11);
+      id = 'sess_' + (crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).substring(2, 11));
       localStorage.setItem('guest_chat_room_id', id);
     }
     return id;

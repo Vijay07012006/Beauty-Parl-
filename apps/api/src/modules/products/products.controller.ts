@@ -26,8 +26,8 @@ export class ProductsController {
     @Query('sort') sort?: string,
     @Query('tags') tags?: string,
   ) {
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 12;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
     const skip = (pageNum - 1) * limitNum;
 
     const [products, total] = await this.productsService.findAllWithFilters({
@@ -110,7 +110,9 @@ export class ProductsController {
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '20',
   ) {
-    return this.productsService.getAllReviews(parseInt(page, 10), parseInt(limit, 10));
+    const safePage = Math.max(1, parseInt(page, 10) || 1);
+    const safeLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    return this.productsService.getAllReviews(safePage, safeLimit);
   }
 
   @Delete('reviews/:reviewId')

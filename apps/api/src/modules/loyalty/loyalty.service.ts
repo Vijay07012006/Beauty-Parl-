@@ -57,80 +57,109 @@ export class LoyaltyService {
   }
 
   async addPoints(userId: number, points: number, reason: string): Promise<void> {
-    const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
-    user.loyaltyPoints += points;
-    
-    // Evaluate Tiers
-    if (user.loyaltyPoints >= 500) {
-      user.loyaltyTier = 'platinum';
-    } else if (user.loyaltyPoints >= 100) {
-      user.loyaltyTier = 'gold';
-    } else {
-      user.loyaltyTier = 'silver';
-    }
+    // Pessimistic lock prevents concurrent read-modify-write races on the balance
+    await this.userRepo.manager.transaction(async (em) => {
+      const user = await em.findOne(User, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) throw new Error('User not found');
+      user.loyaltyPoints += points;
 
-    await this.userRepo.save(user);
+      // Evaluate Tiers
+      if (user.loyaltyPoints >= 500) {
+        user.loyaltyTier = 'platinum';
+      } else if (user.loyaltyPoints >= 100) {
+        user.loyaltyTier = 'gold';
+      } else {
+        user.loyaltyTier = 'silver';
+      }
 
-    const tx = this.transactionRepo.create({ userId, points, reason });
-    await this.transactionRepo.save(tx);
+      await em.save(user);
+
+      const tx = em.create(LoyaltyTransaction, { userId, points, reason });
+      await em.save(tx);
+    });
   }
 
   async recordPurchase(userId: number, total: number): Promise<void> {
-    const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
-    user.totalSpent = Number(user.totalSpent) + Number(total);
-    
-    const points = Math.round(Number(total) * 0.1);
-    user.loyaltyPoints += points;
+    await this.userRepo.manager.transaction(async (em) => {
+      const user = await em.findOne(User, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) throw new Error('User not found');
+      user.totalSpent = Number(user.totalSpent) + Number(total);
 
-    if (user.loyaltyPoints >= 500) {
-      user.loyaltyTier = 'platinum';
-    } else if (user.loyaltyPoints >= 100) {
-      user.loyaltyTier = 'gold';
-    } else {
-      user.loyaltyTier = 'silver';
-    }
+      const points = Math.round(Number(total) * 0.1);
+      user.loyaltyPoints += points;
 
-    await this.userRepo.save(user);
+      if (user.loyaltyPoints >= 500) {
+        user.loyaltyTier = 'platinum';
+      } else if (user.loyaltyPoints >= 100) {
+        user.loyaltyTier = 'gold';
+      } else {
+        user.loyaltyTier = 'silver';
+      }
 
-    const tx = this.transactionRepo.create({
-      userId,
-      points,
-      reason: `Order Purchase Reward Points! 🛍️`,
+      await em.save(user);
+
+      const tx = em.create(LoyaltyTransaction, {
+        userId,
+        points,
+        reason: `Order Purchase Reward Points! 🛍️`,
+      });
+      await em.save(tx);
     });
-    await this.transactionRepo.save(tx);
   }
 
   async redeemReward(rewardId: number, userId: number): Promise<any> {
-    const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
-    const reward = await this.rewardRepo.findOneOrFail({ where: { id: rewardId, isActive: true } });
+    let rewardCode = '';
+    let reward: LoyaltyReward | null = null;
 
-    if (user.loyaltyPoints < reward.pointsRequired) {
-      throw new Error('Insufficient points balance');
-    }
+    await this.userRepo.manager.transaction(async (em) => {
+      const user = await em.findOne(User, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const rw = await em.findOne(LoyaltyReward, {
+        where: { id: rewardId, isActive: true },
+      });
+      if (!user || !rw) {
+        throw new Error('User or reward not found');
+      }
 
-    user.loyaltyPoints -= reward.pointsRequired;
-    
-    // Update tier status after deduction
-    if (user.loyaltyPoints >= 500) {
-      user.loyaltyTier = 'platinum';
-    } else if (user.loyaltyPoints >= 100) {
-      user.loyaltyTier = 'gold';
-    } else {
-      user.loyaltyTier = 'silver';
-    }
+      if (user.loyaltyPoints < rw.pointsRequired) {
+        throw new Error('Insufficient points balance');
+      }
 
-    await this.userRepo.save(user);
+      user.loyaltyPoints -= rw.pointsRequired;
 
-    const tx = this.transactionRepo.create({
-      userId,
-      points: -reward.pointsRequired,
-      reason: `Redeemed Reward: ${reward.name}`,
+      // Update tier status after deduction
+      if (user.loyaltyPoints >= 500) {
+        user.loyaltyTier = 'platinum';
+      } else if (user.loyaltyPoints >= 100) {
+        user.loyaltyTier = 'gold';
+      } else {
+        user.loyaltyTier = 'silver';
+      }
+
+      await em.save(user);
+
+      const tx = em.create(LoyaltyTransaction, {
+        userId,
+        points: -rw.pointsRequired,
+        reason: `Redeemed Reward: ${rw.name}`,
+      });
+      await em.save(tx);
+
+      rewardCode = 'LOYAL_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      reward = rw;
     });
-    await this.transactionRepo.save(tx);
 
     return {
       success: true,
-      rewardCode: 'LOYAL_' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+      rewardCode,
       reward,
     };
   }

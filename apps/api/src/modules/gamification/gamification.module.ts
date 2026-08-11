@@ -7,11 +7,14 @@ import { GamificationController } from './gamification.controller';
 import { Achievement } from './achievement.entity';
 import { UserAchievement } from './user-achievement.entity';
 import { User } from '../auth/user.entity';
+import { Order } from '../orders/order.entity';
+import { Referral } from '../referrals/referral.entity';
+import { ReferralTracking } from '../referrals/referral-tracking.entity';
 import { LoyaltyModule } from '../loyalty/loyalty.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Achievement, UserAchievement, User]),
+    TypeOrmModule.forFeature([Achievement, UserAchievement, User, Order, Referral, ReferralTracking]),
     LoyaltyModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

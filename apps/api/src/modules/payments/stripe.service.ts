@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -31,6 +31,14 @@ export class StripeService {
     if (!this.stripe) {
       throw new InternalServerErrorException('Stripe service is not configured. Payments are disabled.');
     }
+    // Server-side: verify the order exists and the amount matches the order total (prevents price tampering)
+    const dbOrder = await this.orderRepo.findOne({ where: { id: orderId } });
+    if (!dbOrder) {
+      throw new BadRequestException(`Order with ID ${orderId} not found`);
+    }
+    if (Math.abs(Number(dbOrder.total) - Number(amount)) > 0.01) {
+      throw new BadRequestException('Amount does not match the order total');
+    }
     try {
       const frontendUrl = this.configService.get<string>('frontendUrl') || 'http://localhost:3000';
       const locale = 'en'; // Default locale
@@ -44,7 +52,7 @@ export class StripeService {
               product_data: {
                 name: `Beauty Parlé Order #${orderId}`,
               },
-              unit_amount: Math.round(amount * 100), // in cents
+              unit_amount: Math.round(Number(dbOrder.total) * 100), // in cents
             },
             quantity: 1,
           },
@@ -90,6 +98,17 @@ export class StripeService {
     if (order.status === 'paid') {
       console.log(`[Stripe Webhook] Order #${order.id} is already paid. Skipping.`);
       return;
+    }
+
+    // Server-side: verify the paid amount matches the order total (Stripe amount_total is in cents)
+    if (typeof session.amount_total === 'number') {
+      const expectedAmountCents = Math.round(Number(order.total) * 100);
+      if (session.amount_total !== expectedAmountCents) {
+        console.warn(
+          `[Stripe Webhook] Amount mismatch for order #${order.id}: expected ${expectedAmountCents} cents, received ${session.amount_total} cents. Skipping.`,
+        );
+        return;
+      }
     }
 
     // Update order status to paid and assign the Stripe payment ID

@@ -43,7 +43,7 @@ export function ChatWidget() {
       // Guest: check or generate local room ID
       let guestRoomId = localStorage.getItem('guest_chat_room_id');
       if (!guestRoomId) {
-        guestRoomId = 'guest_' + Math.random().toString(36).substring(2, 11);
+        guestRoomId = 'guest_' + (crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).substring(2, 11));
         localStorage.setItem('guest_chat_room_id', guestRoomId);
       }
       uId = guestRoomId;
@@ -57,7 +57,13 @@ export function ChatWidget() {
     if (!isOpen || !roomId || !userProfile) return;
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://beauty-parl-api.onrender.com';
-    const newSocket = io(baseUrl);
+    const token = localStorage.getItem('token');
+    const newSocket = io(baseUrl, {
+      auth: {
+        token: token || undefined,
+        guestId: !token ? roomId : undefined,
+      },
+    });
     setSocket(newSocket);
 
     // Join room

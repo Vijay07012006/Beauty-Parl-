@@ -34,7 +34,9 @@ export class ReviewsController {
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '20',
   ) {
-    return this.productsService.getAllReviews(parseInt(page, 10), parseInt(limit, 10));
+    const safePage = Math.max(1, parseInt(page, 10) || 1);
+    const safeLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    return this.productsService.getAllReviews(safePage, safeLimit);
   }
 
   @Put('admin/:reviewId/approve')

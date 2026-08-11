@@ -12,9 +12,13 @@ async function bootstrap() {
     console.error('❌ Uncaught Exception thrown:', err);
   });
 
-  const criticalEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+  const criticalEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'DB_ENCRYPTION_KEY'];
   for (const envVar of criticalEnvVars) {
     if (!process.env[envVar]) {
+      if (envVar === 'JWT_SECRET' || envVar === 'DB_ENCRYPTION_KEY') {
+        console.error(`❌ [Config] Missing required environment variable: ${envVar}. Refusing to start with insecure defaults.`);
+        process.exit(1);
+      }
       console.warn(`⚠️ [Config] Missing critical environment variable: ${envVar}. Application may fail to start or run.`);
     }
   }

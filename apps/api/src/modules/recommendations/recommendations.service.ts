@@ -19,21 +19,24 @@ export class RecommendationsService {
    * and returns the most frequent ones.
    */
   async getAlsoBought(productId: number, limit = 4): Promise<Product[]> {
-    // 1. Find orders containing this product
-    const orders = await this.orderRepo.find({
-      select: ['items'],
-    });
+    // 1. Find orders containing this product using JSONB containment — avoids loading the whole table
+    const orders = await this.orderRepo
+      .createQueryBuilder('o')
+      .select('o.items', 'items')
+      .where(`o.items @> :filter`, { filter: JSON.stringify([{ productId }]) })
+      .orderBy('o.createdAt', 'DESC')
+      .take(1000)
+      .getRawMany();
 
     const relatedProductCounts: { [id: number]: number } = {};
 
-    // 2. Loop through orders to see which ones contain our target productId
-    for (const order of orders) {
-      const itemIds = order.items.map((item: any) => Number(item.productId));
-      if (itemIds.includes(productId)) {
-        for (const id of itemIds) {
-          if (id !== productId) {
-            relatedProductCounts[id] = (relatedProductCounts[id] || 0) + 1;
-          }
+    // 2. Loop through matching orders and count co-occurrences
+    for (const row of orders) {
+      const items = Array.isArray(row?.items) ? row.items : [];
+      for (const item of items) {
+        const id = Number(item?.productId);
+        if (id && id !== productId) {
+          relatedProductCounts[id] = (relatedProductCounts[id] || 0) + 1;
         }
       }
     }
@@ -95,10 +98,12 @@ export class RecommendationsService {
       return this.getPopular(limit);
     }
 
-    // 1. Fetch user's orders
+    // 1. Fetch user's recent orders (capped to bound memory/CPU)
     const orders = await this.orderRepo.find({
       where: { userId },
       select: ['items'],
+      order: { createdAt: 'DESC' },
+      take: 100,
     });
 
     if (orders.length === 0) {

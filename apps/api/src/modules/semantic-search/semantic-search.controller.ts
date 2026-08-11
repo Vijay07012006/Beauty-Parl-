@@ -12,6 +12,7 @@ export class SemanticSearchController {
     @Query('q') q: string,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ): Promise<{ products: Product[]; total: number; fromCache: boolean }> {
-    return this.semanticSearchService.search(q, limit);
+    const safeLimit = Math.min(50, Math.max(1, limit));
+    return this.semanticSearchService.search(q, safeLimit);
   }
 }

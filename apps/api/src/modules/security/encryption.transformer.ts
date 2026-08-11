@@ -3,14 +3,16 @@ import * as crypto from 'crypto';
 
 export class EncryptionTransformer implements ValueTransformer {
   private key: Buffer;
-  
+
   constructor() {
-    // DB_ENCRYPTION_KEY should be 32 bytes/characters.
-    // If not set or invalid length, we fall back to a default key for seamless development.
-    const secret = process.env.DB_ENCRYPTION_KEY || 'default_beauty_parle_secret_key_32bytes!';
-    this.key = Buffer.alloc(32);
-    const secretBuf = Buffer.from(secret, 'utf8');
-    secretBuf.copy(this.key, 0, 0, Math.min(secretBuf.length, 32));
+    // DB_ENCRYPTION_KEY must be set and exactly 32 bytes — no insecure fallback key.
+    const secret = process.env.DB_ENCRYPTION_KEY || '';
+    if (!secret || Buffer.byteLength(secret, 'utf8') !== 32) {
+      throw new Error(
+        'DB_ENCRYPTION_KEY must be set to exactly 32 characters. Refusing to start with a weak/default key.',
+      );
+    }
+    this.key = Buffer.from(secret, 'utf8');
   }
 
   // Encrypt value before saving to database

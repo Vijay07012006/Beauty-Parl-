@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Headers, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Headers, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { SubscriptionsService } from './subscriptions.service';
 
@@ -23,11 +23,21 @@ export class SubscriptionsController {
 
   @Post()
   async create(
-    @Body() body: { productId: number; frequency: 'monthly' | 'quarterly' | 'bi-monthly'; quantity: number },
+    @Body() body: { productId: number; frequency: 'monthly' | 'quarterly' | 'bi-monthly'; quantity: number; paymentMethod?: string },
     @Headers('authorization') authHeader?: string,
   ) {
     const userId = this.extractUserId(authHeader);
-    return this.subService.create(body.productId, body.frequency, body.quantity || 1, userId);
+
+    // Subscriptions must be backed by a prepaid payment method — COD is not accepted (Fix 21)
+    const method = (body.paymentMethod || '').toLowerCase();
+    if (!method) {
+      throw new BadRequestException('A payment method is required to create a subscription');
+    }
+    if (method === 'cod' || method === 'cash_on_delivery') {
+      throw new BadRequestException('COD is not supported for subscriptions. Please use a prepaid payment method.');
+    }
+
+    return this.subService.create(body.productId, body.frequency, body.quantity || 1, userId, method);
   }
 
   @Get()

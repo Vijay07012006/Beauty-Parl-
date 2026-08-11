@@ -1,8 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { User } from '../auth/user.entity';
 import { Achievement } from './achievement.entity';
 
 @Entity('user_achievements')
+@Unique(['userId', 'achievementId'])
 export class UserAchievement {
   @PrimaryGeneratedColumn()
   id!: number;

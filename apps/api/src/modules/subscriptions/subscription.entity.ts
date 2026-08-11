@@ -27,6 +27,9 @@ export class Subscription {
   @Column({ type: 'integer', default: 1 })
   quantity!: number;
 
+  @Column({ type: 'varchar', length: 20, default: 'card' })
+  paymentMethod!: string;
+
   @Column({ type: 'timestamp' })
   nextDeliveryDate!: Date;
 

@@ -1,19 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Order } from './order.entity';
 import { User } from '../auth/user.entity';
+import { Product } from '../products/product.entity';
+import { Coupon } from '../coupons/coupon.entity';
 import { EmailService } from '../email/email.service';
 import { CartService } from '../cart/cart.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { GamificationService } from '../gamification/gamification.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectRepository(Order)
     private orderRepo: Repository<Order>,
+    @InjectRepository(Product)
+    private productRepo: Repository<Product>,
+    @InjectRepository(Coupon)
+    private couponRepo: Repository<Coupon>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
     private emailService: EmailService,
     private cartService: CartService,
     private loyaltyService: LoyaltyService,
@@ -22,8 +32,108 @@ export class OrdersService {
   ) {}
 
   async create(orderData: Partial<Order>): Promise<Order> {
-    const order = this.orderRepo.create(orderData);
+    // ========== SERVER-SIDE PRICE & STOCK VALIDATION (prevents price tampering) ==========
+    const rawItems = Array.isArray(orderData.items) ? orderData.items : [];
+    const productIds = rawItems
+      .map((i: any) => Number(i?.productId))
+      .filter((id: any) => Number.isInteger(id) && id > 0);
+
+    const products = productIds.length
+      ? await this.productRepo.find({ where: { id: In(productIds) } })
+      : [];
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const validatedItems: any[] = [];
+    let subtotal = 0;
+    for (const item of rawItems) {
+      const product = productMap.get(Number(item?.productId));
+      if (!product) {
+        throw new BadRequestException(`Product with ID ${item?.productId} not found`);
+      }
+      const qty = Math.max(1, Math.floor(Number(item?.quantity) || 1));
+      const available = Number(product.stock);
+      if (!isNaN(available) && available < qty) {
+        throw new BadRequestException(`Insufficient stock for ${product.name}`);
+      }
+      subtotal += Number(product.price) * qty;
+      validatedItems.push({
+        productId: product.id,
+        name: product.name,
+        price: Number(product.price),
+        quantity: qty,
+        image: product.image,
+      });
+    }
+
+    subtotal = round2(subtotal);
+    const tax = round2(subtotal * 0.1);
+    const shipping = subtotal > 50 ? 0 : 5;
+
+    // ========== COUPON SERVER-SIDE VALIDATION ==========
+    let discount = 0;
+    if (orderData.couponCode) {
+      const coupon = await this.couponRepo.findOne({
+        where: { code: String(orderData.couponCode).toUpperCase() },
+      });
+      if (!coupon || !coupon.isActive) {
+        throw new BadRequestException('Invalid coupon code');
+      }
+      if (coupon.expiresAt && new Date() > new Date(coupon.expiresAt)) {
+        throw new BadRequestException('This coupon has expired');
+      }
+      if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) {
+        throw new BadRequestException('This coupon has reached its usage limit');
+      }
+      if (subtotal < Number(coupon.minOrder)) {
+        throw new BadRequestException(`Minimum order amount is ${Number(coupon.minOrder).toFixed(2)}`);
+      }
+      if (coupon.type === 'percentage') {
+        discount = (subtotal * Number(coupon.value)) / 100;
+        if (coupon.maxDiscount && discount > Number(coupon.maxDiscount)) {
+          discount = Number(coupon.maxDiscount);
+        }
+      } else {
+        discount = Number(coupon.value);
+        if (discount > subtotal) discount = subtotal;
+      }
+      discount = round2(discount);
+    }
+
+    // ========== LOYALTY POINTS REDEMPTION VALIDATION ==========
+    let pointsRedeemed = 0;
+    if (orderData.userId && Number(orderData.pointsRedeemed) > 0) {
+      const user = await this.userRepo.findOne({ where: { id: orderData.userId } });
+      if (user) {
+        pointsRedeemed = Math.min(
+          Math.floor(Number(orderData.pointsRedeemed)),
+          Math.round(subtotal),
+          Number(user.loyaltyPoints) || 0,
+        );
+      }
+    }
+
+    const total = Math.max(0, round2(subtotal + tax + shipping - discount - pointsRedeemed));
+
+    const order = this.orderRepo.create({
+      ...orderData,
+      items: validatedItems,
+      subtotal,
+      tax,
+      shipping,
+      total,
+      discount,
+      pointsRedeemed,
+    });
     const saved = await this.orderRepo.save(order);
+
+    // ========== DECREMENT STOCK ==========
+    for (const item of validatedItems) {
+      const product = productMap.get(item.productId)!;
+      const available = Number(product.stock);
+      if (!isNaN(available)) {
+        await this.productRepo.decrement({ id: product.id }, 'stock', item.quantity);
+      }
+    }
 
     // Clear or mark cart checked out
     const email = orderData.guestEmail || (orderData.userId ? await this.getUserEmail(orderData.userId) : null);
@@ -35,14 +145,20 @@ export class OrdersService {
       console.error('Failed to clear cart after order creation:', err.message);
     }
 
-    // Increment coupon usedCount if coupon code is used
+    // Atomic coupon usedCount increment — prevents race-condition double-use (Fix 22)
     if (orderData.couponCode) {
       try {
-        const couponRepo = this.orderRepo.manager.getRepository('Coupon');
-        const coupon = await couponRepo.findOne({ where: { code: orderData.couponCode.toUpperCase() } });
+        const coupon = await this.couponRepo.findOne({
+          where: { code: String(orderData.couponCode).toUpperCase() },
+        });
         if (coupon) {
-          coupon.usedCount = (coupon.usedCount || 0) + 1;
-          await couponRepo.save(coupon);
+          await this.couponRepo
+            .createQueryBuilder()
+            .update(Coupon)
+            .set({ usedCount: () => 'usedCount + 1' })
+            .where('id = :id', { id: coupon.id })
+            .andWhere('(usageLimit = 0 OR usedCount < usageLimit)')
+            .execute();
         }
       } catch (err) {
         console.error('Failed to increment coupon usedCount:', err);
@@ -69,9 +185,9 @@ export class OrdersService {
     }
 
     // Deduct redeemed points if applicable
-    if (saved.userId && orderData.pointsRedeemed) {
+    if (saved.userId && pointsRedeemed > 0) {
       try {
-        await this.loyaltyService.addPoints(saved.userId, -Math.abs(orderData.pointsRedeemed), `Redeemed points on checkout order #${saved.id} 🛍️`);
+        await this.loyaltyService.addPoints(saved.userId, -pointsRedeemed, `Redeemed points on checkout order #${saved.id} 🛍️`);
       } catch (err: any) {
         console.error('Failed to deduct loyalty points:', err.message);
       }

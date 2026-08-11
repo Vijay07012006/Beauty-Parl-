@@ -246,7 +246,7 @@ export class ProductsService {
   }
 
   async getRatingStats(productId: number): Promise<{ average: number; count: number }> {
-    const reviews = await this.reviewRepository.find({ where: { productId } });
+    const reviews = await this.reviewRepository.find({ where: { productId, isApproved: true } });
     const count = reviews.length;
     if (count === 0) return { average: 0, count: 0 };
     const total = reviews.reduce((sum, r) => sum + r.rating, 0);
@@ -254,7 +254,7 @@ export class ProductsService {
   }
 
   private async recalculateRating(productId: number): Promise<void> {
-    const reviews = await this.reviewRepository.find({ where: { productId } });
+    const reviews = await this.reviewRepository.find({ where: { productId, isApproved: true } });
     const ratingCount = reviews.length;
     const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
     const avgRating = ratingCount > 0 ? parseFloat((totalRating / ratingCount).toFixed(2)) : 4.50;

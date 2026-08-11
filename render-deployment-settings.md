@@ -23,16 +23,16 @@ Render par backend ko deploy karne ke liye **Environment Variables** section me 
 
 ### Database & Redis Configuration:
 * **`DATABASE_URL`**
-  - **Value**: `postgresql://neondb_owner:npg_UvCBr62dQNXc@ep-fancy-forest-aoczkmqc-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+  - **Value**: `<REDACTED — set the Neon connection string directly in Render env vars>`
   - **Description**: Neon Cloud PostgreSQL Connection URL. (Aap TypeORM dynamic fallback enabled URL use kar rahe hain).
 
 * **`REDIS_URL`**
-  - **Value**: `rediss://default:AZQeAAIgcDFmZjViYWYxNDQ5OTY0YzZhYTE5MWRjMzA0M2U2OTVhMA@emerging-mutt-37918.upstash.io:6379`
+  - **Value**: `<REDACTED — set your Upstash Redis URL directly in Render env vars>`
   - **Description**: Upstash Redis server URL.
 
 ### JWT Security:
 * **`JWT_SECRET`**
-  - **Value**: `q+te37XF3NNFXQXmzX+CAzrpH+Zhn/46XgEdWr/dZUg=`
+  - **Value**: `<REDACTED — generate a new random 32+ byte secret (e.g. openssl rand -base64 48)>`
   - **Description**: Passwords encryption aur auth tokens sign karne ka secret.
 
 ### Email Service (Gmail SMTP):
@@ -41,25 +41,25 @@ Render par backend ko deploy karne ke liye **Environment Variables** section me 
 * **`EMAIL_PORT`**
   - **Value**: `587`
 * **`EMAIL_USER`**
-  - **Value**: `vkc80905@gmail.com`
+  - **Value**: `<REDACTED — set your sender email directly in Render env vars>`
 * **`EMAIL_PASS`**
-  - **Value**: `nczo cmzf ohiw wfnn`
+  - **Value**: `<REDACTED — use an app-specific password; never commit it>`
 * **`EMAIL_FROM`**
-  - **Value**: `"Beauty Parlé <vkc80905@gmail.com>"`
+  - **Value**: `<REDACTED>`
 
 ### Payments (Live Credentials):
 * **`RAZORPAY_KEY_ID`**
-  - **Value**: `rzp_live_xxxx`
+  - **Value**: `<REDACTED — set in Render env vars>`
 * **`RAZORPAY_KEY_SECRET`**
-  - **Value**: `xxxx`
+  - **Value**: `<REDACTED>`
 * **`STRIPE_SECRET_KEY`**
-  - **Value**: `sk_live_xxxx`
+  - **Value**: `<REDACTED>`
 * **`STRIPE_WEBHOOK_SECRET`**
-  - **Value**: `whsec_xxxx`
+  - **Value**: `<REDACTED>`
 
 ### Admin Seeder:
 * **`ADMIN_SEED_PASSWORD`**
-  - **Value**: `Admin@123`
+  - **Value**: `<REDACTED — use a strong unique password, set in Render env vars>`
   - **Description**: Initial admin configuration password.
 
 ### Frontend Linkage & Environment:
