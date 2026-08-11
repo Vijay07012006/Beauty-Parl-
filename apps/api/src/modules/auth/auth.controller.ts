@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Get, Put, Request, Res, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Get, Put, Request, Res, UnauthorizedException, BadRequestException, Delete, Param } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -26,12 +26,14 @@ export class AuthController {
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: { email: string; password: string }) {
+  async login(@Body() loginDto: { email: string; password: string }, @Request() req: any) {
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     if (!user) {
       throw new BadRequestException('Invalid credentials');
     }
-    return this.authService.login(user);
+    const ipAddress = req.ip;
+    const userAgent = req.headers['user-agent'];
+    return this.authService.login(user, { ipAddress, userAgent });
   }
 
   @Get('profile')
@@ -105,6 +107,31 @@ export class AuthController {
     return { success: true, preferences: updated };
   }
 
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  async getSessions(@Request() req: any) {
+    return this.authService.getUserSessions(req.user.id);
+  }
+
+  @Delete('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  async revokeSession(@Request() req: any, @Param('id') id: string) {
+    const sessionId = parseInt(id, 10);
+    if (isNaN(sessionId)) {
+      throw new BadRequestException('Invalid session id');
+    }
+    await this.authService.revokeSession(req.user.id, sessionId);
+    return { success: true, message: 'Session revoked' };
+  }
+
+  @Delete('sessions/all')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async revokeAllSessions(@Request() req: any) {
+    await this.authService.revokeAllSessions(req.user.id);
+    return { success: true, message: 'All sessions revoked' };
+  }
+
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   async googleAuth() {
@@ -150,5 +177,57 @@ export class AuthController {
     }
     await this.authService.resendOtp(body.email);
     return { success: true };
+  }
+
+  @Get('2fa/generate')
+  @UseGuards(JwtAuthGuard)
+  async generateTwoFactor(@Request() req: any) {
+    return this.authService.generateTwoFactorSecret(req.user.id);
+  }
+
+  @Post('2fa/verify-and-enable')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async verifyAndEnableTwoFactor(
+    @Request() req: any,
+    @Body() body: { token: string; secret: string; backupCodes: string[] },
+  ) {
+    if (!body.token || !body.secret || !body.backupCodes) {
+      throw new BadRequestException('token, secret, and backupCodes are required');
+    }
+    return this.authService.verifyAndEnableTwoFactor(
+      req.user.id,
+      body.token,
+      body.secret,
+      body.backupCodes,
+    );
+  }
+
+  @Post('2fa/disable')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async disableTwoFactor(
+    @Request() req: any,
+    @Body() body: { password: string },
+  ) {
+    if (!body.password) {
+      throw new BadRequestException('password is required');
+    }
+    return this.authService.disableTwoFactor(req.user.id, body.password);
+  }
+
+  @Post('2fa/verify-login')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async verifyTwoFactorLogin(
+    @Body() body: { email: string; token: string },
+    @Request() req: any,
+  ) {
+    if (!body.email || !body.token) {
+      throw new BadRequestException('email and token are required');
+    }
+    const ipAddress = req.ip;
+    const userAgent = req.headers['user-agent'];
+    return this.authService.verifyTwoFactorLogin(body.email, body.token, { ipAddress, userAgent });
   }
 }

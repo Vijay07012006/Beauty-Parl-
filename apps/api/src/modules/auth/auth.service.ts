@@ -1,11 +1,14 @@
-import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
+import * as otplib from 'otplib';
+import * as QRCode from 'qrcode';
 import { User, UserRole } from './user.entity';
+import { UserSession } from './user-session.entity';
 import { EmailService } from '../email/email.service';
 import { OtpService } from './otp.service';
 import { ReferralsService } from '../referrals/referrals.service';
@@ -16,6 +19,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(UserSession)
+    private userSessionRepository: Repository<UserSession>,
     private jwtService: JwtService,
     private emailService: EmailService,
     private otpService: OtpService,
@@ -23,6 +28,57 @@ export class AuthService {
     private referralsService: ReferralsService,
     private auditLogsService: AuditLogsService,
   ) {}
+
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
+  }
+
+  private async createUserSession(
+    userId: number,
+    token: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
+    const tokenHash = this.hashToken(token);
+    const session = this.userSessionRepository.create({
+      userId,
+      tokenHash,
+      ipAddress,
+      userAgent,
+    });
+    await this.userSessionRepository.save(session);
+  }
+
+  async getUserSessions(userId: number) {
+    return this.userSessionRepository.find({
+      where: { userId },
+      select: {
+        id: true,
+        ipAddress: true,
+        userAgent: true,
+        lastActivityAt: true,
+        createdAt: true,
+      },
+      order: { lastActivityAt: 'DESC' },
+    });
+  }
+
+  async revokeSession(userId: number, sessionId: number): Promise<void> {
+    const session = await this.userSessionRepository.findOne({
+      where: { id: sessionId },
+    });
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+    if (session.userId !== userId) {
+      throw new ForbiddenException('Not authorized to revoke this session');
+    }
+    await this.userSessionRepository.delete(sessionId);
+  }
+
+  async revokeAllSessions(userId: number): Promise<void> {
+    await this.userSessionRepository.delete({ userId });
+  }
 
   async register(registerDto: any) {
     const { email, password, name, phone, referralCode } = registerDto;
@@ -102,8 +158,7 @@ export class AuthService {
     return user;
   }
 
-  async login(user: any) {
-    // Check if user is verified
+  async login(user: any, metadata?: { ipAddress?: string; userAgent?: string }) {
     if (!user.isVerified) {
       return {
         requiresOtp: true,
@@ -115,9 +170,29 @@ export class AuthService {
         }
       };
     }
+
+    if (user.isTwoFactorEnabled) {
+      return {
+        requiresTwoFactor: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        }
+      };
+    }
     
     const payload = { sub: user.id, email: user.email, role: user.role };
-    const token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload, { expiresIn: '15m' });
+
+    await this.createUserSession(
+      user.id,
+      token,
+      metadata?.ipAddress,
+      metadata?.userAgent,
+    );
+
     await this.auditLogsService.log('USER_LOGIN', user.email, user.id);
     
     return {
@@ -264,7 +339,11 @@ export class AuthService {
     return emailPreferences;
   }
 
-  async validateOAuthUser(profile: any, provider: 'google' | 'facebook') {
+  async validateOAuthUser(
+    profile: any,
+    provider: 'google' | 'facebook',
+    metadata?: { ipAddress?: string; userAgent?: string },
+  ) {
     if (provider === 'google' && !process.env.GOOGLE_CLIENT_ID && !this.config.get('GOOGLE_CLIENT_ID')) {
       throw new InternalServerErrorException('GOOGLE_CLIENT_ID environment variable is missing on the server.');
     }
@@ -315,7 +394,14 @@ export class AuthService {
 
     // Generate JWT
     const payload = { sub: user.id, email: user.email, role: user.role };
-    const token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload, { expiresIn: '15m' });
+
+    await this.createUserSession(
+      user.id,
+      token,
+      metadata?.ipAddress,
+      metadata?.userAgent,
+    );
 
     return {
       access_token: token,
@@ -330,5 +416,161 @@ export class AuthService {
     }
     await this.otpService.resendOtp(email);
     await this.auditLogsService.log('USER_OTP_RESENT', email, user.id);
+  }
+
+  private generateBackupCodes(count: number = 8): string[] {
+    const codes: string[] = [];
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    for (let i = 0; i < count; i++) {
+      let code = '';
+      for (let j = 0; j < 8; j++) {
+        code += chars.charAt(crypto.randomInt(0, chars.length));
+      }
+      codes.push(code);
+    }
+    return codes;
+  }
+
+  async generateTwoFactorSecret(userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    if (user.isTwoFactorEnabled) {
+      throw new BadRequestException('2FA is already enabled');
+    }
+
+    const secret = otplib.authenticator.generateSecret();
+    const appName = process.env.APP_NAME || 'Beauty Parle';
+    const otpAuthUrl = otplib.authenticator.keyuri(user.email, appName, secret);
+    const qrCode = await QRCode.toDataURL(otpAuthUrl);
+    const backupCodes = this.generateBackupCodes();
+
+    await this.auditLogsService.log('TWO_FACTOR_GENERATED', user.email, user.id);
+
+    return {
+      secret,
+      qrCode,
+      backupCodes,
+    };
+  }
+
+  async verifyAndEnableTwoFactor(
+    userId: number,
+    token: string,
+    secret: string,
+    backupCodes: string[],
+  ) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    if (user.isTwoFactorEnabled) {
+      throw new BadRequestException('2FA is already enabled');
+    }
+
+    const isValid = otplib.authenticator.verify({ token, secret });
+    if (!isValid) {
+      throw new BadRequestException('Invalid 2FA token');
+    }
+
+    user.twoFactorSecret = secret;
+    user.twoFactorBackupCodes = backupCodes;
+    user.isTwoFactorEnabled = true;
+    await this.userRepository.save(user);
+
+    await this.auditLogsService.log('TWO_FACTOR_ENABLED', user.email, user.id);
+
+    return { success: true, message: '2FA enabled successfully' };
+  }
+
+  async disableTwoFactor(userId: number, password: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Incorrect password');
+    }
+
+    user.isTwoFactorEnabled = false;
+    user.twoFactorSecret = undefined;
+    user.twoFactorBackupCodes = undefined;
+    await this.userRepository.save(user);
+
+    await this.auditLogsService.log('TWO_FACTOR_DISABLED', user.email, user.id);
+
+    return { success: true, message: '2FA disabled successfully' };
+  }
+
+  async verifyTwoFactorLogin(
+    email: string,
+    token: string,
+    metadata?: { ipAddress?: string; userAgent?: string },
+  ) {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    if (!user.isTwoFactorEnabled) {
+      throw new BadRequestException('2FA is not enabled for this user');
+    }
+
+    let verified = false;
+    let usedBackupCode = false;
+
+    if (user.twoFactorSecret) {
+      try {
+        verified = otplib.authenticator.verify({ token, secret: user.twoFactorSecret });
+      } catch {
+        verified = false;
+      }
+    }
+
+    if (!verified && user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0) {
+      const tokenUpper = token.toUpperCase();
+      const backupIndex = user.twoFactorBackupCodes.findIndex(
+        (code) => code.toUpperCase() === tokenUpper,
+      );
+      if (backupIndex !== -1) {
+        verified = true;
+        usedBackupCode = true;
+        user.twoFactorBackupCodes.splice(backupIndex, 1);
+        await this.userRepository.save(user);
+      }
+    }
+
+    if (!verified) {
+      await this.auditLogsService.log('TWO_FACTOR_LOGIN_FAILED', email, user.id);
+      throw new BadRequestException('Invalid 2FA token or backup code');
+    }
+
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+
+    await this.createUserSession(
+      user.id,
+      accessToken,
+      metadata?.ipAddress,
+      metadata?.userAgent,
+    );
+
+    await this.auditLogsService.log('USER_LOGIN', user.email, user.id, {
+      twoFactor: true,
+      backupCodeUsed: usedBackupCode,
+    });
+
+    return {
+      access_token: accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    };
   }
 }

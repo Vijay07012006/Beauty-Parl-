@@ -8,6 +8,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { AiChatService } from '../ai-chat/ai-chat.service';
 
 const FAQ_BOT_ANSWERS = [
   {
@@ -32,6 +33,14 @@ const FAQ_BOT_ANSWERS = [
   },
 ];
 
+interface RoomState {
+  guestEmail?: string;
+  messages: any[];
+  hasAdmin: boolean;
+  adminResponded: boolean;
+  pendingAiTimeout?: NodeJS.Timeout;
+}
+
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -41,7 +50,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
-  private activeRooms = new Map<string, { guestEmail?: string; messages: any[] }>();
+  private activeRooms = new Map<string, RoomState>();
+
+  constructor(private readonly aiChatService: AiChatService) {}
 
   handleConnection(client: Socket) {
     console.log(`🔌 Client connected: ${client.id}`);
@@ -54,25 +65,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('join_room')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { roomId: string; guestEmail?: string },
+    @MessageBody() payload: { roomId: string; guestEmail?: string; isAdmin?: boolean },
   ) {
-    const { roomId, guestEmail } = payload;
+    const { roomId, guestEmail, isAdmin } = payload;
     client.join(roomId);
-    console.log(`👥 Client ${client.id} joined room: ${roomId}`);
+    console.log(`👥 Client ${client.id} joined room: ${roomId} (admin: ${isAdmin || false})`);
 
     if (!this.activeRooms.has(roomId)) {
       this.activeRooms.set(roomId, {
         guestEmail,
         messages: [],
+        hasAdmin: !!isAdmin,
+        adminResponded: false,
       });
+    } else if (isAdmin) {
+      const room = this.activeRooms.get(roomId)!;
+      room.hasAdmin = true;
     }
 
-    // Restore message history
     const room = this.activeRooms.get(roomId);
     if (room && room.messages.length > 0) {
       client.emit('message_history', room.messages);
     } else {
-      // Welcome new user with greeting message from chatbot
       const initialGreeting = {
         id: 'welcome_' + Date.now(),
         senderId: 'beauty_bot',
@@ -85,12 +99,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('receive_message', initialGreeting);
     }
 
-    // Broadcast room update to admin channels
     this.broadcastActiveRooms();
   }
 
   @SubscribeMessage('send_message')
-  handleMessage(
+  async handleMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody()
     payload: {
@@ -114,12 +127,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = this.activeRooms.get(roomId);
     if (room) {
       room.messages.push(message);
+
+      if (isAdmin) {
+        room.hasAdmin = true;
+        room.adminResponded = true;
+        if (room.pendingAiTimeout) {
+          clearTimeout(room.pendingAiTimeout);
+          room.pendingAiTimeout = undefined;
+        }
+      }
     }
 
-    // Broadcast user message to room (client & listening agents)
     this.server.to(roomId).emit('receive_message', message);
 
-    // Trigger FAQ Chatbot if user messaged (not admin)
     if (!isAdmin) {
       const lowerContent = content.toLowerCase().trim();
       let answerFound = false;
@@ -135,7 +155,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             createdAt: new Date(),
           };
 
-          // Delay bot response slightly to feel natural
           setTimeout(() => {
             if (room) room.messages.push(botMessage);
             this.server.to(roomId).emit('receive_message', botMessage);
@@ -147,25 +166,65 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       if (!answerFound) {
-        // Default chatbot response
-        const fallbackMessage = {
-          id: 'bot_fallback_' + Date.now(),
-          senderId: 'beauty_bot',
-          senderName: 'Beauty Assistant',
-          content: "Sorry, I didn't quite catch that. Type **4** or **agent** to escalate this conversation to a human support agent!",
-          isAdmin: true,
-          createdAt: new Date(),
-        };
-
-        setTimeout(() => {
-          if (room) room.messages.push(fallbackMessage);
-          this.server.to(roomId).emit('receive_message', fallbackMessage);
-        }, 1000);
+        if (room?.hasAdmin) {
+          if (room.pendingAiTimeout) {
+            clearTimeout(room.pendingAiTimeout);
+          }
+          room.adminResponded = false;
+          room.pendingAiTimeout = setTimeout(() => {
+            if (!room.adminResponded) {
+              this.sendAiReply(roomId, content, senderId);
+            }
+          }, 2000);
+        } else {
+          this.sendAiReply(roomId, content, senderId);
+        }
       }
     }
 
-    // Broadcast room update to admin channels
     this.broadcastActiveRooms();
+  }
+
+  private async sendAiReply(roomId: string, content: string, senderId?: string) {
+    const room = this.activeRooms.get(roomId);
+    if (!room) return;
+
+    try {
+      const { reply, modelUsed } = await this.aiChatService.sendMessage(
+        content,
+        senderId,
+        roomId,
+      );
+
+      const botMessage = {
+        id: 'ai_bot_' + Date.now(),
+        senderId: 'beauty_bot',
+        senderName: 'Beauty Assistant',
+        content: reply,
+        isAdmin: true,
+        modelUsed,
+        createdAt: new Date(),
+      };
+
+      if (room && !room.adminResponded) {
+        room.messages.push(botMessage);
+        this.server.to(roomId).emit('receive_message', botMessage);
+      }
+    } catch (err) {
+      console.warn('AI chat reply failed:', err?.message || err);
+      const fallbackMessage = {
+        id: 'bot_fallback_' + Date.now(),
+        senderId: 'beauty_bot',
+        senderName: 'Beauty Assistant',
+        content: "Sorry, I didn't quite catch that. Type **4** or **agent** to escalate this conversation to a human support agent!",
+        isAdmin: true,
+        createdAt: new Date(),
+      };
+      if (room) {
+        room.messages.push(fallbackMessage);
+        this.server.to(roomId).emit('receive_message', fallbackMessage);
+      }
+    }
   }
 
   @SubscribeMessage('get_active_rooms')
@@ -174,6 +233,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId,
       guestEmail: data.guestEmail,
       lastMessage: data.messages[data.messages.length - 1],
+      hasAdmin: data.hasAdmin,
     }));
     client.emit('active_rooms_list', list);
   }
@@ -183,6 +243,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId,
       guestEmail: data.guestEmail,
       lastMessage: data.messages[data.messages.length - 1],
+      hasAdmin: data.hasAdmin,
     }));
     this.server.emit('active_rooms_list', list);
   }

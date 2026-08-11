@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { UserThrottlerGuard } from './modules/auth/user-throttler.guard';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -75,6 +76,10 @@ import { ProductTagsModule } from './modules/product-tags/product-tags.module';
 import { LooksModule } from './modules/looks/looks.module';
 import { BundlesModule } from './modules/bundles/bundles.module';
 import { TikTokModule } from './modules/tiktok/tiktok.module';
+
+// AI Modules
+import { AiChatModule } from './modules/ai-chat/ai-chat.module';
+import { SemanticSearchModule } from './modules/semantic-search/semantic-search.module';
 
 import configuration from './config/configuration';
 
@@ -150,13 +155,15 @@ import configuration from './config/configuration';
     BundlesModule,
     TikTokModule,
     AuditLogsModule,
+    AiChatModule,
+    SemanticSearchModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: UserThrottlerGuard,
     },
   ],
 })

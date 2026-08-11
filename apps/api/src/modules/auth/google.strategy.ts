@@ -23,10 +23,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: clientSecret || 'placeholder_secret',
       callbackURL,
       scope: ['email', 'profile'],
+      passReqToCallback: true,
     });
   }
 
   async validate(
+    req: any,
     accessToken: string,
     refreshToken: string,
     profile: any,
@@ -39,7 +41,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       avatar: photos && photos.length > 0 ? photos[0].value : null,
       googleId: profile.id,
     };
-    const validatedUser = await this.authService.validateOAuthUser(user, 'google');
+    const ipAddress = req?.ip;
+    const userAgent = req?.headers?.['user-agent'];
+    const validatedUser = await this.authService.validateOAuthUser(user, 'google', { ipAddress, userAgent });
     done(null, validatedUser);
   }
 }

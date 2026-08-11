@@ -59,6 +59,15 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   resetTokenExpiry?: Date;
 
+  @Column({ name: 'is_two_factor_enabled', default: false })
+  isTwoFactorEnabled!: boolean;
+
+  @Column({ name: 'two_factor_secret', nullable: true, transformer: new EncryptionTransformer() })
+  twoFactorSecret?: string;
+
+  @Column({ name: 'two_factor_backup_codes', type: 'jsonb', nullable: true })
+  twoFactorBackupCodes?: string[];
+
   @Column({ nullable: true })
   googleId?: string;
 

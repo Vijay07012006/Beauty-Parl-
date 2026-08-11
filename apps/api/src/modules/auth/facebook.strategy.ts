@@ -23,10 +23,12 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       clientSecret: clientSecret || 'placeholder_secret',
       callbackURL,
       profileFields: ['id', 'emails', 'name', 'picture.type(large)'],
+      passReqToCallback: true,
     });
   }
 
   async validate(
+    req: any,
     accessToken: string,
     refreshToken: string,
     profile: Profile,
@@ -39,7 +41,9 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       avatar: photos && photos.length > 0 ? photos[0].value : null,
       facebookId: profile.id,
     };
-    const validatedUser = await this.authService.validateOAuthUser(user, 'facebook');
+    const ipAddress = req?.ip;
+    const userAgent = req?.headers?.['user-agent'];
+    const validatedUser = await this.authService.validateOAuthUser(user, 'facebook', { ipAddress, userAgent });
     done(null, validatedUser);
   }
 }

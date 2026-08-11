@@ -11,6 +11,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { GoogleStrategy } from './google.strategy';
 import { FacebookStrategy } from './facebook.strategy';
 import { User } from './user.entity';
+import { UserSession } from './user-session.entity';
 import { EmailModule } from '../email/email.module';
 import { RedisModule } from '../redis/redis.module';
 import { AdminSeeder } from './admin-seeder.service';
@@ -19,7 +20,7 @@ import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, UserSession]),
     PassportModule,
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
