@@ -103,63 +103,125 @@ export default function AdminProductsPage() {
           ) : products.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">No products found. Add your first product!</div>
           ) : (
-            <div className="bg-card rounded-2xl shadow-sm border border-border/50 overflow-x-auto">
-              <table className="w-full min-w-[800px]">
-                <thead className="bg-secondary/30">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Image</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Category</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Price</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Stock</th>
-                    <th className="px-6 py-3 text-right text-sm font-medium text-muted-foreground">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-secondary/20 transition">
-                      <td className="px-6 py-3">
-                        <div className="relative w-12 h-12 bg-secondary/20 rounded-lg overflow-hidden">
-                          {product.image ? (
-                            <Image src={product.image} alt={product.name} fill className="object-cover" sizes="48px" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs">💄</div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 font-medium">{product.name}</td>
-                      <td className="px-6 py-3 text-muted-foreground">{product.category || 'Uncategorized'}</td>
-                      <td className="px-6 py-3 font-bold text-primary">${Number(product.price).toFixed(2)}</td>
-                      <td className="px-6 py-3">{product.stock}</td>
-                      <td className="px-6 py-3 text-right space-x-2">
-                        <button
-                          onClick={() => {
-                            setEditingProduct(product);
-                            setForm({
-                              name: product.name,
-                              description: product.description,
-                              price: product.price.toString(),
-                              category: product.category || '',
-                              stock: product.stock.toString(),
-                              image: product.image || '',
-                            });
-                            setShowModal(true);
-                          }}
-                          className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition cursor-pointer"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-full transition cursor-pointer"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
+            <div className="space-y-4">
+              {/* Desktop Table View */}
+              <div className="hidden md:block bg-card rounded-2xl shadow-sm border border-border/50 overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-secondary/30">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Image</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Category</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Price</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Stock</th>
+                      <th className="px-6 py-3 text-right text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border/50">
+                    {products.map((product) => (
+                      <tr key={product.id} className="hover:bg-secondary/20 transition">
+                        <td className="px-6 py-3">
+                          <div className="relative w-12 h-12 bg-secondary/20 rounded-lg overflow-hidden">
+                            {product.image ? (
+                              <Image src={product.image} alt={product.name} fill className="object-cover" sizes="48px" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs">💄</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 font-medium">{product.name}</td>
+                        <td className="px-6 py-3 text-muted-foreground">{product.category || 'Uncategorized'}</td>
+                        <td className="px-6 py-3 font-bold text-primary">${Number(product.price).toFixed(2)}</td>
+                        <td className="px-6 py-3">{product.stock}</td>
+                        <td className="px-6 py-3 text-right space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditingProduct(product);
+                              setForm({
+                                name: product.name,
+                                description: product.description,
+                                price: product.price.toString(),
+                                category: product.category || '',
+                                stock: product.stock.toString(),
+                                image: product.image || '',
+                              });
+                              setShowModal(true);
+                            }}
+                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition cursor-pointer"
+                          >
+                            <Edit size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-full transition cursor-pointer"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {products.map((product) => (
+                  <div key={product.id} className="bg-card p-4 rounded-2xl border border-border/50 shadow-sm flex gap-4">
+                    <div className="relative w-20 h-20 bg-secondary/20 rounded-xl overflow-hidden shrink-0">
+                      {product.image ? (
+                        <Image src={product.image} alt={product.name} fill className="object-cover" sizes="80px" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-lg">💄</div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div className="space-y-0.5">
+                        <h4 className="font-bold text-sm text-foreground truncate">{product.name}</h4>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                          {product.category || 'Uncategorized'}
+                        </p>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-2">
+                        <div>
+                          <p className="text-xs font-bold text-primary">${Number(product.price).toFixed(2)}</p>
+                          <p className="text-[10px] text-muted-foreground">Stock: {product.stock}</p>
+                        </div>
+
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingProduct(product);
+                              setForm({
+                                name: product.name,
+                                description: product.description,
+                                price: product.price.toString(),
+                                category: product.category || '',
+                                stock: product.stock.toString(),
+                                image: product.image || '',
+                              });
+                              setShowModal(true);
+                            }}
+                            className="p-2 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 rounded-lg transition cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 bg-red-500/10 text-red-600 hover:bg-red-500/20 rounded-lg transition cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

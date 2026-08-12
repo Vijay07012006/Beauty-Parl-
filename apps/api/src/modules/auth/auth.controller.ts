@@ -234,10 +234,30 @@ export class AuthController {
     return this.authService.generateTwoFactorSecret(req.user.id);
   }
 
+  @Post('2fa/enable')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async enableTwoFactorPost(@Request() req: any) {
+    return this.authService.generateTwoFactorSecret(req.user.id);
+  }
+
   @Post('2fa/verify-and-enable')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async verifyAndEnableTwoFactor(
+    @Request() req: any,
+    @Body() body: { token: string },
+  ) {
+    if (!body.token) {
+      throw new BadRequestException('token is required');
+    }
+    return this.authService.verifyAndEnableTwoFactor(req.user.id, body.token);
+  }
+
+  @Post('2fa/verify')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async verifyTwoFactorPost(
     @Request() req: any,
     @Body() body: { token: string },
   ) {

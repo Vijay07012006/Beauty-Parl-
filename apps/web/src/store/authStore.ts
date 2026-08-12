@@ -12,6 +12,7 @@ interface User {
   loyaltyTier?: string;
   totalSpent?: number;
   birthday?: string;
+  isTwoFactorEnabled?: boolean;
 }
 
 interface AuthStore {
@@ -19,7 +20,8 @@ interface AuthStore {
   token: string | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; requiresOtp?: boolean; user?: User; error?: string }>;
+  hydrated: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresOtp?: boolean; requires2fa?: boolean; user?: User; error?: string }>;
   register: (name: string, email: string, password: string, phone: string, referralCode?: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   setSession: (access_token: string, user: User) => void;
   verifyOtp: (email: string, otp: string) => Promise<{ success: boolean; error?: string }>;
@@ -30,6 +32,10 @@ interface AuthStore {
   logout: () => void;
   hydrate: () => void;
   clearError: () => void;
+  enable2fa: () => Promise<{ success: boolean; secret?: string; qrCode?: string; backupCodes?: string[]; error?: string }>;
+  verify2fa: (token: string) => Promise<{ success: boolean; error?: string }>;
+  disable2fa: (password: string) => Promise<{ success: boolean; error?: string }>;
+  verify2faLogin: (email: string, token: string) => Promise<{ success: boolean; user?: User; error?: string }>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => {
@@ -53,6 +59,7 @@ export const useAuthStore = create<AuthStore>((set, get) => {
   token: null,
   loading: false,
   error: null,
+  hydrated: false,
 
   clearError: () => set({ error: null }),
 
@@ -70,11 +77,11 @@ export const useAuthStore = create<AuthStore>((set, get) => {
       .then((res) => {
         const freshUser = res.data;
         localStorage.setItem('user', JSON.stringify(freshUser));
-        set({ user: freshUser });
+        set({ user: freshUser, hydrated: true });
       })
       .catch(() => {
         localStorage.removeItem('user');
-        set({ user: null, token: null });
+        set({ user: null, token: null, hydrated: true });
       });
   },
 
@@ -93,6 +100,11 @@ export const useAuthStore = create<AuthStore>((set, get) => {
       if (data.requiresOtp) {
         set({ loading: false });
         return { success: true, requiresOtp: true, user: data.user };
+      }
+
+      if (data.requiresTwoFactor) {
+        set({ loading: false });
+        return { success: true, requires2fa: true, user: data.user };
       }
 
       const { access_token, user } = data;
@@ -201,6 +213,71 @@ export const useAuthStore = create<AuthStore>((set, get) => {
     localStorage.removeItem('wishlist-storage'); // clear wishlisted items on logout
     delete api.defaults.headers.common['Authorization'];
     set({ user: null, token: null });
+  },
+
+  enable2fa: async () => {
+    set({ loading: true, error: null });
+    try {
+      const response = await api.post('/auth/2fa/enable');
+      set({ loading: false });
+      return { success: true, ...response.data };
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to generate 2FA';
+      set({ error: message, loading: false });
+      return { success: false, error: message };
+    }
+  },
+
+  verify2fa: async (token: string) => {
+    set({ loading: true, error: null });
+    try {
+      await api.post('/auth/2fa/verify', { token });
+      const currentUser = get().user;
+      if (currentUser) {
+        const updatedUser = { ...currentUser, isTwoFactorEnabled: true };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        set({ user: updatedUser });
+      }
+      set({ loading: false });
+      return { success: true };
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Verification failed';
+      set({ error: message, loading: false });
+      return { success: false, error: message };
+    }
+  },
+
+  disable2fa: async (password: string) => {
+    set({ loading: true, error: null });
+    try {
+      await api.post('/auth/2fa/disable', { password });
+      const currentUser = get().user;
+      if (currentUser) {
+        const updatedUser = { ...currentUser, isTwoFactorEnabled: false };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        set({ user: updatedUser });
+      }
+      set({ loading: false });
+      return { success: true };
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to disable 2FA';
+      set({ error: message, loading: false });
+      return { success: false, error: message };
+    }
+  },
+
+  verify2faLogin: async (email: string, token: string) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await api.post('/auth/2fa/verify-login', { email, token });
+      const { access_token, user } = response.data;
+      get().setSession(access_token, user);
+      return { success: true, user };
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Invalid 2FA code';
+      set({ error: message, loading: false });
+      return { success: false, error: message };
+    }
   },
   };
 });

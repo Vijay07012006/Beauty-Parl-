@@ -85,73 +85,134 @@ export default function AdminUsersPage() {
           ) : users.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">No users found.</div>
           ) : (
-            <div className="bg-card rounded-2xl shadow-sm border border-border/50 overflow-x-auto">
-              <table className="w-full min-w-[800px]">
-                <thead className="bg-secondary/30">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Email</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Role</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Joined</th>
-                    <th className="px-6 py-3 text-right text-sm font-medium text-muted-foreground">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-secondary/20 transition">
-                      <td className="px-6 py-3 font-medium">{user.name}</td>
-                      <td className="px-6 py-3 text-muted-foreground">{user.email}</td>
-                      <td className="px-6 py-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${
-                          user.role === 'admin' || user.role === 'super_admin' 
-                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 font-bold' 
-                            : 'bg-gray-100 text-gray-700 dark:bg-secondary dark:text-muted-foreground'
-                        }`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}>
-                          {user.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-muted-foreground">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-3 text-right space-x-2">
-                        {user.role !== 'super_admin' && (
-                          <>
-                            <button
-                              onClick={() => toggleRole(user.id, user.role)}
-                              className="p-2 text-purple-500 hover:bg-purple-50 rounded-full transition cursor-pointer"
-                              title="Toggle Admin Role"
-                            >
-                              {user.role === 'admin' ? <ShieldOff size={18} /> : <Shield size={18} />}
-                            </button>
-                            <button
-                              onClick={() => toggleStatus(user.id, user.isActive)}
-                              className={`p-2 ${user.isActive ? 'text-orange-500 hover:bg-orange-50' : 'text-green-500 hover:bg-green-50'} rounded-full transition cursor-pointer`}
-                              title={user.isActive ? 'Deactivate User' : 'Activate User'}
-                            >
-                              {user.isActive ? <AlertTriangle size={18} /> : <Check size={18} />}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(user)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-full transition cursor-pointer"
-                              title="Delete User"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </>
-                        )}
-                      </td>
+            <div className="space-y-4">
+              {/* Desktop Table View */}
+              <div className="hidden md:block bg-card rounded-2xl shadow-sm border border-border/50 overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-secondary/30">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Email</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Role</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Joined</th>
+                      <th className="px-6 py-3 text-right text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border/50">
+                    {users.map((user) => (
+                      <tr key={user.id} className="hover:bg-secondary/20 transition">
+                        <td className="px-6 py-3 font-medium">{user.name}</td>
+                        <td className="px-6 py-3 text-muted-foreground">{user.email}</td>
+                        <td className="px-6 py-3">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${
+                            user.role === 'admin' || user.role === 'super_admin' 
+                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 font-bold' 
+                              : 'bg-gray-100 text-gray-700 dark:bg-secondary dark:text-muted-foreground'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {user.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-sm text-muted-foreground">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-3 text-right space-x-2">
+                          {user.role !== 'super_admin' && (
+                            <>
+                              <button
+                                onClick={() => toggleRole(user.id, user.role)}
+                                className="p-2 text-purple-500 hover:bg-purple-50 rounded-full transition cursor-pointer"
+                                title="Toggle Admin Role"
+                              >
+                                {user.role === 'admin' ? <ShieldOff size={18} /> : <Shield size={18} />}
+                              </button>
+                              <button
+                                onClick={() => toggleStatus(user.id, user.isActive)}
+                                className={`p-2 ${user.isActive ? 'text-orange-500 hover:bg-orange-50' : 'text-green-500 hover:bg-green-50'} rounded-full transition cursor-pointer`}
+                                title={user.isActive ? 'Deactivate User' : 'Activate User'}
+                              >
+                                {user.isActive ? <AlertTriangle size={18} /> : <Check size={18} />}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(user)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-full transition cursor-pointer"
+                                title="Delete User"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {users.map((user) => (
+                  <div key={user.id} className="bg-card p-5 rounded-2xl border border-border/50 shadow-sm space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-bold text-base text-foreground">{user.name}</h4>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                        user.role === 'admin' || user.role === 'super_admin' 
+                          ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300' 
+                          : 'bg-gray-100 text-gray-700 dark:bg-secondary dark:text-muted-foreground'
+                      }`}>
+                        {user.role}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">Joined: {new Date(user.createdAt).toLocaleDateString()}</span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {user.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+
+                    {user.role !== 'super_admin' && (
+                      <div className="flex justify-end gap-2 pt-3 border-t border-border/40">
+                        <button
+                          onClick={() => toggleRole(user.id, user.role)}
+                          className="px-3 py-1.5 border border-border rounded-xl text-xs font-semibold hover:bg-secondary text-foreground flex items-center gap-1 cursor-pointer"
+                        >
+                          {user.role === 'admin' ? <ShieldOff size={14} /> : <Shield size={14} />}
+                          <span>Role</span>
+                        </button>
+                        <button
+                          onClick={() => toggleStatus(user.id, user.isActive)}
+                          className={`px-3 py-1.5 border border-border rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer ${
+                            user.isActive ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'
+                          }`}
+                        >
+                          {user.isActive ? <AlertTriangle size={14} /> : <Check size={14} />}
+                          <span>{user.isActive ? 'Suspend' : 'Activate'}</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(user)}
+                          className="p-2 text-red-500 hover:bg-red-50 border border-border rounded-xl cursor-pointer"
+                          title="Delete User"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -61,59 +61,118 @@ export default function AdminOrdersPage() {
           ) : orders.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">No orders yet.</div>
           ) : (
-            <div className="bg-card rounded-2xl shadow-sm border border-border/50 overflow-x-auto">
-              <table className="w-full min-w-[800px]">
-                <thead className="bg-secondary/30">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Order #</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Customer</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Total</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Payment</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Date</th>
-                    <th className="px-6 py-3 text-right text-sm font-medium text-muted-foreground">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-secondary/20 transition">
-                      <td className="px-6 py-3 font-medium">#{order.id}</td>
-                      <td className="px-6 py-3 text-sm max-w-[200px] truncate">
-                        {order.guestEmail || `User ID: ${order.userId}`}
-                      </td>
-                      <td className="px-6 py-3 font-bold text-primary">${Number(order.total).toFixed(2)}</td>
-                      <td className="px-6 py-3 text-sm">{order.paymentMethod.toUpperCase()}</td>
-                      <td className="px-6 py-3">
-                        <select
-                          value={order.status}
-                          onChange={(e) => updateStatus(order.id, e.target.value)}
-                          className={`px-3 py-1 rounded-full text-xs font-medium border-0 focus:ring-2 focus:ring-primary/50 cursor-pointer ${
-                            order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                            order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                            order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                            'bg-yellow-100 text-yellow-700'
-                          }`}
-                        >
-                          {statuses.map((s) => (
-                            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-3 text-right">
-                        <button
-                          onClick={() => setSelectedOrder(order)}
-                          className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition cursor-pointer"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </td>
+            <div className="space-y-4">
+              {/* Desktop Table View */}
+              <div className="hidden md:block bg-card rounded-2xl shadow-sm border border-border/50 overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-secondary/30">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Order #</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Customer</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Total</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Payment</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground">Date</th>
+                      <th className="px-6 py-3 text-right text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border/50">
+                    {orders.map((order) => (
+                      <tr key={order.id} className="hover:bg-secondary/20 transition">
+                        <td className="px-6 py-3 font-medium">#{order.id}</td>
+                        <td className="px-6 py-3 text-sm max-w-[200px] truncate">
+                          {order.guestEmail || `User ID: ${order.userId}`}
+                        </td>
+                        <td className="px-6 py-3 font-bold text-primary">${Number(order.total).toFixed(2)}</td>
+                        <td className="px-6 py-3 text-sm">{order.paymentMethod.toUpperCase()}</td>
+                        <td className="px-6 py-3">
+                          <select
+                            value={order.status}
+                            onChange={(e) => updateStatus(order.id, e.target.value)}
+                            className={`px-3 py-1 rounded-full text-xs font-medium border-0 focus:ring-2 focus:ring-primary/50 cursor-pointer ${
+                              order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                              order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                              order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}
+                          >
+                            {statuses.map((s) => (
+                              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-6 py-3 text-sm text-muted-foreground">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-3 text-right">
+                          <button
+                            onClick={() => setSelectedOrder(order)}
+                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition cursor-pointer"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {orders.map((order) => (
+                  <div key={order.id} className="bg-card p-5 rounded-2xl border border-border/50 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-sm text-foreground">Order #{order.id}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-xs flex justify-between">
+                        <span className="text-muted-foreground">Customer:</span>
+                        <span className="font-semibold text-foreground max-w-[180px] truncate">
+                          {order.guestEmail || `User ID: ${order.userId}`}
+                        </span>
+                      </div>
+                      <div className="text-xs flex justify-between">
+                        <span className="text-muted-foreground">Payment:</span>
+                        <span className="font-semibold text-foreground">{order.paymentMethod.toUpperCase()}</span>
+                      </div>
+                      <div className="text-xs flex justify-between">
+                        <span className="text-muted-foreground">Total:</span>
+                        <span className="font-bold text-primary">${Number(order.total).toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-3 border-t border-border/40">
+                      <select
+                        value={order.status}
+                        onChange={(e) => updateStatus(order.id, e.target.value)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border border-border bg-background focus:ring-2 focus:ring-primary/50 cursor-pointer ${
+                          order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                          order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                          order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}
+                      >
+                        {statuses.map((s) => (
+                          <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        ))}
+                      </select>
+
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="px-3.5 py-1.5 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 text-xs font-bold rounded-xl flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Eye size={14} />
+                        <span>Details</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

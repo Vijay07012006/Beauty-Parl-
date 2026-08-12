@@ -78,7 +78,7 @@ export default function LiveShoppingRoomPage() {
   };
 
   const initWebSockets = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://beauty-parl-api.onrender.com';
     const socket = io(baseUrl, {
       withCredentials: true,
       auth: { token: token || undefined },

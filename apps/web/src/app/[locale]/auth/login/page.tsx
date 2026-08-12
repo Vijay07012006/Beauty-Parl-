@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { OtpModal } from '@/components/auth/OtpModal';
+import { TwoFactorModal } from '@/components/auth/TwoFactorModal';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { useLocale } from '@/hooks/useLocale';
 
@@ -18,6 +19,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showOtpModal, setShowOtpModal] = useState(false);
+  const [show2faModal, setShow2faModal] = useState(false);
+  const [twoFactorEmail, setTwoFactorEmail] = useState('');
   const [unverifiedEmail, setUnverifiedEmail] = useState('');
   const [unverifiedPassword, setUnverifiedPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -37,6 +40,9 @@ export default function LoginPage() {
       setUnverifiedEmail(email);
       setUnverifiedPassword(password);
       setShowOtpModal(true);
+    } else if (result.success && result.requires2fa) {
+      setTwoFactorEmail(email);
+      setShow2faModal(true);
     } else if (result.success && result.user) {
       const user = result.user;
       if (user.role === 'admin' || user.role === 'super_admin') {
@@ -62,6 +68,18 @@ export default function LoginPage() {
 
   const handleOtpClose = () => {
     setShowOtpModal(false);
+  };
+
+  const handle2faVerified = () => {
+    setShow2faModal(false);
+    const user = useAuthStore.getState().user;
+    if (user) {
+      if (user.role === 'admin' || user.role === 'super_admin') {
+        router.push(`/${locale}/admin/dashboard`);
+      } else {
+        router.push(`/${locale}`);
+      }
+    }
   };
 
   return (
@@ -139,6 +157,13 @@ export default function LoginPage() {
           email={unverifiedEmail}
           onVerified={handleOtpVerified}
           onClose={handleOtpClose}
+        />
+      )}
+      {show2faModal && (
+        <TwoFactorModal
+          email={twoFactorEmail}
+          onVerified={handle2faVerified}
+          onClose={() => setShow2faModal(false)}
         />
       )}
       <Footer />

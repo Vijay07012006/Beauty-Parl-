@@ -24,6 +24,7 @@ import { ReviewList } from '@/components/reviews/ReviewList';
 // Phase 5C imports
 import { TikTokShopButton } from '@/components/products/TikTokShopButton';
 import { BundleCard } from '@/components/products/BundleCard';
+import { Sparkles } from 'lucide-react';
 
 interface Product {
   id: number;
@@ -328,21 +329,34 @@ export default function ProductDetailPage() {
               </div>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <button
-                  onClick={handleAddToCart}
-                  disabled={product.stock <= 0}
-                  className="flex-1 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/95 transition-all shadow-md shadow-primary/20 active:scale-95 disabled:opacity-50 cursor-pointer select-none"
-                >
-                  Add to Cart
-                </button>
-                <button
-                  onClick={handleBuyNow}
-                  disabled={product.stock <= 0}
-                  className="flex-1 py-4 bg-accent text-white font-bold rounded-full hover:bg-accent/95 transition-all shadow-md shadow-accent/20 active:scale-95 disabled:opacity-50 cursor-pointer select-none"
-                >
-                  Buy Now
-                </button>
+              <div className="flex flex-col gap-3 pt-2">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={product.stock <= 0}
+                    className="flex-1 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/95 transition-all shadow-md shadow-primary/20 active:scale-95 disabled:opacity-50 cursor-pointer select-none"
+                  >
+                    Add to Cart
+                  </button>
+                  <button
+                    onClick={handleBuyNow}
+                    disabled={product.stock <= 0}
+                    className="flex-1 py-4 bg-accent text-white font-bold rounded-full hover:bg-accent/95 transition-all shadow-md shadow-accent/20 active:scale-95 disabled:opacity-50 cursor-pointer select-none"
+                  >
+                    Buy Now
+                  </button>
+                </div>
+                {['makeup', 'lips', 'lipstick', 'eyes', 'blush', 'face', 'cosmetics', 'shade', 'eye'].some(
+                  cat => product.category?.toLowerCase().includes(cat) || product.name?.toLowerCase().includes(cat)
+                ) && (
+                  <button
+                    onClick={() => router.push(`/${locale}/virtual-try-on`)}
+                    className="w-full py-3.5 border-2 border-primary text-primary font-bold rounded-full hover:bg-primary/5 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 select-none"
+                  >
+                    <Sparkles size={16} />
+                    <span>Virtual Try-On (AR)</span>
+                  </button>
+                )}
               </div>
 
               {/* TikTok Shop Integration */}

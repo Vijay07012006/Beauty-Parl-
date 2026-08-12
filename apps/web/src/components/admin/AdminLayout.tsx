@@ -15,7 +15,8 @@ import {
   X,
   Ticket,
   MessageSquare,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Tv
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -27,6 +28,7 @@ const navItems = [
   { icon: Ticket, label: 'Coupons', href: '/admin/coupons' },
   { icon: MessageSquare, label: 'Reviews', href: '/admin/reviews' },
   { icon: ImageIcon, label: 'UGC Photos', href: '/admin/ugc' },
+  { icon: Tv, label: 'Live Shopping', href: '/admin/live-shopping' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 
