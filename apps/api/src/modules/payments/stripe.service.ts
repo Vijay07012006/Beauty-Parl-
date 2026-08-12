@@ -27,7 +27,7 @@ export class StripeService {
     }
   }
 
-  async createCheckoutSession(amount: number, orderId: number): Promise<any> {
+  async createCheckoutSession(amount: number, orderId: number, userId?: number, guestEmail?: string): Promise<any> {
     if (!this.stripe) {
       throw new InternalServerErrorException('Stripe service is not configured. Payments are disabled.');
     }
@@ -35,6 +35,12 @@ export class StripeService {
     const dbOrder = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!dbOrder) {
       throw new BadRequestException(`Order with ID ${orderId} not found`);
+    }
+    // H-7: ownership — the caller must own the order (their userId OR the guest email on the order)
+    const orderBelongsToUser = dbOrder.userId && userId && dbOrder.userId === userId;
+    const orderBelongsToGuest = !dbOrder.userId && guestEmail && dbOrder.guestEmail?.toLowerCase() === guestEmail;
+    if (!orderBelongsToUser && !orderBelongsToGuest) {
+      throw new BadRequestException('You are not authorized to pay for this order');
     }
     if (Math.abs(Number(dbOrder.total) - Number(amount)) > 0.01) {
       throw new BadRequestException('Amount does not match the order total');

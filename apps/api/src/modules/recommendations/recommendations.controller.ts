@@ -1,12 +1,12 @@
-import { Controller, Get, Query, Headers } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { RecommendationsService } from './recommendations.service';
+import { OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('recommendations')
 export class RecommendationsController {
   constructor(
     private readonly recommendationsService: RecommendationsService,
-    private readonly jwtService: JwtService,
   ) {}
 
   private safeLimit(limit?: string): number {
@@ -41,23 +41,14 @@ export class RecommendationsController {
   }
 
   @Get('personalized')
+  @UseGuards(OptionalJwtAuthGuard)
   async getPersonalized(
-    @Headers('authorization') authHeader?: string,
+    @Req() req: Request,
     @Query('limit') limit?: string,
   ) {
     const max = this.safeLimit(limit);
-    let userId: number | null = null;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.split(' ')[1];
-        const payload = this.jwtService.verify(token);
-        userId = payload.sub ? Number(payload.sub) : null;
-      } catch (err) {
-        // Token expired or invalid — fallback to guest
-      }
-    }
-
+    const user = req.user as { id?: number } | undefined;
+    const userId = user?.id ?? null;
     return this.recommendationsService.getPersonalized(userId, max);
   }
 }

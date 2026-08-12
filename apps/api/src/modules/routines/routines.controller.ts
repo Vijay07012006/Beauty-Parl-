@@ -1,25 +1,13 @@
-import { Controller, Get, Post, Body, Headers, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { RoutinesService } from './routines.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('routine-builder')
 export class RoutinesController {
   constructor(
     private readonly routineService: RoutinesService,
-    private readonly jwtService: JwtService,
   ) {}
-
-  private extractUserId(authHeader?: string): number {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication token missing or invalid');
-    }
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = this.jwtService.verify(token);
-      if (payload?.sub) return Number(payload.sub);
-    } catch {}
-    throw new UnauthorizedException('Authentication token signature verification failed');
-  }
 
   @Post('analyze')
   async analyze(@Body() body: { skinType: string; primaryConcern: string }) {
@@ -27,17 +15,19 @@ export class RoutinesController {
   }
 
   @Post('save')
+  @UseGuards(JwtAuthGuard)
   async save(
     @Body() body: { name: string; products: any },
-    @Headers('authorization') authHeader?: string,
+    @Req() req: Request,
   ) {
-    const userId = this.extractUserId(authHeader);
+    const userId = (req.user as { id: number }).id;
     return this.routineService.saveRoutine(body.name, body.products, userId);
   }
 
   @Get('my-routines')
-  async listMyRoutines(@Headers('authorization') authHeader?: string) {
-    const userId = this.extractUserId(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async listMyRoutines(@Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
     return this.routineService.list(userId);
   }
 }

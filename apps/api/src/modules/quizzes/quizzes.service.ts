@@ -103,6 +103,19 @@ export class QuizzesService {
 
     const saved = await this.qrRepo.save(savedResponse);
 
+    // M-11: cap stored quiz responses per user/session (keeps rows bounded even under
+    // anonymous-session spam) — retain only the 5 most recent submissions.
+    try {
+      const where = userId ? { userId } : { sessionId: sessionId || '' };
+      const recent = await this.qrRepo.find({ where, order: { createdAt: 'DESC' }, take: 10 });
+      const stale = recent.slice(5).map((r) => r.id);
+      if (stale.length > 0) {
+        await this.qrRepo.delete(stale);
+      }
+    } catch (err) {
+      console.warn('⚠️ [Quizzes] Failed to prune old quiz responses:', (err as Error).message);
+    }
+
     return {
       recommendations,
       id: saved.id,

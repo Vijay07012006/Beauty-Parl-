@@ -1,22 +1,21 @@
-import { Controller, Post, Body, Headers, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Post, Body, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import { Request } from 'express';
 import { SkinAnalysisService } from './skin-analysis.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('skin-analysis')
 export class SkinAnalysisController {
   constructor(
     private readonly saService: SkinAnalysisService,
-    private readonly jwtService: JwtService,
   ) {}
 
   @Post('analyze')
+  @UseGuards(JwtAuthGuard)
   async analyze(
     @Body() body: { imageUrl: string },
-    @Headers('authorization') authHeader?: string,
+    @Req() req: Request,
   ) {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication token missing or invalid');
-    }
+    const userId = (req.user as { id: number }).id;
 
     // imageUrl is required, a string, and bounded (entity column is varchar(500))
     if (typeof body?.imageUrl !== 'string' || body.imageUrl.length === 0) {
@@ -24,15 +23,6 @@ export class SkinAnalysisController {
     }
     if (body.imageUrl.length > 500) {
       throw new BadRequestException('imageUrl is too long');
-    }
-
-    let userId: number;
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = this.jwtService.verify(token);
-      userId = Number(payload.sub);
-    } catch {
-      throw new UnauthorizedException('Authentication token signature verification failed');
     }
 
     return this.saService.analyze(body.imageUrl, userId);

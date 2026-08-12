@@ -31,7 +31,7 @@ export class RazorpayService {
     }
   }
 
-  async createOrder(amount: number, orderId?: number, currency = 'INR'): Promise<any> {
+  async createOrder(amount: number, orderId?: number, currency = 'INR', userId?: number, guestEmail?: string): Promise<any> {
     if (!this.razorpay) {
       throw new InternalServerErrorException('Razorpay service is not configured. Payments are disabled.');
     }
@@ -42,6 +42,12 @@ export class RazorpayService {
     const dbOrder = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!dbOrder) {
       throw new BadRequestException(`Order with ID ${orderId} not found`);
+    }
+    // H-7: ownership — the caller must own the order (their userId OR the guest email on the order)
+    const orderBelongsToUser = dbOrder.userId && userId && dbOrder.userId === userId;
+    const orderBelongsToGuest = !dbOrder.userId && guestEmail && dbOrder.guestEmail?.toLowerCase() === guestEmail;
+    if (!orderBelongsToUser && !orderBelongsToGuest) {
+      throw new BadRequestException('You are not authorized to pay for this order');
     }
     if (Math.abs(Number(dbOrder.total) - Number(amount)) > 0.01) {
       throw new BadRequestException('Amount does not match the order total');
@@ -80,7 +86,13 @@ export class RazorpayService {
       .createHmac('sha256', webhookSecret)
       .update(body)
       .digest('hex');
-    return expectedSignature === signature;
+    // M-5: constant-time comparison to avoid timing side channels
+    const expectedBuf = Buffer.from(expectedSignature, 'hex');
+    const receivedBuf = Buffer.from(signature || '', 'hex');
+    if (expectedBuf.length !== receivedBuf.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(expectedBuf, receivedBuf);
   }
 
   // Handle payment success webhook
@@ -110,6 +122,13 @@ export class RazorpayService {
     if (payment.amount !== expectedAmountPaise) {
       console.warn(
         `[Webhook] Amount mismatch for order #${order.id}: expected ${expectedAmountPaise} paise, received ${payment.amount} paise. Skipping.`,
+      );
+      return;
+    }
+    // M-5: enforce the order currency (INR) — reject payments settled in any other currency
+    if (payment.currency && payment.currency.toUpperCase() !== 'INR') {
+      console.warn(
+        `[Webhook] Currency mismatch for order #${order.id}: expected INR, received ${payment.currency}. Skipping.`,
       );
       return;
     }

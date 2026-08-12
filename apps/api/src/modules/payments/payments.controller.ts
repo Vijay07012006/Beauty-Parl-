@@ -1,6 +1,8 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, BadRequestException, Req, Res } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, BadRequestException, Req, Res, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { RazorpayService } from './razorpay.service';
 import { StripeService } from './stripe.service';
+import { OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('payments')
 export class PaymentsController {
@@ -9,13 +11,21 @@ export class PaymentsController {
     private stripeService: StripeService,
   ) {}
 
+  // H-7: payment orders may only be created for the caller's own order —
+  // authenticated users are bound by their id, guests must prove ownership of the guest email.
   @Post('create-order')
+  @UseGuards(OptionalJwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async createOrder(@Body() body: { amount: number; orderId?: number }) {
+  async createOrder(@Req() req: Request, @Body() body: { amount: number; orderId?: number; email?: string }) {
+    if (!body.orderId) {
+      throw new BadRequestException('Order ID is required');
+    }
     if (body.amount === undefined || body.amount <= 0) {
       throw new BadRequestException('Amount must be a positive number');
     }
-    return this.razorpayService.createOrder(body.amount, body.orderId);
+    const userId = (req.user as { id?: number })?.id;
+    const guestEmail = userId ? undefined : body.email?.trim().toLowerCase();
+    return this.razorpayService.createOrder(body.amount, body.orderId, 'INR', userId, guestEmail);
   }
 
   @Post('webhook')
@@ -43,15 +53,18 @@ export class PaymentsController {
   }
 
   @Post('create-stripe-session')
+  @UseGuards(OptionalJwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async createStripeSession(@Body() body: { amount: number; orderId: number }) {
-    if (!body.amount || body.amount <= 0) {
-      throw new BadRequestException('Amount must be a positive number');
-    }
+  async createStripeSession(@Req() req: Request, @Body() body: { amount: number; orderId: number; email?: string }) {
     if (!body.orderId) {
       throw new BadRequestException('OrderId is required');
     }
-    return this.stripeService.createCheckoutSession(body.amount, body.orderId);
+    if (!body.amount || body.amount <= 0) {
+      throw new BadRequestException('Amount must be a positive number');
+    }
+    const userId = (req.user as { id?: number })?.id;
+    const guestEmail = userId ? undefined : body.email?.trim().toLowerCase();
+    return this.stripeService.createCheckoutSession(body.amount, body.orderId, userId, guestEmail);
   }
 
   @Post('stripe-webhook')

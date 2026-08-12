@@ -1,25 +1,20 @@
-import { Controller, Get, Post, Body, Param, Headers, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Get, Post, Body, Param, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+import { Request } from 'express';
 import { LiveShoppingService } from './live-shopping.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('live-shopping')
 export class LiveShoppingController {
   constructor(
     private readonly liveService: LiveShoppingService,
-    private readonly jwtService: JwtService,
   ) {}
 
-  private checkAdmin(authHeader?: string) {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication token missing or invalid');
+  private requireAdmin(req: Request): void {
+    const user = req.user as { role?: string } | undefined;
+    // LS-4: super_admin was missing — both admin roles may manage live events
+    if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+      throw new UnauthorizedException('Admin privileges required');
     }
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = this.jwtService.verify(token);
-      // LS-4: super_admin was missing — both admin roles may manage live events
-      if (payload?.role === 'admin' || payload?.role === 'super_admin') return;
-    } catch {}
-    throw new UnauthorizedException('Admin privileges required');
   }
 
   @Get()
@@ -33,8 +28,9 @@ export class LiveShoppingController {
   }
 
   @Post('create')
-  async create(@Body() body: any, @Headers('authorization') authHeader?: string) {
-    this.checkAdmin(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async create(@Body() body: any, @Req() req: Request) {
+    this.requireAdmin(req);
     return this.liveService.create(body);
   }
 }

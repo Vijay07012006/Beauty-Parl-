@@ -1,37 +1,26 @@
-import { Controller, Get, Post, Param, Headers, UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Get, Post, Param, UseGuards, Req, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { GamificationService } from './gamification.service';
 import { Order } from '../orders/order.entity';
 import { Referral } from '../referrals/referral.entity';
 import { ReferralTracking } from '../referrals/referral-tracking.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('gamification')
 export class GamificationController {
   constructor(
     private readonly gameService: GamificationService,
-    private readonly jwtService: JwtService,
     @InjectRepository(Order) private readonly orderRepo: Repository<Order>,
     @InjectRepository(Referral) private readonly referralRepo: Repository<Referral>,
     @InjectRepository(ReferralTracking) private readonly trackingRepo: Repository<ReferralTracking>,
   ) {}
 
-  private extractUserId(authHeader?: string): number {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication token missing or invalid');
-    }
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = this.jwtService.verify(token);
-      if (payload?.sub) return Number(payload.sub);
-    } catch {}
-    throw new UnauthorizedException('Authentication token signature verification failed');
-  }
-
   @Get('achievements')
-  async getAchievements(@Headers('authorization') authHeader?: string) {
-    const userId = this.extractUserId(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async getAchievements(@Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
     return this.gameService.getAchievements(userId);
   }
 
@@ -41,11 +30,12 @@ export class GamificationController {
   }
 
   @Post('trigger/:type')
+  @UseGuards(JwtAuthGuard)
   async trigger(
     @Param('type') type: any,
-    @Headers('authorization') authHeader?: string,
+    @Req() req: Request,
   ) {
-    const userId = this.extractUserId(authHeader);
+    const userId = (req.user as { id: number }).id;
 
     // Server-side proof: only grant achievements that are backed by real user activity.
     let proven = false;

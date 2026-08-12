@@ -1,24 +1,17 @@
-import { Controller, Get, Post, Param, Body, Headers, NotFoundException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Get, Post, Param, Body, Headers, UseGuards, Req, NotFoundException } from '@nestjs/common';
+import { Request } from 'express';
 import { QuizzesService } from './quizzes.service';
+import { OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('quizzes')
 export class QuizzesController {
   constructor(
     private readonly quizzesService: QuizzesService,
-    private readonly jwtService: JwtService,
   ) {}
 
-  private extractUserOrSession(authHeader?: string, sessionHeader?: string) {
-    let userId: number | undefined;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.split(' ')[1];
-        const payload = this.jwtService.verify(token);
-        if (payload?.sub) userId = Number(payload.sub);
-      } catch {}
-    }
-    return { userId, sessionId: sessionHeader };
+  private userOrSession(req: Request, sessionHeader?: string) {
+    const user = req.user as { id?: number } | undefined;
+    return { userId: user?.id, sessionId: sessionHeader };
   }
 
   @Get()
@@ -34,13 +27,14 @@ export class QuizzesController {
   }
 
   @Post(':id/submit')
+  @UseGuards(OptionalJwtAuthGuard)
   async submit(
     @Param('id') id: string,
     @Body() body: { answers: Record<string, string> },
-    @Headers('authorization') authHeader?: string,
+    @Req() req: Request,
     @Headers('x-session-id') sessionHeader?: string,
   ) {
-    const { userId, sessionId } = this.extractUserOrSession(authHeader, sessionHeader);
+    const { userId, sessionId } = this.userOrSession(req, sessionHeader);
     return this.quizzesService.submitAnswers(id, body.answers, userId, sessionId);
   }
 }

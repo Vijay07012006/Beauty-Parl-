@@ -1,32 +1,21 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Headers, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import { Request } from 'express';
 import { SubscriptionsService } from './subscriptions.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('subscriptions')
+@UseGuards(JwtAuthGuard)
 export class SubscriptionsController {
   constructor(
     private readonly subService: SubscriptionsService,
-    private readonly jwtService: JwtService,
   ) {}
-
-  private extractUserId(authHeader?: string): number {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication token missing or invalid');
-    }
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = this.jwtService.verify(token);
-      if (payload?.sub) return Number(payload.sub);
-    } catch {}
-    throw new UnauthorizedException('Authentication token signature verification failed');
-  }
 
   @Post()
   async create(
     @Body() body: { productId: number; frequency: 'monthly' | 'quarterly' | 'bi-monthly'; quantity: number; paymentMethod?: string },
-    @Headers('authorization') authHeader?: string,
+    @Req() req: Request,
   ) {
-    const userId = this.extractUserId(authHeader);
+    const userId = (req.user as { id: number }).id;
 
     // Subscriptions must be backed by a prepaid payment method — COD is not accepted (Fix 21)
     const method = (body.paymentMethod || '').toLowerCase();
@@ -41,8 +30,8 @@ export class SubscriptionsController {
   }
 
   @Get()
-  async list(@Headers('authorization') authHeader?: string) {
-    const userId = this.extractUserId(authHeader);
+  async list(@Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
     return this.subService.list(userId);
   }
 
@@ -50,15 +39,15 @@ export class SubscriptionsController {
   async update(
     @Param('id') id: string,
     @Body() body: { frequency: 'monthly' | 'quarterly' | 'bi-monthly'; quantity: number },
-    @Headers('authorization') authHeader?: string,
+    @Req() req: Request,
   ) {
-    const userId = this.extractUserId(authHeader);
+    const userId = (req.user as { id: number }).id;
     return this.subService.update(Number(id), body.frequency, body.quantity, userId);
   }
 
   @Delete(':id')
-  async cancel(@Param('id') id: string, @Headers('authorization') authHeader?: string) {
-    const userId = this.extractUserId(authHeader);
+  async cancel(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
     await this.subService.cancel(Number(id), userId);
     return { success: true };
   }
