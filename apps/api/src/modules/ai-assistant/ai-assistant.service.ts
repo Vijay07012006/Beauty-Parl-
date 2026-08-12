@@ -533,7 +533,7 @@ export class AiAssistantService implements OnModuleInit {
       if (!response.ok) throw new Error('DuckDuckGo search request failed');
       const data: any = await response.json();
       
-      const results = (data.RelatedTopics || [])
+      let results = (data.RelatedTopics || [])
         .map((t: any) => {
           if (t.Topics) {
             return t.Topics.map((sub: any) => ({
@@ -550,6 +550,24 @@ export class AiAssistantService implements OnModuleInit {
         })
         .flat()
         .filter((t: any) => t.url && t.url !== '#');
+
+      // If no results from RelatedTopics, try parsing AbstractText
+      if (results.length === 0 && data.AbstractText) {
+        results.push({
+          title: data.AbstractText.split('.')[0] || 'Result',
+          url: data.AbstractURL || `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+          snippet: data.AbstractText,
+        });
+      }
+
+      // If still no results, add generic search link
+      if (results.length === 0) {
+        results.push({
+          title: `Search for '${query}'`,
+          url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+          snippet: `Search DuckDuckGo directly for results regarding: ${query}`,
+        });
+      }
 
       return {
         visualType: 'web_search',

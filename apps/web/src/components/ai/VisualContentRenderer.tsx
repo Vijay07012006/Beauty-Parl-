@@ -370,6 +370,16 @@ function ComparisonRenderer({ data }: { data: { headers: string[]; rows: Compari
 // ─── Web Search Renderer ──────────────────────────────────────────────────────
 
 function WebSearchRenderer({ results }: { results: { title: string; url: string; snippet: string }[] }) {
+  if (!results || results.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3 py-10">
+        <Search className="w-12 h-12 opacity-25 animate-pulse" />
+        <p className="text-sm font-semibold">No search results found</p>
+        <p className="text-xs text-muted-foreground max-w-xs text-center">Try adjusting your query or searching for a different beauty topic.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-center gap-2 shrink-0">
