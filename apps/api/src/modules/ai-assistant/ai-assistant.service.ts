@@ -274,7 +274,11 @@ export class AiAssistantService implements OnModuleInit {
         try {
           if (name === 'get_products') {
             toolResult = await this.getProductsTool(toolArgs);
-            productsList = productsList.concat(toolResult || []);
+            if (toolResult && toolResult.visualType === 'products') {
+              productsList = productsList.concat(toolResult.data || []);
+            } else {
+              productsList = productsList.concat(toolResult || []);
+            }
           } else if (name === 'get_sales_stats') {
             if (!this.isAdmin(role)) {
               toolResult = { error: 'Only admins can access sales statistics.' };
@@ -294,8 +298,16 @@ export class AiAssistantService implements OnModuleInit {
               toolResult = { error: `Page '${rawPage}' is not a valid navigation destination.` };
             }
           } else if (name === 'generate_chart') {
-            chartData = toolArgs;
-            toolResult = { success: true, chart: toolArgs };
+            chartData = {
+              type: toolArgs.type,
+              title: toolArgs.title,
+              labels: toolArgs.labels,
+              values: toolArgs.values,
+            };
+            toolResult = {
+              visualType: 'chart',
+              data: chartData,
+            };
 
             // Save asset generation in ai_generations
             const generation = new AiGeneration();
@@ -347,12 +359,29 @@ export class AiAssistantService implements OnModuleInit {
     finalAssistantMessage.content = responseText;
     await this.conversationRepo.save(finalAssistantMessage);
 
+    let finalVisualType: string | undefined = undefined;
+    let finalData: any = undefined;
+
+    if (productsList.length > 0) {
+      finalVisualType = 'products';
+      finalData = productsList;
+    } else if (chartData) {
+      finalVisualType = 'chart';
+      finalData = chartData;
+    } else if (navigationRoute) {
+      finalVisualType = 'navigation';
+      finalData = navigationRoute;
+    }
+
     return {
       reply: responseText,
+      response: responseText,
       products: productsList.length > 0 ? productsList : undefined,
       chart: chartData,
       navigation: navigationRoute,
       sessionId,
+      visualType: finalVisualType,
+      data: finalData,
     };
   }
 
@@ -383,7 +412,20 @@ export class AiAssistantService implements OnModuleInit {
       query.andWhere('product.price <= :maxPrice', { maxPrice });
     }
 
-    return query.take(6).getMany();
+    const products = await query.take(6).getMany();
+    return {
+      visualType: 'products',
+      data: products.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        image: p.image,
+        rating: p.rating,
+        stock: p.stock,
+        description: p.description,
+        category: p.category,
+      })),
+    };
   }
 
   private async getSalesStatsTool(args: any) {

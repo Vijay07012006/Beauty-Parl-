@@ -114,12 +114,16 @@ How can I help?
       ]);
 
       // ── Update visual panel ──────────────────────────────────────────────
-      if (data.products?.length > 0) {
+      if (data.visualType && data.data) {
+        if (data.visualType === 'products') {
+          setVisualContent({ visualType: 'products', products: data.data });
+        } else if (data.visualType === 'chart') {
+          setVisualContent({ visualType: 'chart', chart: data.data });
+        }
+      } else if (data.products?.length > 0) {
         setVisualContent({ visualType: 'products', products: data.products });
       } else if (data.chart) {
         setVisualContent({ visualType: 'chart', chart: data.chart });
-      } else {
-        // Keep previous visual content on plain text answers
       }
 
       // ── Handle navigation (double-sanitized) ────────────────────────────
