@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI, FunctionDeclaration, SchemaType } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../products/product.entity';
@@ -11,68 +11,83 @@ import { AiGeneration } from './entities/ai-generation.entity';
 
 @Injectable()
 export class AiAssistantService implements OnModuleInit {
-  private genAI!: GoogleGenerativeAI;
+  private openai!: OpenAI;
   private isConfigured = false;
 
-  private functionDeclarations: FunctionDeclaration[] = [
+  private tools: any[] = [
     {
-      name: 'get_products',
-      description: 'Get products by category, search term, or price range. Use this when the user asks to see products, search items, suggest items, or show catalogs.',
-      parameters: {
-        type: SchemaType.OBJECT,
-        properties: {
-          category: { type: SchemaType.STRING, description: 'Product category like Makeup, Skincare, Haircare' },
-          search: { type: SchemaType.STRING, description: 'Search term/keyword matching name or description' },
-          minPrice: { type: SchemaType.NUMBER, description: 'Minimum price filter value' },
-          maxPrice: { type: SchemaType.NUMBER, description: 'Maximum price filter value' },
+      type: 'function',
+      function: {
+        name: 'get_products',
+        description: 'Get products by category, search term, or price range. Use this when the user asks to see products, search items, suggest items, or show catalogs.',
+        parameters: {
+          type: 'object',
+          properties: {
+            category: { type: 'string', description: 'Product category like Makeup, Skincare, Haircare' },
+            search: { type: 'string', description: 'Search term/keyword matching name or description' },
+            minPrice: { type: 'number', description: 'Minimum price filter value' },
+            maxPrice: { type: 'number', description: 'Maximum price filter value' },
+          },
         },
       },
     },
     {
-      name: 'get_sales_stats',
-      description: 'Get sales statistics (total revenue, order count, and average order value) for a range. Useful to answer business queries.',
-      parameters: {
-        type: SchemaType.OBJECT,
-        properties: {
-          range: { type: SchemaType.STRING, description: 'Time range to filter sales', enum: ['today', 'week', 'month', 'year'], format: 'enum' },
+      type: 'function',
+      function: {
+        name: 'get_sales_stats',
+        description: 'Get sales statistics (total revenue, order count, and average order value) for a range. Useful to answer business queries.',
+        parameters: {
+          type: 'object',
+          properties: {
+            range: { type: 'string', description: 'Time range to filter sales', enum: ['today', 'week', 'month', 'year'] },
+          },
+          required: ['range'],
         },
-        required: ['range'],
       },
     },
     {
-      name: 'get_order_details',
-      description: 'Get status and summary details of a specific order by its numeric ID.',
-      parameters: {
-        type: SchemaType.OBJECT,
-        properties: {
-          orderId: { type: SchemaType.NUMBER, description: 'Numeric order identifier' },
+      type: 'function',
+      function: {
+        name: 'get_order_details',
+        description: 'Get status and summary details of a specific order by its numeric ID.',
+        parameters: {
+          type: 'object',
+          properties: {
+            orderId: { type: 'number', description: 'Numeric order identifier' },
+          },
+          required: ['orderId'],
         },
-        required: ['orderId'],
       },
     },
     {
-      name: 'navigate_to',
-      description: 'Navigate the client browser tab to a specific page or route. Examples: /en/products, /en/orders, /en/profile, etc.',
-      parameters: {
-        type: SchemaType.OBJECT,
-        properties: {
-          route: { type: SchemaType.STRING, description: 'Destination route path' },
+      type: 'function',
+      function: {
+        name: 'navigate_to',
+        description: 'Navigate the client browser tab to a specific page or route. Examples: /en/products, /en/orders, /en/profile, etc.',
+        parameters: {
+          type: 'object',
+          properties: {
+            route: { type: 'string', description: 'Destination route path' },
+          },
+          required: ['route'],
         },
-        required: ['route'],
       },
     },
     {
-      name: 'generate_chart',
-      description: 'Generate config data to plot a bar, line, or pie chart for visual dashboard presentation.',
-      parameters: {
-        type: SchemaType.OBJECT,
-        properties: {
-          type: { type: SchemaType.STRING, description: 'Visualization plot type', enum: ['bar', 'line', 'pie'], format: 'enum' },
-          title: { type: SchemaType.STRING, description: 'Headline title of the chart card' },
-          labels: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: 'Names for the coordinates labels array' },
-          values: { type: SchemaType.ARRAY, items: { type: SchemaType.NUMBER }, description: 'Numeric data points list' },
+      type: 'function',
+      function: {
+        name: 'generate_chart',
+        description: 'Generate config data to plot a bar, line, or pie chart for visual dashboard presentation.',
+        parameters: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', description: 'Visualization plot type', enum: ['bar', 'line', 'pie'] },
+            title: { type: 'string', description: 'Headline title of the chart card' },
+            labels: { type: 'array', items: { type: 'string' }, description: 'Names for the coordinates labels array' },
+            values: { type: 'array', items: { type: 'number' }, description: 'Numeric data points list' },
+          },
+          required: ['type', 'title', 'labels', 'values'],
         },
-        required: ['type', 'title', 'labels', 'values'],
       },
     },
   ];
@@ -92,20 +107,23 @@ export class AiAssistantService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    const apiKey = this.config.get<string>('geminiApiKey') || this.config.get<string>('GEMINI_API_KEY') || process.env.GEMINI_API_KEY;
+    const apiKey = this.config.get<string>('deepseekApiKey') || this.config.get<string>('DEEPSEEK_API_KEY') || process.env.DEEPSEEK_API_KEY;
     if (apiKey && apiKey !== 'placeholder_key') {
-      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.openai = new OpenAI({
+        apiKey,
+        baseURL: 'https://api.deepseek.com/v1',
+      });
       this.isConfigured = true;
-      console.log('✅ [AiAssistantService] JARVIS Gemini AI Assistant initialized successfully.');
+      console.log('✅ DeepSeek-V3 AI Assistant initialized successfully.');
     } else {
-      console.warn('⚠️ [AiAssistantService] GEMINI_API_KEY is missing. JARVIS AI will run in fallback rule-based mode.');
+      console.warn('⚠️ [AiAssistantService] DEEPSEEK_API_KEY is missing. JARVIS AI will run in fallback rule-based mode.');
     }
   }
 
   async processMessage(userId: number, sessionId: string, messageText: string) {
     if (!this.isConfigured) {
       return {
-        reply: '🌸 Hello! I am in rule-based fallback mode because GEMINI_API_KEY is not configured yet. Please configure it in your environment variables!',
+        reply: '🌸 Hello! I am in rule-based fallback mode because DEEPSEEK_API_KEY is not configured yet. Please configure it in your environment variables!',
         sessionId,
       };
     }
@@ -117,42 +135,33 @@ export class AiAssistantService implements OnModuleInit {
       take: 20,
     });
 
-    // 2. Prepare Gemini contents structure
-    const contents: any[] = [];
-    contents.push({
-      role: 'user',
-      parts: [{ text: `System Instruction: You are Beauty Parlé's JARVIS-level AI Assistant. You have tools to get products, get sales statistics, get order details, trigger client-side page routing, or request interactive animated charts. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If user asks to save the conversation, acknowledge it and explain that conversation is saved to database automatically.` }]
-    });
-    contents.push({
-      role: 'model',
-      parts: [{ text: 'Understood. I will use the available tools to help the user with database lookups, charts, and page navigation.' }]
+    // 2. Prepare OpenAI messages structure
+    const messages: any[] = [];
+    messages.push({
+      role: 'system',
+      content: `You are Beauty Parlé's JARVIS-level AI Assistant. You have tools to get products, get sales statistics, get order details, trigger client-side page routing, or request interactive animated charts. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If user asks to save the conversation, acknowledge it and explain that conversation is saved to database automatically.`
     });
 
     for (const msg of dbMessages) {
       if (msg.role === 'user') {
-        contents.push({ role: 'user', parts: [{ text: msg.content || '' }] });
+        messages.push({ role: 'user', content: msg.content || '' });
       } else if (msg.role === 'assistant') {
-        const parts: any[] = [];
-        if (msg.content) parts.push({ text: msg.content });
-        if (msg.toolCalls) {
-          parts.push({ functionCall: msg.toolCalls });
-        }
-        contents.push({ role: 'model', parts });
+        messages.push({
+          role: 'assistant',
+          content: msg.content || null,
+          tool_calls: msg.toolCalls ? [msg.toolCalls] : undefined,
+        });
       } else if (msg.role === 'tool') {
-        contents.push({
-          role: 'user',
-          parts: [{
-            functionResponse: {
-              name: msg.toolCalls?.name || 'tool_response',
-              response: { result: msg.content ? JSON.parse(msg.content) : {} }
-            }
-          }]
+        messages.push({
+          role: 'tool',
+          tool_call_id: msg.toolCalls?.id || `call_${msg.id}`,
+          content: msg.content || '{}',
         });
       }
     }
 
     // Add current user prompt
-    contents.push({ role: 'user', parts: [{ text: messageText }] });
+    messages.push({ role: 'user', content: messageText });
 
     // Save user's question to database
     const userMessage = new AiConversation();
@@ -162,15 +171,15 @@ export class AiAssistantService implements OnModuleInit {
     userMessage.content = messageText;
     await this.conversationRepo.save(userMessage);
 
-    // Instantiate Gemini model with tool declarations
-    const model = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      tools: [{ functionDeclarations: this.functionDeclarations }],
+    let response = await this.openai.chat.completions.create({
+      model: 'deepseek-v3',
+      messages,
+      tools: this.tools,
     });
 
-    let result = await model.generateContent({ contents });
-    let responseText = '';
-    let functionCalls = result.response.functionCalls();
+    let responseMessage = response.choices[0].message;
+    let responseText = responseMessage.content || '';
+    let toolCalls = responseMessage.tool_calls;
     let attempts = 0;
     const maxAttempts = 3;
 
@@ -178,24 +187,31 @@ export class AiAssistantService implements OnModuleInit {
     let navigationRoute: string | null = null;
     let productsList: any[] = [];
 
-    while (functionCalls && functionCalls.length > 0 && attempts < maxAttempts) {
+    while (toolCalls && toolCalls.length > 0 && attempts < maxAttempts) {
       attempts++;
-      const call = functionCalls[0];
-      const { name, args } = call;
-      const toolArgs = args as any;
+      const call = toolCalls[0] as any;
+      const { name, arguments: rawArgs } = call.function;
+      let toolArgs: any = {};
+      try {
+        toolArgs = JSON.parse(rawArgs);
+      } catch (e) {
+        console.error('Failed to parse tool call arguments', e);
+      }
 
       // Save assistant's function call action to DB
       const assistantCallMessage = new AiConversation();
       assistantCallMessage.userId = userId;
       assistantCallMessage.sessionId = sessionId;
       assistantCallMessage.role = 'assistant';
-      assistantCallMessage.toolCalls = call;
+      assistantCallMessage.toolCalls = {
+        id: call.id,
+        type: 'function',
+        function: { name, arguments: rawArgs }
+      };
       await this.conversationRepo.save(assistantCallMessage);
 
-      contents.push({
-        role: 'model',
-        parts: [{ functionCall: call }]
-      });
+      // Append assistant's turn in local context
+      messages.push(responseMessage);
 
       let toolResult: any = null;
 
@@ -221,9 +237,9 @@ export class AiAssistantService implements OnModuleInit {
           generation.content = toolArgs;
           await this.generationRepo.save(generation);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error running tool ' + name, err);
-        toolResult = { error: (err as any).message || 'Tool execution error' };
+        toolResult = { error: err.message || 'Tool execution error' };
       }
 
       // Save tool response data to DB
@@ -232,25 +248,25 @@ export class AiAssistantService implements OnModuleInit {
       toolMessage.sessionId = sessionId;
       toolMessage.role = 'tool';
       toolMessage.content = JSON.stringify(toolResult);
-      toolMessage.toolCalls = { name };
+      toolMessage.toolCalls = { id: call.id, name };
       await this.conversationRepo.save(toolMessage);
 
-      contents.push({
-        role: 'user',
-        parts: [{
-          functionResponse: {
-            name,
-            response: { result: toolResult }
-          }
-        }]
+      messages.push({
+        role: 'tool',
+        tool_call_id: call.id,
+        content: JSON.stringify(toolResult),
       });
 
       // Get next turn
-      result = await model.generateContent({ contents });
-      functionCalls = result.response.functionCalls();
+      response = await this.openai.chat.completions.create({
+        model: 'deepseek-v3',
+        messages,
+        tools: this.tools,
+      });
+      responseMessage = response.choices[0].message;
+      responseText = responseMessage.content || '';
+      toolCalls = responseMessage.tool_calls;
     }
-
-    responseText = result.response.text() || 'I have loaded the request data.';
 
     // Save final assistant message to DB
     const finalAssistantMessage = new AiConversation();
