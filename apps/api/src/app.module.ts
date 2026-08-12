@@ -80,6 +80,9 @@ import { TikTokModule } from './modules/tiktok/tiktok.module';
 // AI Modules
 import { AiChatModule } from './modules/ai-chat/ai-chat.module';
 import { SemanticSearchModule } from './modules/semantic-search/semantic-search.module';
+import { AiAssistantModule } from './modules/ai-assistant/ai-assistant.module';
+import { AiConversation } from './modules/ai-assistant/entities/ai-conversation.entity';
+import { AiGeneration } from './modules/ai-assistant/entities/ai-generation.entity';
 
 import configuration from './config/configuration';
 
@@ -105,7 +108,7 @@ import configuration from './config/configuration';
           Subscription, BeautyBox, UserRoutine, LiveEvent, LoyaltyTransaction,
           LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
           ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
-          AuditLog
+          AuditLog, AiConversation, AiGeneration
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -164,6 +167,7 @@ import configuration from './config/configuration';
     AuditLogsModule,
     AiChatModule,
     SemanticSearchModule,
+    AiAssistantModule,
   ],
   controllers: [AppController],
   providers: [

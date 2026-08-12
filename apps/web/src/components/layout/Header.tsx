@@ -233,6 +233,9 @@ export function Header() {
               <Link href={`/${locale}/subscriptions`} className="hover:text-primary transition-colors">
                 Subscriptions
               </Link>
+              <Link href={`/${locale}/ai-history`} className="hover:text-primary transition-colors">
+                AI History
+              </Link>
               <button onClick={logout} className="hover:text-primary transition-colors cursor-pointer">
                 {t('logout')}
               </button>
@@ -374,6 +377,9 @@ export function Header() {
                   </Link>
                   <Link href={`/${locale}/subscriptions`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
                     Subscriptions
+                  </Link>
+                  <Link href={`/${locale}/ai-history`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                    AI History
                   </Link>
                   <button 
                     onClick={() => { logout(); setIsMenuOpen(false); }} 

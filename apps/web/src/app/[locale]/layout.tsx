@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ChatWidget } from '@/components/chat/ChatWidget';
+import { JarvisChat } from '@/components/ai/JarvisChat';
 
 const locales = ['en', 'hi', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml', 'pa'];
 
@@ -62,6 +63,7 @@ export default async function RootLayout({
             <ThemeProvider>
               {children}
               <ChatWidget />
+              <JarvisChat />
             </ThemeProvider>
           </ErrorBoundaryProvider>
         </NextIntlClientProvider>
