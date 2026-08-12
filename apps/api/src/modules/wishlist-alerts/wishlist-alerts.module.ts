@@ -7,10 +7,11 @@ import { WishlistAlertsController } from './wishlist-alerts.controller';
 import { WishlistAlert } from './wishlist-alert.entity';
 import { Product } from '../products/product.entity';
 import { User } from '../auth/user.entity';
+import { CronLock } from '../subscriptions/cron-lock.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([WishlistAlert, Product, User]),
+    TypeOrmModule.forFeature([WishlistAlert, Product, User, CronLock]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

@@ -5,6 +5,9 @@ import { Cron } from '@nestjs/schedule';
 import { User } from '../auth/user.entity';
 import { LoyaltyTransaction } from './loyalty-transaction.entity';
 import { LoyaltyReward } from './loyalty-reward.entity';
+import { CronLock } from '../subscriptions/cron-lock.entity';
+
+const BIRTHDAY_REASON_PREFIX = 'birthday:';
 
 @Injectable()
 export class LoyaltyService {
@@ -15,8 +18,34 @@ export class LoyaltyService {
     private readonly transactionRepo: Repository<LoyaltyTransaction>,
     @InjectRepository(LoyaltyReward)
     private readonly rewardRepo: Repository<LoyaltyReward>,
+    @InjectRepository(CronLock)
+    private readonly lockRepo: Repository<CronLock>,
   ) {
     this.seedDefaultRewards();
+  }
+
+  private async acquireLock(name: string, ttlMs: number): Promise<boolean> {
+    const now = new Date();
+    try {
+      const existing = await this.lockRepo.findOne({ where: { name } });
+      if (existing) {
+        if (existing.expiresAt > now) return false;
+        existing.expiresAt = new Date(now.getTime() + ttlMs);
+        await this.lockRepo.save(existing);
+        return true;
+      }
+      const lock = this.lockRepo.create({ name, expiresAt: new Date(now.getTime() + ttlMs) });
+      await this.lockRepo.save(lock);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async releaseLock(name: string): Promise<void> {
+    try {
+      await this.lockRepo.delete({ name });
+    } catch {}
   }
 
   private async seedDefaultRewards() {
@@ -167,25 +196,42 @@ export class LoyaltyService {
   @Cron('0 8 * * *')
   async checkBirthdays() {
     console.log('⏰ Running Birthday Rewards cron checks...');
-    const today = new Date();
-    const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    const users = await this.userRepo.find();
-    for (const u of users) {
-      if (u.birthday) {
+    // H-3: distributed lock so N instances cannot award N× points on the same day
+    if (!(await this.acquireLock('loyalty:birthday', 60 * 60 * 1000))) {
+      console.log('⏭️ Birthday cron skipped — lock held by another instance.');
+      return;
+    }
+
+    try {
+      const today = new Date();
+      const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const todayKey = `${BIRTHDAY_REASON_PREFIX}${todayStr}`;
+
+      const users = await this.userRepo.find();
+      for (const u of users) {
+        if (!u.birthday) continue;
         const bdate = new Date(u.birthday);
         const bStr = `${String(bdate.getMonth() + 1).padStart(2, '0')}-${String(bdate.getDate()).padStart(2, '0')}`;
-        
-        if (todayStr === bStr) {
-          try {
-            // Award 50 points on birthday
-            await this.addPoints(u.id, 50, 'Happy Birthday Reward Points! 🎂');
-            console.log(`🎂 Birthday reward credited to user #${u.id} (${u.email})`);
-          } catch (err: any) {
-            console.error(`Failed to credit birthday reward for user #${u.id}:`, err.message);
-          }
+
+        if (todayStr !== bStr) continue;
+
+        try {
+          // Per-day dedup: if this user already received the birthday reward today,
+          // skip (prevents double-award on cron re-runs / retries).
+          const alreadyAwarded = await this.transactionRepo.findOne({
+            where: { userId: u.id, reason: todayKey },
+          });
+          if (alreadyAwarded) continue;
+
+          await this.addPoints(u.id, 50, todayKey);
+          console.log(`🎂 Birthday reward credited to user #${u.id} (${u.email})`);
+        } catch (err: any) {
+          console.error(`Failed to credit birthday reward for user #${u.id}:`, err.message);
         }
       }
+    } finally {
+      await this.releaseLock('loyalty:birthday');
     }
   }
 }

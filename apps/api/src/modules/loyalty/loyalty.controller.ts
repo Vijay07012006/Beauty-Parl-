@@ -1,35 +1,25 @@
-import { Controller, Get, Post, Param, Headers, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Get, Post, Param, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { LoyaltyService } from './loyalty.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('loyalty')
 export class LoyaltyController {
   constructor(
     private readonly loyaltyService: LoyaltyService,
-    private readonly jwtService: JwtService,
   ) {}
 
-  private extractUserId(authHeader?: string): number {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication token missing or invalid');
-    }
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = this.jwtService.verify(token);
-      if (payload?.sub) return Number(payload.sub);
-    } catch {}
-    throw new UnauthorizedException('Authentication token signature verification failed');
-  }
-
   @Get('points')
-  async getPoints(@Headers('authorization') authHeader?: string) {
-    const userId = this.extractUserId(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async getPoints(@Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
     return this.loyaltyService.getPointsAndTier(userId);
   }
 
   @Get('transactions')
-  async getTransactions(@Headers('authorization') authHeader?: string) {
-    const userId = this.extractUserId(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async getTransactions(@Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
     return this.loyaltyService.getTransactions(userId);
   }
 
@@ -39,8 +29,9 @@ export class LoyaltyController {
   }
 
   @Post('redeem/:rewardId')
-  async redeem(@Param('rewardId') rewardId: string, @Headers('authorization') authHeader?: string) {
-    const userId = this.extractUserId(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async redeem(@Param('rewardId') rewardId: string, @Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
     return this.loyaltyService.redeemReward(Number(rewardId), userId);
   }
 }
