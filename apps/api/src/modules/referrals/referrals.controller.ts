@@ -1,35 +1,25 @@
-import { Controller, Get, Post, Body, Headers, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { ReferralsService } from './referrals.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('referral')
 export class ReferralsController {
   constructor(
     private readonly referralService: ReferralsService,
-    private readonly jwtService: JwtService,
   ) {}
 
-  private extractUserId(authHeader?: string): number {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication token missing or invalid');
-    }
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = this.jwtService.verify(token);
-      if (payload?.sub) return Number(payload.sub);
-    } catch {}
-    throw new UnauthorizedException('Authentication token signature verification failed');
-  }
-
   @Post('generate')
-  async generate(@Headers('authorization') authHeader?: string) {
-    const userId = this.extractUserId(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async generate(@Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
     return this.referralService.generateCode(userId);
   }
 
   @Get('stats')
-  async stats(@Headers('authorization') authHeader?: string) {
-    const userId = this.extractUserId(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async stats(@Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
     return this.referralService.getStats(userId);
   }
 

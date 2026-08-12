@@ -1,4 +1,4 @@
-import { Injectable, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, forwardRef, Inject, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Referral } from './referral.entity';
@@ -50,9 +50,28 @@ export class ReferralsService {
     };
   }
 
-  async applyReferralCode(code: string, referredEmail: string): Promise<void> {
-    const ref = await this.referralRepo.findOneOrFail({ where: { code } });
-    
+  async applyReferralCode(code: string, referredEmailInput: string): Promise<void> {
+    if (typeof code !== 'string' || !code) {
+      throw new BadRequestException('Invalid referral code');
+    }
+    const referredEmail = referredEmailInput?.trim().toLowerCase();
+    if (!referredEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(referredEmail)) {
+      throw new BadRequestException('A valid email address is required');
+    }
+
+    const ref = await this.referralRepo.findOne({
+      where: { code: code.trim().toUpperCase() },
+      relations: ['referrer'],
+    });
+    if (!ref) {
+      throw new BadRequestException('Invalid referral code');
+    }
+
+    // H-2: block self-referral — a user must not earn points by referring their own email
+    if (ref.referrer && ref.referrer.email?.toLowerCase() === referredEmail) {
+      throw new BadRequestException('You cannot refer yourself');
+    }
+
     // Check if tracking already exists
     const exists = await this.trackingRepo.findOne({ where: { referralId: ref.id, referredEmail } });
     if (exists) return;
@@ -74,7 +93,14 @@ export class ReferralsService {
     if (track && track.referral) {
       try {
         const referrerId = track.referral.referrerId;
-        
+
+        // H-2 defense-in-depth: never reward a self-referral (same account)
+        if (referrerId === newUserId) {
+          track.status = 'completed';
+          await this.trackingRepo.save(track);
+          return;
+        }
+
         // Reward referrer with 50 points
         await this.loyaltyService.addPoints(referrerId, 50, `Referral Conversion: ${referredEmail} Joined! 🤝`);
         // Reward referred user with 50 points

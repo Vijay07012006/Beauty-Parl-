@@ -3,14 +3,18 @@ import * as crypto from 'crypto';
 
 /**
  * Encrypts an array/json value at rest (AES-256-CBC with DB_ENCRYPTION_KEY).
- * Supports legacy plaintext rows (returns them as-is) so existing data keeps working.
  * Used for 2FA backup codes — a DB leak must not expose single-factor-equivalent credentials.
+ *
+ * H-4: FAIL-CLOSED. If DB_ENCRYPTION_KEY is missing or not exactly 32 bytes, we throw
+ * instead of writing plaintext or silently returning empty data.
  */
 export class JsonEncryptionTransformer implements ValueTransformer {
-  private getKey(): Buffer | null {
+  private getKey(): Buffer {
     const secret = process.env.DB_ENCRYPTION_KEY || '';
     if (!secret || Buffer.byteLength(secret, 'utf8') !== 32) {
-      return null;
+      throw new Error(
+        'DB_ENCRYPTION_KEY must be set and exactly 32 bytes for JSON encryption. Refusing plaintext write.',
+      );
     }
     return Buffer.from(secret, 'utf8');
   }
@@ -20,9 +24,6 @@ export class JsonEncryptionTransformer implements ValueTransformer {
       return value;
     }
     const key = this.getKey();
-    if (!key) {
-      return value;
-    }
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
     let encrypted = cipher.update(JSON.stringify(value), 'utf8', 'hex');
@@ -35,23 +36,8 @@ export class JsonEncryptionTransformer implements ValueTransformer {
       return value;
     }
     const key = this.getKey();
-    // Legacy plaintext data: a jsonb value arrives as a parsed array
-    if (Array.isArray(value)) {
-      return value;
-    }
+    // Reads from the DB are always encrypted strings (iv:cipher)
     if (typeof value === 'string') {
-      // Plaintext JSON string (non-encrypted legacy)
-      if (!value.includes(':')) {
-        try {
-          const parsed = JSON.parse(value);
-          return Array.isArray(parsed) ? parsed : [];
-        } catch {
-          return [];
-        }
-      }
-      if (!key) {
-        return [];
-      }
       const parts = value.split(':');
       if (parts.length !== 2) {
         return [];

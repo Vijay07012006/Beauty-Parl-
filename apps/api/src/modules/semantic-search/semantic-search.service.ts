@@ -95,15 +95,31 @@ export class SemanticSearchService {
 
     const scored: ScoredProduct[] = [];
 
+    // H-5: product text embeddings are cached (by text hash) so the N+1 external
+    // embedding calls happen once per unique product, not once per search.
     for (let i = 0; i < allProducts.length; i++) {
       const p = allProducts[i];
       const text = `${p.name} ${p.brand || ''} ${p.category || ''} ${p.description}`;
-      const productEmbedding = await this.getEmbedding(text);
+      const productEmbedding = await this.getCachedEmbedding(text);
+      if (!productEmbedding.length) continue;
       const similarity = this.cosineSimilarity(queryEmbedding, productEmbedding);
       scored.push({ product: p, score: similarity });
     }
 
     return scored;
+  }
+
+  private async getCachedEmbedding(text: string): Promise<number[]> {
+    const key = `embedding:${Buffer.from(text).toString('base64url').slice(0, 64)}`;
+    const cached = await this.cacheManager.get<number[]>(key);
+    if (cached) return cached;
+
+    const embedding = await this.getEmbedding(text);
+    if (embedding.length > 0) {
+      // Cache embeddings for 24h — products are rarely updated
+      await this.cacheManager.set(key, embedding, 24 * 60 * 60 * 1000).catch(() => {});
+    }
+    return embedding;
   }
 
   private async getEmbedding(text: string): Promise<number[]> {

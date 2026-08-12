@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const title = searchParams.get('title') || 'Beauty Parlé';
     const price = searchParams.get('price');
-    const image = searchParams.get('image');
+    const rawImage = searchParams.get('image');
+
+    // H-8: only allow same-origin relative paths — never external URLs (blocks SSRF via ?image=)
+    const image = rawImage && /^\/[A-Za-z0-9/._%+-]*$/.test(rawImage) ? rawImage : null;
 
     return new ImageResponse(
       (

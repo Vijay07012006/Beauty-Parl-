@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UgcPhoto } from './ugc-photo.entity';
+import { User } from '../auth/user.entity';
 
 @Injectable()
 export class UgcService {
@@ -26,27 +27,55 @@ export class UgcService {
     return this.ugcRepo.save(photo);
   }
 
-  async listApproved(productId: number): Promise<UgcPhoto[]> {
-    return this.ugcRepo.find({
-      where: { productId, isApproved: true },
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
+  // CRITICAL (C-1): the full User relation is NEVER returned to clients — only
+  // safe, public fields (id, name, avatar). Loading the raw relation would expose
+  // bcrypt hashes, reset tokens and 2FA secrets on public endpoints.
+  private async findWithUser(where: Partial<UgcPhoto>, relations: string[]): Promise<UgcPhoto[]> {
+    const photos = await this.ugcRepo.find({ where, relations, order: { createdAt: 'DESC' } });
+    return photos.map((photo) => {
+      const user = photo.user as User | undefined;
+      if (user) {
+        (photo as any).user = {
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar,
+        };
+      }
+      return photo;
     });
   }
 
+  async listApproved(productId: number): Promise<UgcPhoto[]> {
+    return this.findWithUser({ productId, isApproved: true }, ['user']);
+  }
+
   async listAllApproved(): Promise<UgcPhoto[]> {
-    return this.ugcRepo.find({
+    const photos = await this.ugcRepo.find({
       where: { isApproved: true },
       relations: ['user', 'product'],
       order: { createdAt: 'DESC' },
     });
+    return photos.map((photo) => {
+      const user = photo.user as User | undefined;
+      if (user) {
+        (photo as any).user = { id: user.id, name: user.name, avatar: user.avatar };
+      }
+      return photo;
+    });
   }
 
   async listPending(): Promise<UgcPhoto[]> {
-    return this.ugcRepo.find({
+    const photos = await this.ugcRepo.find({
       where: { isApproved: false },
       relations: ['user', 'product'],
       order: { createdAt: 'ASC' },
+    });
+    return photos.map((photo) => {
+      const user = photo.user as User | undefined;
+      if (user) {
+        (photo as any).user = { id: user.id, name: user.name, avatar: user.avatar };
+      }
+      return photo;
     });
   }
 

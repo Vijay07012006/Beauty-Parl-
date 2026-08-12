@@ -1,46 +1,28 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Headers, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+import { Request } from 'express';
 import { UgcService } from './ugc.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('ugc')
 export class UgcController {
   constructor(
     private readonly ugcService: UgcService,
-    private readonly jwtService: JwtService,
   ) {}
 
-  private extractUserId(authHeader?: string): number {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication token missing or invalid');
+  private requireAdmin(req: Request): void {
+    const user = req.user as { role?: string } | undefined;
+    if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+      throw new UnauthorizedException('Access denied. Administrator privileges required.');
     }
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = this.jwtService.verify(token);
-      if (payload?.sub) return Number(payload.sub);
-    } catch {}
-    throw new UnauthorizedException('Authentication token signature verification failed');
-  }
-
-  private extractAdminUser(authHeader?: string): number {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication token missing or invalid');
-    }
-    try {
-      const token = authHeader.split(' ')[1];
-      const payload = this.jwtService.verify(token);
-      if (payload?.sub && (payload.role === 'admin' || payload.role === 'super_admin')) {
-        return Number(payload.sub);
-      }
-    } catch {}
-    throw new UnauthorizedException('Access denied. Administrator privileges required.');
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async upload(
     @Body() body: { productId: number; imageUrl: string; caption?: string },
-    @Headers('authorization') authHeader?: string,
+    @Req() req: Request,
   ) {
-    const userId = this.extractUserId(authHeader);
+    const userId = (req.user as { id: number }).id;
     return this.ugcService.uploadPhoto(body.productId, body.imageUrl, body.caption, userId);
   }
 
@@ -55,21 +37,24 @@ export class UgcController {
   }
 
   @Get('admin/pending')
-  async listPending(@Headers('authorization') authHeader?: string) {
-    this.extractAdminUser(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async listPending(@Req() req: Request) {
+    this.requireAdmin(req);
     return this.ugcService.listPending();
   }
 
   @Put('admin/approve/:id')
-  async approve(@Param('id') id: string, @Headers('authorization') authHeader?: string) {
-    this.extractAdminUser(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async approve(@Param('id') id: string, @Req() req: Request) {
+    this.requireAdmin(req);
     await this.ugcService.approve(Number(id));
     return { success: true };
   }
 
   @Delete('admin/reject/:id')
-  async reject(@Param('id') id: string, @Headers('authorization') authHeader?: string) {
-    this.extractAdminUser(authHeader);
+  @UseGuards(JwtAuthGuard)
+  async reject(@Param('id') id: string, @Req() req: Request) {
+    this.requireAdmin(req);
     await this.ugcService.reject(Number(id));
     return { success: true };
   }
