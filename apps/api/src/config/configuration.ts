@@ -60,5 +60,7 @@ export default () => ({
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   },
 
+  geminiApiKey: process.env.GEMINI_API_KEY,
+
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 });

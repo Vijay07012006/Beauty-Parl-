@@ -92,10 +92,11 @@ export class AiAssistantService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    const apiKey = this.config.get<string>('GEMINI_API_KEY');
+    const apiKey = this.config.get<string>('geminiApiKey') || this.config.get<string>('GEMINI_API_KEY') || process.env.GEMINI_API_KEY;
     if (apiKey && apiKey !== 'placeholder_key') {
       this.genAI = new GoogleGenerativeAI(apiKey);
       this.isConfigured = true;
+      console.log('✅ [AiAssistantService] JARVIS Gemini AI Assistant initialized successfully.');
     } else {
       console.warn('⚠️ [AiAssistantService] GEMINI_API_KEY is missing. JARVIS AI will run in fallback rule-based mode.');
     }

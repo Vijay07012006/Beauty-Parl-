@@ -62,6 +62,17 @@ How can I assist you today? You can ask me to:
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('chat-open');
+    } else {
+      document.body.classList.remove('chat-open');
+    }
+    return () => {
+      document.body.classList.remove('chat-open');
+    };
+  }, [isOpen]);
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
@@ -187,13 +198,13 @@ How can I assist you today? You can ask me to:
 
       {/* Floating Chat Drawer Container */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[92vw] sm:w-[420px] h-[550px] bg-card/90 backdrop-blur-xl rounded-3xl border border-border/60 shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300">
+        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[380px] max-w-[92vw] h-[500px] max-h-[75vh] bg-card/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 chat-container">
           
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 border-b border-border/50 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary relative">
-                <Bot className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary relative">
+                <Bot className="w-4.5 h-4.5" />
                 <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border border-background" />
               </div>
               <div>
@@ -211,13 +222,13 @@ How can I assist you today? You can ask me to:
                 className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-xl transition cursor-pointer disabled:opacity-50"
                 title="Download PDF"
               >
-                <Download className="w-4.5 h-4.5" />
+                <Download className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary/40 rounded-xl transition cursor-pointer"
               >
-                <X className="w-4.5 h-4.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -230,35 +241,35 @@ How can I assist you today? You can ask me to:
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-3 max-w-[85%] ${
-                  msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
+                className={`w-full flex gap-3 ${
+                  msg.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
                 {/* Avatar Icon */}
-                <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs ${
-                  msg.role === 'user' ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
-                }`}>
-                  {msg.role === 'user' ? <User className="w-4.5 h-4.5" /> : <Bot className="w-4.5 h-4.5" />}
-                </div>
+                {msg.role !== 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 text-xs">
+                    <Bot className="w-4.5 h-4.5" />
+                  </div>
+                )}
 
-                {/* Message Bubble */}
-                <div className="space-y-3">
-                  <div className={`p-4 rounded-2xl border text-xs leading-relaxed space-y-3 ${
+                {/* Message Bubble & widgets */}
+                <div className={`max-w-[85%] flex flex-col gap-2 ${
+                  msg.role === 'user' ? 'items-end' : 'items-start'
+                }`}>
+                  <div className={`p-3.5 rounded-2xl border text-xs leading-relaxed ${
                     msg.role === 'user' 
                       ? 'bg-primary text-white border-primary/20 rounded-tr-none' 
-                      : 'bg-card text-foreground border-border/40 rounded-tl-none shadow-sm'
+                      : 'bg-card text-foreground border-border/50 rounded-tl-none shadow-sm'
                   }`}>
                     {/* Render plain text with markdown support (bolding and bullet lists) */}
-                    <div className="whitespace-pre-line space-y-2">
+                    <div className="whitespace-pre-line space-y-1.5">
                       {msg.text.split('\n').map((line, idx) => {
                         let content: any = line;
-                        // Replace markdown bold **text**
                         if (line.includes('**')) {
                           const parts = line.split('**');
                           content = parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-extrabold text-primary dark:text-purple-300">{part}</strong> : part);
                         }
                         
-                        // Render lists
                         if (line.trim().startsWith('- ')) {
                           return (
                             <div key={idx} className="flex gap-1.5 ml-2">
@@ -275,23 +286,23 @@ How can I assist you today? You can ask me to:
 
                   {/* Render Visual Products widget if attached */}
                   {msg.products && msg.products.length > 0 && (
-                    <div className="flex gap-3 overflow-x-auto py-1 pr-4 max-w-full no-scrollbar">
+                    <div className="flex gap-3 overflow-x-auto py-1 pr-4 w-full no-scrollbar max-w-[280px] sm:max-w-[320px]">
                       {msg.products.map((prod) => (
-                        <div key={prod.id} className="bg-card w-40 shrink-0 p-3 rounded-2xl border border-border/40 shadow-sm flex flex-col justify-between space-y-2">
+                        <div key={prod.id} className="bg-card w-36 shrink-0 p-2.5 rounded-2xl border border-border/40 shadow-sm flex flex-col justify-between space-y-2">
                           <div className="space-y-1">
                             <div className="aspect-square bg-secondary/35 rounded-xl flex items-center justify-center text-xl relative overflow-hidden">
                               {prod.image ? (
                                 <img src={prod.image} alt={prod.name} className="object-cover w-full h-full" />
                               ) : '💄'}
                             </div>
-                            <h5 className="font-bold text-[10px] text-foreground truncate">{prod.name}</h5>
-                            <p className="text-[10px] font-bold text-primary">${Number(prod.price).toFixed(2)}</p>
+                            <h5 className="font-bold text-[9px] text-foreground truncate">{prod.name}</h5>
+                            <p className="text-[9px] font-bold text-primary">${Number(prod.price).toFixed(2)}</p>
                           </div>
                           <button
                             onClick={() => handleAddToCart(prod)}
-                            className="w-full py-1.5 bg-primary/10 text-primary hover:bg-primary text-white rounded-lg text-[9px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                            className="w-full py-1.5 bg-primary/10 text-primary hover:bg-primary text-white rounded-lg text-[8px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
                           >
-                            <ShoppingCart className="w-3 h-3" />
+                            <ShoppingCart className="w-2.5 h-2.5" />
                             <span>Add</span>
                           </button>
                         </div>
@@ -301,7 +312,7 @@ How can I assist you today? You can ask me to:
 
                   {/* Render Visual Svg Chart widget if attached */}
                   {msg.chart && (
-                    <div className="max-w-full">
+                    <div className="w-full max-w-[280px] sm:max-w-[320px]">
                       <SvgChart 
                         type={msg.chart.type} 
                         title={msg.chart.title} 
@@ -311,7 +322,7 @@ How can I assist you today? You can ask me to:
                     </div>
                   )}
                   
-                  <span className="text-[9px] text-muted-foreground block text-right px-1">{msg.time}</span>
+                  <span className="text-[8px] text-muted-foreground block px-1 self-end">{msg.time}</span>
                 </div>
               </div>
             ))}

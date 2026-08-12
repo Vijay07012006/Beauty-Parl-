@@ -179,3 +179,14 @@
     background: #ffffff !important;
   }
 }
+
+/* Ensure no overflow on chat container */
+.chat-container {
+  max-height: 75vh;
+  overflow: hidden;
+}
+
+/* Prevent body scroll when chat is open */
+body.chat-open {
+  overflow: hidden;
+}

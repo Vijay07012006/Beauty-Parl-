@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Request, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiAssistantService } from './ai-assistant.service';
 
@@ -11,10 +12,17 @@ export class AiAssistantController {
   async chat(
     @Request() req: any,
     @Body() body: { message: string; sessionId?: string },
+    @Res() res: Response,
   ) {
-    const userId = req.user.id;
-    const sessionId = body.sessionId || `sess_${Date.now()}`;
-    return this.aiService.processMessage(userId, sessionId, body.message);
+    try {
+      const userId = req.user.id;
+      const sessionId = body.sessionId || `sess_${Date.now()}`;
+      const response = await this.aiService.processMessage(userId, sessionId, body.message);
+      return res.json(response);
+    } catch (error: any) {
+      console.error('JARVIS Error:', error.message);
+      return res.status(500).json({ error: error.message });
+    }
   }
 
   @Get('history')
