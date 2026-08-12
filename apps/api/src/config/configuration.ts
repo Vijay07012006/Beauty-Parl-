@@ -14,7 +14,8 @@ export default () => ({
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5433', 10),
     username: process.env.DB_USERNAME || 'beauty',
-    password: process.env.DB_PASSWORD || 'beauty123',
+    // M-4: no hardcoded production credential fallback — only local dev gets a default
+    password: process.env.NODE_ENV === 'production' ? process.env.DB_PASSWORD : (process.env.DB_PASSWORD || 'beauty123'),
     database: process.env.DB_NAME || 'beauty',
   },
 

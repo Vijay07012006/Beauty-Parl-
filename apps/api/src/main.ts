@@ -53,8 +53,8 @@ async function bootstrap() {
     // Exact match
     if (origins.includes(origin)) return true;
 
-    // Allow all Vercel preview deployments (pattern: *.vercel.app)
-    if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) return true;
+    // M-1: allow Vercel preview deployments ONLY when explicitly enabled via env
+    if (process.env.CORS_ALLOW_VERCEL_PREVIEWS === 'true' && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) return true;
 
     // Allow local development on any port
     if (/^http:\/\/localhost:\d+$/.test(origin)) return true;

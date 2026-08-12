@@ -8,7 +8,11 @@ export class SocialService {
   constructor(private readonly redis: RedisService) {}
 
   async trackClick(platform: string, productId: number): Promise<void> {
+    // M-11: only known platforms are stored — arbitrary strings cannot create unbounded keys
     const normPlatform = platform.toLowerCase();
+    if (!['instagram', 'facebook', 'whatsapp', 'pinterest', 'twitter'].includes(normPlatform)) {
+      return;
+    }
     const key = `clicks:${normPlatform}`;
     if (this.redis.isEnabled()) {
       try {

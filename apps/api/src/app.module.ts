@@ -108,9 +108,16 @@ import configuration from './config/configuration';
           AuditLog
         ],
         autoLoadEntities: true,
-        synchronize: process.env.DB_SYNCHRONIZE !== 'false', // Default to true unless explicitly disabled, ensuring tables are created on startup since there are no migrations
+        // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
+        synchronize:
+          process.env.NODE_ENV === 'production'
+            ? process.env.DB_SYNCHRONIZE === 'true'
+            : process.env.DB_SYNCHRONIZE !== 'false',
         logging: process.env.NODE_ENV === 'development',
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+        // M-3: verify the server cert by default; opt-out only via explicit DB_SSL_REJECT_UNAUTHORIZED=false
+        ssl: process.env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
+          : false,
       }),
       inject: [ConfigService],
     }),
