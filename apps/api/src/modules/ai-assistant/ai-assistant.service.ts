@@ -107,23 +107,29 @@ export class AiAssistantService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    const apiKey = this.config.get<string>('deepseekApiKey') || this.config.get<string>('DEEPSEEK_API_KEY') || process.env.DEEPSEEK_API_KEY;
+    const apiKey = this.config.get<string>('openrouterApiKey') || this.config.get<string>('OPENROUTER_API_KEY') || process.env.OPENROUTER_API_KEY ||
+                   this.config.get<string>('deepseekApiKey') || this.config.get<string>('DEEPSEEK_API_KEY') || process.env.DEEPSEEK_API_KEY;
     if (apiKey && apiKey !== 'placeholder_key') {
+      const frontendUrl = this.config.get<string>('frontendUrl') || 'http://localhost:3000';
       this.openai = new OpenAI({
         apiKey,
-        baseURL: 'https://api.deepseek.com/v1',
+        baseURL: 'https://openrouter.ai/api/v1',
+        defaultHeaders: {
+          'HTTP-Referer': frontendUrl,
+          'X-Title': 'Beauty Parlé',
+        },
       });
       this.isConfigured = true;
-      console.log('✅ DeepSeek-V3 AI Assistant initialized successfully.');
+      console.log('✅ OpenRouter AI Assistant initialized successfully.');
     } else {
-      console.warn('⚠️ [AiAssistantService] DEEPSEEK_API_KEY is missing. JARVIS AI will run in fallback rule-based mode.');
+      console.warn('⚠️ [AiAssistantService] OPENROUTER_API_KEY is missing. JARVIS AI will run in fallback rule-based mode.');
     }
   }
 
   async processMessage(userId: number, sessionId: string, messageText: string) {
     if (!this.isConfigured) {
       return {
-        reply: '🌸 Hello! I am in rule-based fallback mode because DEEPSEEK_API_KEY is not configured yet. Please configure it in your environment variables!',
+        reply: '🌸 Hello! I am in rule-based fallback mode because OPENROUTER_API_KEY is not configured yet. Please configure it in your environment variables!',
         sessionId,
       };
     }
@@ -172,7 +178,7 @@ export class AiAssistantService implements OnModuleInit {
     await this.conversationRepo.save(userMessage);
 
     let response = await this.openai.chat.completions.create({
-      model: 'deepseek-v3',
+      model: 'deepseek/deepseek-v3',
       messages,
       tools: this.tools,
     });
@@ -259,7 +265,7 @@ export class AiAssistantService implements OnModuleInit {
 
       // Get next turn
       response = await this.openai.chat.completions.create({
-        model: 'deepseek-v3',
+        model: 'deepseek/deepseek-v3',
         messages,
         tools: this.tools,
       });
