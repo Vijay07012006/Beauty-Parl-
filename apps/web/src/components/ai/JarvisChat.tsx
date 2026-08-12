@@ -49,9 +49,8 @@ export function JarvisChat() {
 
 How can I assist you today? You can ask me to:
 - 💄 **Recommend products** matching skin concerns or shade queries.
-- 📊 **Check sales statistics** ("show revenue today/this week").
-- 📦 **View order details** ("check order #5").
-- ⚙️ **Navigate the website** ("go to coupons page").
+- 📦 **View order details** ("check my order #5").
+- ${user?.role === 'admin' || user?.role === 'super_admin' ? '- 📊 **Check sales statistics** ("show revenue today/this week").\n' : ''}- ⚙️ **Navigate the website** ("go to coupons page").
 - 📝 **Download this conversation** as a PDF file.`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }

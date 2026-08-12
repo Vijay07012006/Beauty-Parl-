@@ -6,13 +6,22 @@ import { Repository } from 'typeorm';
 import { Product } from '../products/product.entity';
 import { Order } from '../orders/order.entity';
 import { User } from '../auth/user.entity';
+import { UserRole } from '../auth/user.entity';
 import { AiConversation } from './entities/ai-conversation.entity';
 import { AiGeneration } from './entities/ai-generation.entity';
+
+// OpenRouter currently serves this model and it supports OpenAI-style tool calling.
+// (meta-llama/llama-3-70b-instruct and mistralai/mistral-7b-instruct are both retired from the catalog.)
+const DEFAULT_MODEL = 'mistralai/mistral-small-3.2-24b-instruct';
 
 @Injectable()
 export class AiAssistantService implements OnModuleInit {
   private openai!: OpenAI;
   private isConfigured = false;
+
+  private isAdmin(role: string | undefined): boolean {
+    return role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN;
+  }
 
   private tools: any[] = [
     {
@@ -107,8 +116,7 @@ export class AiAssistantService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    const apiKey = this.config.get<string>('openrouterApiKey') || this.config.get<string>('OPENROUTER_API_KEY') || process.env.OPENROUTER_API_KEY ||
-                   this.config.get<string>('deepseekApiKey') || this.config.get<string>('DEEPSEEK_API_KEY') || process.env.DEEPSEEK_API_KEY;
+    const apiKey = this.config.get<string>('openrouterApiKey') || process.env.OPENROUTER_API_KEY;
     if (apiKey && apiKey !== 'placeholder_key') {
       const frontendUrl = this.config.get<string>('frontendUrl') || 'http://localhost:3000';
       this.openai = new OpenAI({
@@ -126,7 +134,7 @@ export class AiAssistantService implements OnModuleInit {
     }
   }
 
-  async processMessage(userId: number, sessionId: string, messageText: string) {
+  async processMessage(userId: number, sessionId: string, messageText: string, role?: string) {
     if (!this.isConfigured) {
       return {
         reply: '🌸 Hello! I am in rule-based fallback mode because OPENROUTER_API_KEY is not configured yet. Please configure it in your environment variables!',
@@ -134,7 +142,7 @@ export class AiAssistantService implements OnModuleInit {
       };
     }
 
-    const modelId = this.config.get<string>('openrouterModel') || this.config.get<string>('OPENROUTER_MODEL') || process.env.OPENROUTER_MODEL || 'meta-llama/llama-3-70b-instruct';
+    const modelId = this.config.get<string>('openrouterModel') || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
 
     // 1. Fetch conversation history
     const dbMessages = await this.conversationRepo.find({
@@ -197,75 +205,84 @@ export class AiAssistantService implements OnModuleInit {
 
     while (toolCalls && toolCalls.length > 0 && attempts < maxAttempts) {
       attempts++;
-      const call = toolCalls[0] as any;
-      const { name, arguments: rawArgs } = call.function;
-      let toolArgs: any = {};
-      try {
-        toolArgs = JSON.parse(rawArgs);
-      } catch (e) {
-        console.error('Failed to parse tool call arguments', e);
-      }
 
-      // Save assistant's function call action to DB
-      const assistantCallMessage = new AiConversation();
-      assistantCallMessage.userId = userId;
-      assistantCallMessage.sessionId = sessionId;
-      assistantCallMessage.role = 'assistant';
-      assistantCallMessage.toolCalls = {
-        id: call.id,
-        type: 'function',
-        function: { name, arguments: rawArgs }
-      };
-      await this.conversationRepo.save(assistantCallMessage);
-
-      // Append assistant's turn in local context
+      // Append assistant's turn in local context (it may contain MULTIPLE tool calls)
       messages.push(responseMessage);
 
-      let toolResult: any = null;
-
-      try {
-        if (name === 'get_products') {
-          toolResult = await this.getProductsTool(toolArgs);
-          productsList = toolResult;
-        } else if (name === 'get_sales_stats') {
-          toolResult = await this.getSalesStatsTool(toolArgs);
-        } else if (name === 'get_order_details') {
-          toolResult = await this.getOrderDetailsTool(toolArgs);
-        } else if (name === 'navigate_to') {
-          navigationRoute = toolArgs.route;
-          toolResult = { success: true, route: toolArgs.route };
-        } else if (name === 'generate_chart') {
-          chartData = toolArgs;
-          toolResult = { success: true, chart: toolArgs };
-
-          // Save asset generation in ai_generations
-          const generation = new AiGeneration();
-          generation.userId = userId;
-          generation.type = 'chart';
-          generation.content = toolArgs;
-          await this.generationRepo.save(generation);
+      for (const call of toolCalls as any[]) {
+        const { name, arguments: rawArgs } = call.function;
+        let toolArgs: any = {};
+        try {
+          toolArgs = JSON.parse(rawArgs);
+        } catch (e) {
+          console.error('Failed to parse tool call arguments', e);
         }
-      } catch (err: any) {
-        console.error('Error running tool ' + name, err);
-        toolResult = { error: err.message || 'Tool execution error' };
+
+        // Save assistant's function call action to DB
+        const assistantCallMessage = new AiConversation();
+        assistantCallMessage.userId = userId;
+        assistantCallMessage.sessionId = sessionId;
+        assistantCallMessage.role = 'assistant';
+        assistantCallMessage.toolCalls = {
+          id: call.id,
+          type: 'function',
+          function: { name, arguments: rawArgs }
+        };
+        await this.conversationRepo.save(assistantCallMessage);
+
+        let toolResult: any = null;
+
+        try {
+          if (name === 'get_products') {
+            toolResult = await this.getProductsTool(toolArgs);
+            productsList = productsList.concat(toolResult || []);
+          } else if (name === 'get_sales_stats') {
+            if (!this.isAdmin(role)) {
+              toolResult = { error: 'Only admins can access sales statistics.' };
+            } else {
+              toolResult = await this.getSalesStatsTool(toolArgs);
+            }
+          } else if (name === 'get_order_details') {
+            toolResult = await this.getOrderDetailsTool(toolArgs, userId, role);
+          } else if (name === 'navigate_to') {
+            navigationRoute = toolArgs.route;
+            toolResult = { success: true, route: toolArgs.route };
+          } else if (name === 'generate_chart') {
+            chartData = toolArgs;
+            toolResult = { success: true, chart: toolArgs };
+
+            // Save asset generation in ai_generations
+            const generation = new AiGeneration();
+            generation.userId = userId;
+            generation.type = 'chart';
+            generation.content = toolArgs;
+            await this.generationRepo.save(generation);
+          } else {
+            console.warn('Unknown tool called: ' + name);
+            toolResult = { error: 'Requested tool is not available.' };
+          }
+        } catch (err: any) {
+          console.error('Error running tool ' + name, err);
+          toolResult = { error: err.message || 'Tool execution error' };
+        }
+
+        // Save tool response data to DB
+        const toolMessage = new AiConversation();
+        toolMessage.userId = userId;
+        toolMessage.sessionId = sessionId;
+        toolMessage.role = 'tool';
+        toolMessage.content = JSON.stringify(toolResult);
+        toolMessage.toolCalls = { id: call.id, name };
+        await this.conversationRepo.save(toolMessage);
+
+        messages.push({
+          role: 'tool',
+          tool_call_id: call.id,
+          content: JSON.stringify(toolResult),
+        });
       }
 
-      // Save tool response data to DB
-      const toolMessage = new AiConversation();
-      toolMessage.userId = userId;
-      toolMessage.sessionId = sessionId;
-      toolMessage.role = 'tool';
-      toolMessage.content = JSON.stringify(toolResult);
-      toolMessage.toolCalls = { id: call.id, name };
-      await this.conversationRepo.save(toolMessage);
-
-      messages.push({
-        role: 'tool',
-        tool_call_id: call.id,
-        content: JSON.stringify(toolResult),
-      });
-
-      // Get next turn
+      // Get next turn after the whole tool batch has been resolved
       response = await this.openai.chat.completions.create({
         model: modelId,
         messages,
@@ -354,10 +371,17 @@ export class AiAssistantService implements OnModuleInit {
     };
   }
 
-  private async getOrderDetailsTool(args: any) {
+  private async getOrderDetailsTool(args: any, userId: number, role?: string) {
     const { orderId } = args;
-    const order = await this.orderRepo.findOne({ where: { id: orderId } });
+    // Non-admins may only inspect their own orders (prevents order-data leakage)
+    if (!Number.isInteger(Number(orderId))) {
+      return { error: 'A valid numeric order ID is required.' };
+    }
+    const order = await this.orderRepo.findOne({ where: { id: Number(orderId) } });
     if (!order) return { error: 'Order matching specified ID was not found.' };
+    if (!this.isAdmin(role) && Number(order.userId) !== Number(userId)) {
+      return { error: 'Order matching specified ID was not found.' };
+    }
 
     return {
       id: order.id,

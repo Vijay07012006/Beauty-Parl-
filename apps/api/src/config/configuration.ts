@@ -61,7 +61,6 @@ export default () => ({
   },
 
   geminiApiKey: process.env.GEMINI_API_KEY,
-  deepseekApiKey: process.env.DEEPSEEK_API_KEY,
   openrouterApiKey: process.env.OPENROUTER_API_KEY,
   openrouterModel: process.env.OPENROUTER_MODEL,
 

@@ -16,12 +16,13 @@ export class AiAssistantController {
   ) {
     try {
       const userId = req.user.id;
+      const role = req.user.role;
       const sessionId = body.sessionId || `sess_${Date.now()}`;
-      const response = await this.aiService.processMessage(userId, sessionId, body.message);
+      const response = await this.aiService.processMessage(userId, sessionId, body.message, role);
       return res.json(response);
     } catch (error: any) {
-      console.error('JARVIS Error:', error.message);
-      return res.status(500).json({ error: error.message });
+      console.error('JARVIS Error:', error);
+      return res.status(500).json({ error: 'JARVIS encountered an error while processing your request. Please try again.' });
     }
   }
 
