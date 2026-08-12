@@ -165,6 +165,7 @@ export default function CheckoutPage() {
           amount: orderData.total,
           orderId: orderId,
           currency: 'INR',
+          email: user ? undefined : form.email,
         });
 
         // 3. Save last used address
@@ -304,6 +305,7 @@ export default function CheckoutPage() {
       const rzpOrderRes = await api.post('/payments/create-order', {
         amount: orderData.total,
         orderId,
+        email: user ? undefined : activeForm.email,
       });
       const { id: rzpOrderId, keyId } = rzpOrderRes.data;
 

@@ -105,8 +105,8 @@ export default function AdminUsersPage() {
                       <td className="px-6 py-3">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${
                           user.role === 'admin' || user.role === 'super_admin' 
-                            ? 'bg-purple-100 text-purple-700 font-bold' 
-                            : 'bg-gray-100 text-gray-700'
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 font-bold' 
+                            : 'bg-gray-100 text-gray-700 dark:bg-secondary dark:text-muted-foreground'
                         }`}>
                           {user.role}
                         </span>

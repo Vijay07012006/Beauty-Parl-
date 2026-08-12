@@ -108,7 +108,7 @@ export default function GamificationPage() {
                   <div key={user.id} className="flex items-center justify-between p-3 bg-secondary/10 rounded-2xl border border-border/20 text-xs">
                     <div className="flex items-center gap-3">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${
-                        index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-slate-100 text-slate-600' : 'bg-secondary text-muted-foreground'
+                        index === 0 ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300' : index === 1 ? 'bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-300' : 'bg-secondary text-muted-foreground'
                       }`}>
                         {index + 1}
                       </span>

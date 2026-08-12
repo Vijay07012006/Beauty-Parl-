@@ -79,7 +79,9 @@
 @layer base {
   * { @apply border-border; }
   html, body {
-    overflow-x: hidden;
+    /* M-9: 'clip' (not 'hidden') prevents horizontal scroll without creating a scroll
+       container — which would break position:sticky on the header/footer. */
+    overflow-x: clip;
     max-width: 100%;
   }
   body { @apply bg-background text-foreground font-sans antialiased; }

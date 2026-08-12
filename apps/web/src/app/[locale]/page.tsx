@@ -9,6 +9,7 @@ import { RecommendationsSection } from '@/components/products/RecommendationsSec
 import { RecentlyViewed } from '@/components/recently-viewed/RecentlyViewed';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useParams } from 'next/navigation';
 
 // Lazy load heavy sections
 const Categories = dynamic(() => import('@/components/home/Categories').then(m => m.Categories), { 
@@ -22,6 +23,7 @@ const FeaturedProducts = dynamic(() => import('@/components/home/FeaturedProduct
 });
 
 export default function HomePage() {
+  const { locale } = useParams<{ locale: string }>();
   const [showSections, setShowSections] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
 
@@ -66,7 +68,7 @@ export default function HomePage() {
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       Get inspired by our expert-recommended styles and beauty routines. From "Date Night Glam" to "Dewy Skin Glow", grab everything you need in one click.
                     </p>
-                    <Link href="/en/looks" className="inline-block mt-2">
+                    <Link href={`/${locale}/looks`} className="inline-block mt-2">
                       <button className="px-6 py-3 bg-primary hover:bg-primary/95 text-white rounded-full font-bold text-xs transition shadow-md cursor-pointer select-none">
                         Explore Curated Looks
                       </button>

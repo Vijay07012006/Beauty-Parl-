@@ -31,15 +31,35 @@ interface AuthStore {
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
-  user: null,
-  token: null,
+export const useAuthStore = create<AuthStore>((set, get) => {
+  // M-8: hydrate synchronously at store creation (module scope) so the api Authorization
+  // header is present before any component effect fires — eliminates the admin hydration race.
+  let initialToken: string | null = null;
+  let initialUser: User | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const rawToken = localStorage.getItem('token');
+      const rawUser = localStorage.getItem('user');
+      if (rawToken && rawUser) {
+        initialToken = rawToken;
+        initialUser = JSON.parse(rawUser);
+        api.defaults.headers.common['Authorization'] = `Bearer ${rawToken}`;
+      }
+    } catch {
+      // ignore malformed persisted state
+    }
+  }
+
+  return {
+  user: initialUser,
+  token: initialToken,
   loading: false,
   error: null,
 
   clearError: () => set({ error: null }),
 
   hydrate: () => {
+    if (typeof window === 'undefined') return;
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
     if (token && user) {
@@ -163,4 +183,5 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     delete api.defaults.headers.common['Authorization'];
     set({ user: null, token: null });
   },
-}));
+  };
+});
