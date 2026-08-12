@@ -134,6 +134,8 @@ export class AiAssistantService implements OnModuleInit {
       };
     }
 
+    const modelId = this.config.get<string>('openrouterModel') || this.config.get<string>('OPENROUTER_MODEL') || process.env.OPENROUTER_MODEL || 'meta-llama/llama-3-70b-instruct';
+
     // 1. Fetch conversation history
     const dbMessages = await this.conversationRepo.find({
       where: { sessionId },
@@ -178,7 +180,7 @@ export class AiAssistantService implements OnModuleInit {
     await this.conversationRepo.save(userMessage);
 
     let response = await this.openai.chat.completions.create({
-      model: 'deepseek/deepseek-v3',
+      model: modelId,
       messages,
       tools: this.tools,
     });
@@ -265,7 +267,7 @@ export class AiAssistantService implements OnModuleInit {
 
       // Get next turn
       response = await this.openai.chat.completions.create({
-        model: 'deepseek/deepseek-v3',
+        model: modelId,
         messages,
         tools: this.tools,
       });
