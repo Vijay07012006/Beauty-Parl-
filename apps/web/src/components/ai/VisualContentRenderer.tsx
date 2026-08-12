@@ -251,52 +251,53 @@ function ProductsRenderer({ products }: { products: VisualProduct[] }) {
         </div>
 
         {/* Horizontal scroll strip */}
-        <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar flex-1 items-start">
+        <div className="flex overflow-x-auto gap-4 pb-4 scroll-smooth flex-1 items-start">
           {products.map((p) => (
-            <div
-              key={p.id}
-              onClick={() => setSelectedProduct(p)}
-              className="group bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer shrink-0 w-44 flex flex-col"
-            >
-              {/* Image */}
-              <div className="relative aspect-square bg-gradient-to-br from-secondary/50 to-secondary/20 overflow-hidden">
-                {p.image ? (
-                  <img
-                    src={p.image}
-                    alt={p.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="w-8 h-8 text-muted-foreground/25" />
-                  </div>
-                )}
-                {p.category && (
-                  <span className="absolute top-1.5 left-1.5 text-[8px] font-bold uppercase tracking-wider bg-background/80 backdrop-blur-sm px-1.5 py-0.5 rounded-full border border-border/40">
-                    {p.category}
-                  </span>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="p-3 flex flex-col gap-2 flex-1">
-                <div>
-                  <h4 className="font-semibold text-xs text-foreground line-clamp-2 leading-tight">{p.name}</h4>
-                  <p className="text-sm font-bold text-primary mt-1">₹{formatPrice(p.price)}</p>
-                  <StarRating value={p.rating} />
+            <div key={p.id} className="flex-shrink-0 w-48 md:w-56">
+              <div
+                onClick={() => setSelectedProduct(p)}
+                className="group bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer w-full flex flex-col"
+              >
+                {/* Image */}
+                <div className="relative aspect-square bg-gradient-to-br from-secondary/50 to-secondary/20 overflow-hidden">
+                  {p.image ? (
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="w-8 h-8 text-muted-foreground/25" />
+                    </div>
+                  )}
+                  {p.category && (
+                    <span className="absolute top-1.5 left-1.5 text-[8px] font-bold uppercase tracking-wider bg-background/80 backdrop-blur-sm px-1.5 py-0.5 rounded-full border border-border/40">
+                      {p.category}
+                    </span>
+                  )}
                 </div>
 
-                {p.stock !== undefined && p.stock <= 5 && p.stock > 0 && (
-                  <span className="text-[9px] text-orange-500 font-semibold">Only {p.stock} left!</span>
-                )}
+                {/* Info */}
+                <div className="p-3 flex flex-col gap-2 flex-1">
+                  <div>
+                    <h4 className="font-semibold text-xs text-foreground line-clamp-2 leading-tight">{p.name}</h4>
+                    <p className="text-sm font-bold text-primary mt-1">₹{formatPrice(p.price)}</p>
+                    <StarRating value={p.rating} />
+                  </div>
 
-                <button
-                  onClick={(e) => handleQuickAdd(e, p)}
-                  className="w-full mt-auto py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-[10px] font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <ShoppingCart className="w-3 h-3" />
-                  Quick Add
-                </button>
+                  {p.stock !== undefined && p.stock <= 5 && p.stock > 0 && (
+                    <span className="text-[9px] text-orange-500 font-semibold">Only {p.stock} left!</span>
+                  )}
+
+                  <button
+                    onClick={(e) => handleQuickAdd(e, p)}
+                    className="w-full mt-auto py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-[10px] font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <ShoppingCart className="w-3 h-3" />
+                    Quick Add
+                  </button>
+                </div>
               </div>
             </div>
           ))}

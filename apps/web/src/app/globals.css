@@ -190,3 +190,16 @@
 body.chat-open {
   overflow: hidden;
 }
+
+/* Custom scrollbar for horizontal product grid */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 6px;
+}
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: hsl(var(--secondary));
+  border-radius: 8px;
+}
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary));
+  border-radius: 8px;
+}
