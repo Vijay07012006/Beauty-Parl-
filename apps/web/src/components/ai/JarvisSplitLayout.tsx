@@ -36,6 +36,7 @@ interface JarvisSplitLayoutProps {
   onExportPDF: () => void;
   onAddToCart: (product: any) => void;
   visualContent: VisualContent | null;
+  onQuickCommand?: (cmd: string) => void;
 }
 
 // ─── Simple markdown-lite renderer ───────────────────────────────────────────
@@ -77,8 +78,41 @@ export function JarvisSplitLayout({
   onExportPDF,
   onAddToCart,
   visualContent,
+  onQuickCommand,
 }: JarvisSplitLayoutProps) {
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Safe rendering with fallback
+  const renderContent = () => {
+    if (!visualContent || visualContent.visualType === 'empty') {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-center px-6">
+          <p className="text-sm font-semibold text-foreground">Ask JARVIS to show products, charts, or comparisons</p>
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => onQuickCommand?.('show products')}
+              className="px-4 py-2 bg-secondary hover:bg-primary/10 hover:text-primary rounded-full text-xs font-semibold transition cursor-pointer"
+            >
+              Show products
+            </button>
+            <button
+              onClick={() => onQuickCommand?.('sales chart')}
+              className="px-4 py-2 bg-secondary hover:bg-primary/10 hover:text-primary rounded-full text-xs font-semibold transition cursor-pointer"
+            >
+              Sales chart
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    try {
+      return <VisualContentRenderer content={visualContent} />;
+    } catch (error) {
+      console.error('Visual render error:', error);
+      return <div className="text-red-500 text-xs p-4">Something went wrong rendering visual content. Please try again.</div>;
+    }
+  };
 
   // Auto-scroll chat on new messages
   useEffect(() => {
@@ -306,7 +340,7 @@ export function JarvisSplitLayout({
 
           {/* Content */}
           <div className="flex-1 overflow-hidden p-5">
-            <VisualContentRenderer content={visualContent} />
+            {renderContent()}
           </div>
         </div>
       </div>

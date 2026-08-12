@@ -380,8 +380,8 @@ export class AiAssistantService implements OnModuleInit {
       chart: chartData,
       navigation: navigationRoute,
       sessionId,
-      visualType: finalVisualType,
-      data: finalData,
+      visualType: finalVisualType || null,
+      data: finalData || null,
     };
   }
 
@@ -416,14 +416,14 @@ export class AiAssistantService implements OnModuleInit {
     return {
       visualType: 'products',
       data: products.map(p => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        image: p.image,
-        rating: p.rating,
-        stock: p.stock,
-        description: p.description,
-        category: p.category,
+        id: Number(p.id),
+        name: String(p.name),
+        price: Number(p.price) || 0,
+        image: p.image || '/images/placeholder.jpg',
+        rating: Number(p.rating) || 0,
+        stock: Number(p.stock) || 0,
+        description: String(p.description || ''),
+        category: String(p.category || ''),
       })),
     };
   }

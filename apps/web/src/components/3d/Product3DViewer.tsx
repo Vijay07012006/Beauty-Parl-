@@ -11,11 +11,15 @@ function CosmeticProduct() {
   const ringRef = useRef<THREE.Mesh>(null);
   const capRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
-  const clock = useRef(new THREE.Clock());
+  const lastTime = useRef(typeof window !== 'undefined' ? window.performance.now() : 0);
+  const startTime = useRef(typeof window !== 'undefined' ? window.performance.now() : 0);
 
   useFrame(() => {
-    const delta = clock.current.getDelta();
-    const elapsed = clock.current.getElapsedTime();
+    const now = typeof window !== 'undefined' ? window.performance.now() : 0;
+    const delta = (now - lastTime.current) / 1000;
+    const elapsed = (now - startTime.current) / 1000;
+    lastTime.current = now;
+
     if (groupRef.current) {
       groupRef.current.rotation.y += delta * 0.3;
     }

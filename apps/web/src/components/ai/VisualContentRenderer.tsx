@@ -13,6 +13,11 @@ import { toast } from 'sonner';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+const formatPrice = (price: any): string => {
+  const num = Number(price);
+  return isNaN(num) ? '0.00' : num.toFixed(2);
+};
+
 export interface VisualProduct {
   id: number | string;
   name: string;
@@ -80,7 +85,7 @@ function ProductModal({
     addItem({
       id: Number(product.id),
       name: product.name,
-      price: Number(product.price),
+      price: Number(product.price) || 0,
       image: product.image || '',
       maxStock,
       quantity: qty,
@@ -146,7 +151,7 @@ function ProductModal({
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xl font-bold text-primary">₹{Number(product.price).toFixed(2)}</p>
+              <p className="text-xl font-bold text-primary">₹{formatPrice(product.price)}</p>
               <StarRating value={product.rating} />
             </div>
             {product.stock !== undefined && (
@@ -210,7 +215,7 @@ function ProductsRenderer({ products }: { products: VisualProduct[] }) {
     addItem({
       id: Number(product.id),
       name: product.name,
-      price: Number(product.price),
+      price: Number(product.price) || 0,
       image: product.image || '',
       maxStock: product.stock ?? 99,
       quantity: 1,
@@ -277,7 +282,7 @@ function ProductsRenderer({ products }: { products: VisualProduct[] }) {
               <div className="p-3 flex flex-col gap-2 flex-1">
                 <div>
                   <h4 className="font-semibold text-xs text-foreground line-clamp-2 leading-tight">{p.name}</h4>
-                  <p className="text-sm font-bold text-primary mt-1">₹{Number(p.price).toFixed(2)}</p>
+                  <p className="text-sm font-bold text-primary mt-1">₹{formatPrice(p.price)}</p>
                   <StarRating value={p.rating} />
                 </div>
 

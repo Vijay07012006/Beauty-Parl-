@@ -81,9 +81,7 @@ How can I help?
   }, [user]);
 
   // ── Send message ──────────────────────────────────────────────────────────
-  const handleSend = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = input.trim();
+  const submitMessage = useCallback(async (text: string) => {
     if (!text || loading) return;
 
     if (!user) {
@@ -92,7 +90,6 @@ How can I help?
     }
 
     const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setInput('');
     setMessages((prev) => [...prev, { id: `u_${Date.now()}`, role: 'user', text, time: userTime }]);
     setLoading(true);
 
@@ -150,7 +147,19 @@ How can I help?
     } finally {
       setLoading(false);
     }
-  }, [input, loading, sessionId, user, locale, router]);
+  }, [loading, sessionId, user, locale, router]);
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    setInput('');
+    submitMessage(text);
+  };
+
+  const handleQuickCommand = useCallback((cmd: string) => {
+    submitMessage(cmd);
+  }, [submitMessage]);
 
   // ── PDF export ────────────────────────────────────────────────────────────
   const handleExportPDF = useCallback(async () => {
@@ -199,6 +208,7 @@ How can I help?
         onExportPDF={handleExportPDF}
         onAddToCart={handleAddToCart}
         visualContent={visualContent}
+        onQuickCommand={handleQuickCommand}
       />
 
       {/* Floating Action Button — always visible */}
