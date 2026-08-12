@@ -138,6 +138,34 @@ export class AiAssistantService implements OnModuleInit {
         },
       },
     },
+    {
+      type: 'function',
+      function: {
+        name: 'search_web',
+        description: 'Search the web using DuckDuckGo to answer questions with fresh internet results.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search query' },
+          },
+          required: ['query'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'generate_image',
+        description: 'Generate an image using Hugging Face Stable Diffusion based on a text prompt.',
+        parameters: {
+          type: 'object',
+          properties: {
+            prompt: { type: 'string', description: 'Text prompt detailing the visual image' },
+          },
+          required: ['prompt'],
+        },
+      },
+    },
   ];
 
   constructor(
@@ -241,6 +269,8 @@ export class AiAssistantService implements OnModuleInit {
     let chartData: any = null;
     let navigationRoute: string | null = null;
     let productsList: any[] = [];
+    let searchResults: any = null;
+    let generatedImage: any = null;
 
     while (toolCalls && toolCalls.length > 0 && attempts < maxAttempts) {
       attempts++;
@@ -315,6 +345,16 @@ export class AiAssistantService implements OnModuleInit {
             generation.type = 'chart';
             generation.content = toolArgs;
             await this.generationRepo.save(generation);
+          } else if (name === 'search_web') {
+            toolResult = await this.searchWebTool(toolArgs);
+            if (toolResult && toolResult.visualType === 'web_search') {
+              searchResults = toolResult.data;
+            }
+          } else if (name === 'generate_image') {
+            toolResult = await this.generateImageTool(toolArgs);
+            if (toolResult && toolResult.visualType === 'image') {
+              generatedImage = toolResult.data;
+            }
           } else {
             console.warn('Unknown tool called: ' + name);
             toolResult = { error: 'Requested tool is not available.' };
@@ -371,6 +411,12 @@ export class AiAssistantService implements OnModuleInit {
     } else if (navigationRoute) {
       finalVisualType = 'navigation';
       finalData = navigationRoute;
+    } else if (searchResults) {
+      finalVisualType = 'web_search';
+      finalData = searchResults;
+    } else if (generatedImage) {
+      finalVisualType = 'image';
+      finalData = generatedImage;
     }
 
     return {
@@ -478,5 +524,97 @@ export class AiAssistantService implements OnModuleInit {
       paymentMethod: order.paymentMethod,
       createdAt: order.createdAt,
     };
+  }
+
+  private async searchWebTool(args: any) {
+    const { query } = args;
+    try {
+      const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
+      if (!response.ok) throw new Error('DuckDuckGo search request failed');
+      const data: any = await response.json();
+      
+      const results = (data.RelatedTopics || [])
+        .map((t: any) => {
+          if (t.Topics) {
+            return t.Topics.map((sub: any) => ({
+              title: sub.Text?.split(' - ')[0] || sub.Text || 'Search Result',
+              url: sub.FirstURL || '#',
+              snippet: sub.Text || '',
+            }));
+          }
+          return {
+            title: t.Text?.split(' - ')[0] || t.Text || 'Search Result',
+            url: t.FirstURL || '#',
+            snippet: t.Text || '',
+          };
+        })
+        .flat()
+        .filter((t: any) => t.url && t.url !== '#');
+
+      return {
+        visualType: 'web_search',
+        data: results.slice(0, 5),
+      };
+    } catch (e: any) {
+      console.error('DuckDuckGo search error:', e);
+      return {
+        visualType: 'web_search',
+        data: [
+          {
+            title: `Search for '${query}'`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+            snippet: `Search DuckDuckGo directly for results regarding: ${query}`,
+          }
+        ],
+      };
+    }
+  }
+
+  private async generateImageTool(args: any) {
+    const { prompt } = args;
+    try {
+      const apiKey = this.config.get<string>('HUGGINGFACE_API_KEY') || process.env.HUGGINGFACE_API_KEY;
+      if (!apiKey) {
+        throw new Error('HUGGINGFACE_API_KEY environment variable is not set');
+      }
+
+      const response = await fetch(
+        'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-v1-5',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ inputs: prompt }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HuggingFace API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const base64 = buffer.toString('base64');
+      const imageUrl = `data:image/jpeg;base64,${base64}`;
+
+      return {
+        visualType: 'image',
+        data: {
+          url: imageUrl,
+          prompt,
+        },
+      };
+    } catch (e: any) {
+      console.error('Image generation error:', e);
+      return {
+        visualType: 'image',
+        data: {
+          url: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&auto=format&fit=crop&q=60',
+          prompt: `${prompt} (Fallback image due to: ${e.message})`,
+        },
+      };
+    }
   }
 }

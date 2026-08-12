@@ -325,6 +325,8 @@ export function JarvisSplitLayout({
                     ? 'Comparison Table'
                     : visualContent?.visualType === 'web_search'
                     ? 'Search Results'
+                    : visualContent?.visualType === 'image'
+                    ? 'Generated Image'
                     : 'Visual Output'
                   : 'Visual Panel'
                 }

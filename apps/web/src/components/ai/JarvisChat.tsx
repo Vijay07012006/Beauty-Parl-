@@ -116,6 +116,10 @@ How can I help?
           setVisualContent({ visualType: 'products', products: data.data });
         } else if (data.visualType === 'chart') {
           setVisualContent({ visualType: 'chart', chart: data.data });
+        } else if (data.visualType === 'web_search') {
+          setVisualContent({ visualType: 'web_search', webSearch: data.data });
+        } else if (data.visualType === 'image') {
+          setVisualContent({ visualType: 'image', imageUrl: data.data.url, imagePrompt: data.data.prompt });
         }
       } else if (data.products?.length > 0) {
         setVisualContent({ visualType: 'products', products: data.products });
