@@ -80,6 +80,7 @@ export default function LiveShoppingRoomPage() {
   const initWebSockets = () => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     const socket = io(baseUrl, {
+      withCredentials: true,
       auth: { token: token || undefined },
     });
     socketRef.current = socket;

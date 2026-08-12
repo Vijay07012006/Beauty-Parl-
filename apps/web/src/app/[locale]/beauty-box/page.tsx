@@ -26,7 +26,7 @@ export default function BeautyBoxesPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const { addItem } = useCartStore();
   const [boxes, setBoxes] = useState<BeautyBox[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export default function BeautyBoxesPage() {
   };
 
   const handleSubscribe = (box: BeautyBox, frequency: 'monthly' | 'bi-monthly') => {
-    if (!token) {
+    if (!user) {
       toast.error('Please sign in to subscribe to beauty boxes');
       router.push(`/${locale}/auth/login`);
       return;

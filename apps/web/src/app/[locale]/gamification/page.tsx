@@ -31,25 +31,25 @@ export default function GamificationPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       toast.error('Please sign in to view your achievements');
       router.push(`/${locale}/auth/login`);
       return;
     }
     fetchData();
-  }, [token, locale]);
+  }, [user, locale]);
 
   const fetchData = async () => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      // The HttpOnly bp_token cookie is sent automatically via withCredentials
       const [achRes, leadRes] = await Promise.all([
-        api.get('/gamification/achievements', { headers }),
+        api.get('/gamification/achievements'),
         api.get('/gamification/leaderboard'),
       ]);
 

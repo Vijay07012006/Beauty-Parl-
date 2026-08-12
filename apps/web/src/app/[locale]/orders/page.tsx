@@ -42,18 +42,18 @@ export default function OrdersPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       router.push(`/${locale}/auth/login`);
       return;
     }
     fetchOrders();
-  }, [token, locale]);
+  }, [user, locale]);
 
   const fetchOrders = async (status?: string) => {
     setLoading(true);

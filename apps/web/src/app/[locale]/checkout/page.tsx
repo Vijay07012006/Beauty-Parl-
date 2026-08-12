@@ -18,7 +18,7 @@ export default function CheckoutPage() {
   const locale = params?.locale || 'en';
   
   const { items, total, clearCart } = useCartStore();
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
 
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -56,9 +56,9 @@ export default function CheckoutPage() {
 
   // Fetch saved addresses if logged in
   useEffect(() => {
-    if (user && token) {
-      const headers = { Authorization: `Bearer ${token}` };
-      api.get('/loyalty/points', { headers })
+    if (user) {
+      // Auth is carried by the HttpOnly bp_token cookie sent via withCredentials
+      api.get('/loyalty/points')
         .then(res => setPoints(res.data.points || 0))
         .catch(() => {});
 
@@ -84,7 +84,7 @@ export default function CheckoutPage() {
           console.error('Failed to load user addresses', err);
         });
     }
-  }, [user, token]);
+  }, [user]);
 
   useEffect(() => {
     if (user && !selectedAddressId) {

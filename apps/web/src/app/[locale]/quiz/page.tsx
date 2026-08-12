@@ -103,10 +103,9 @@ export default function QuizPage() {
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      const token = localStorage.getItem('token');
+      // Auth is carried by the HttpOnly bp_token cookie (withCredentials); guests use x-session-id.
       const sessionId = localStorage.getItem('guest_chat_room_id') || 'default';
       const headers = {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         'x-session-id': sessionId,
       };
 

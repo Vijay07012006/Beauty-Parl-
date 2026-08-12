@@ -119,6 +119,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         token = authHeader.slice(7);
       }
     }
+    if (!token) {
+      // HttpOnly cookie fallback (sent when socket.io connects with credentials)
+      const cookieHeader = client.handshake.headers?.cookie;
+      if (cookieHeader && typeof cookieHeader === 'string') {
+        for (const part of cookieHeader.split(';')) {
+          const pair = part.trim();
+          if (pair.startsWith('bp_token=')) {
+            token = pair.substring('bp_token='.length);
+            break;
+          }
+        }
+      }
+    }
     // Token via query string is NOT accepted — avoids leakage in logs/referrers (M7)
     if (!token) return null;
     try {

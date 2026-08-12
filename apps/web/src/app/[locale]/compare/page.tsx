@@ -5,6 +5,7 @@ import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ComparisonTable } from '@/components/comparison/ComparisonTable';
+import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { Share2, Trash2, ArrowLeft } from 'lucide-react';
@@ -15,16 +16,16 @@ function ComparePageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = params.locale || 'en';
+  const { user } = useAuthStore();
 
   const [products, setProducts] = useState<any[]>([]);
   const [differences, setDifferences] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
   // Comparison list identity: authenticated users are scoped server-side by their
-  // JWT; guests get a dedicated, cryptographically-random session id (F4).
+  // JWT (HttpOnly cookie); guests get a dedicated, cryptographically-random session id (F4).
   const getSessionId = () => {
-    const token = localStorage.getItem('token');
-    if (token) return undefined;
+    if (user) return undefined;
 
     let id = localStorage.getItem('guest_compare_session_id');
     if (!id) {
@@ -35,10 +36,8 @@ function ComparePageContent() {
   };
 
   const getHeaders = () => {
-    const token = localStorage.getItem('token');
     const sessionId = getSessionId();
     return {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(sessionId ? { 'x-session-id': sessionId } : {}),
     };
   };

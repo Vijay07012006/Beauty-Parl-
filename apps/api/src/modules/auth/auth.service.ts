@@ -101,6 +101,11 @@ export class AuthService {
     await this.userSessionRepository.delete({ userId });
   }
 
+  async revokeToken(token: string): Promise<void> {
+    if (!token) return;
+    await this.userSessionRepository.delete({ tokenHash: this.hashToken(token) });
+  }
+
   async register(registerDto: any) {
     const email = typeof registerDto?.email === 'string' ? registerDto.email.trim().toLowerCase() : '';
     const password = typeof registerDto?.password === 'string' ? registerDto.password : '';

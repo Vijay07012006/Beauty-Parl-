@@ -38,13 +38,13 @@ export default function OrderDetailPage() {
   const locale = (params?.locale as string) || 'en';
   const t = useTranslations('orders');
 
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'timeline' | 'receipt'>('timeline');
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       router.push(`/${locale}/auth/login`);
       return;
     }
@@ -54,7 +54,7 @@ export default function OrderDetailPage() {
         .catch(() => router.push(`/${locale}/orders`))
         .finally(() => setLoading(false));
     }
-  }, [id, token, locale]);
+  }, [id, user, locale]);
 
   const handlePrint = () => {
     window.print();

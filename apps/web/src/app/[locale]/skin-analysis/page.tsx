@@ -23,17 +23,17 @@ export default function SkinAnalysisPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const [imageUrl, setImageUrl] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<any | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       toast.error('Please sign in to access AI Skin Diagnostics');
       router.push(`/${locale}/auth/login`);
     }
-  }, [token, locale]);
+  }, [user, locale]);
 
   const handleAnalyze = async (urlToAnalyze?: string) => {
     const targetUrl = urlToAnalyze || imageUrl;
@@ -49,8 +49,8 @@ export default function SkinAnalysisPage() {
     await new Promise((resolve) => setTimeout(resolve, 2500));
 
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.post('/skin-analysis/analyze', { imageUrl: targetUrl }, { headers });
+      // The HttpOnly bp_token cookie is sent automatically via withCredentials
+      const res = await api.post('/skin-analysis/analyze', { imageUrl: targetUrl });
       setResult(res.data);
       toast.success('Diagnosis compiled successfully! ✨');
     } catch (err: any) {

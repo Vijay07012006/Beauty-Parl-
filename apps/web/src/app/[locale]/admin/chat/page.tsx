@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Send, User, MessageCircle } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
 
 interface ActiveRoom {
   roomId: string;
@@ -41,18 +42,9 @@ export default function AdminChatPage() {
 
   useEffect(() => {
     // 1. Check if user is admin
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        if (parsed.role === 'admin' || parsed.role === 'super_admin') {
-          setIsAdminUser(true);
-        } else {
-          router.push(`/${locale}/auth/login`);
-        }
-      } catch {
-        router.push(`/${locale}/auth/login`);
-      }
+    const user = useAuthStore.getState().user;
+    if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      setIsAdminUser(true);
     } else {
       router.push(`/${locale}/auth/login`);
     }
@@ -63,8 +55,11 @@ export default function AdminChatPage() {
     if (!isAdminUser) return;
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://beauty-parl-api.onrender.com';
-    const token = localStorage.getItem('token');
+    // Token now lives in the HttpOnly cookie; the in-memory store token is a
+    // socket.io handshake fallback for cross-site connections.
+    const token = useAuthStore.getState().token;
     const newSocket = io(baseUrl, {
+      withCredentials: true,
       auth: { token: token || undefined },
     });
     setSocket(newSocket);

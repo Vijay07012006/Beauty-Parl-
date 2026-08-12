@@ -35,9 +35,7 @@ export default function CartPage() {
     // Sync cart state to backend API for recovery tracking
     const syncCartToBackend = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-        
+        // Auth is carried by the HttpOnly bp_token cookie sent via withCredentials
         const userStr = localStorage.getItem('user');
         let email: string | undefined;
         if (userStr) {
@@ -46,7 +44,7 @@ export default function CartPage() {
             email = parsedUser.email;
           } catch {}
         }
-        await api.post('/cart', { items, email }, { headers });
+        await api.post('/cart', { items, email });
       } catch (err) {
         console.error('Failed to sync cart to backend:', err);
       }

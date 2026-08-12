@@ -32,7 +32,7 @@ export default function LoyaltyPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { token, user } = useAuthStore();
+  const { user } = useAuthStore();
 
   const [pointsInfo, setPointsInfo] = useState({ points: 0, tier: 'silver', totalSpent: 0 });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -41,20 +41,20 @@ export default function LoyaltyPage() {
   const [redeemedCode, setRedeemedCode] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       toast.error('Please sign in to view your loyalty dashboard');
       router.push(`/${locale}/auth/login`);
       return;
     }
     fetchData();
-  }, [token, locale]);
+  }, [user, locale]);
 
   const fetchData = async () => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      // The HttpOnly bp_token cookie is sent automatically via withCredentials
       const [ptsRes, txRes, rewRes] = await Promise.all([
-        api.get('/loyalty/points', { headers }),
-        api.get('/loyalty/transactions', { headers }),
+        api.get('/loyalty/points'),
+        api.get('/loyalty/transactions'),
         api.get('/loyalty/rewards'),
       ]);
 
@@ -70,8 +70,7 @@ export default function LoyaltyPage() {
 
   const handleRedeem = async (rewardId: number) => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.post(`/loyalty/redeem/${rewardId}`, {}, { headers });
+      const res = await api.post(`/loyalty/redeem/${rewardId}`, {});
       
       setRedeemedCode(res.data.rewardCode);
       toast.success('Reward redeemed successfully! 🎁');

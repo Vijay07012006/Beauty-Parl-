@@ -10,7 +10,7 @@ function CallbackHandler() {
   const searchParams = useSearchParams();
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
-  const { hydrate } = useAuthStore();
+  const { setSession } = useAuthStore();
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -22,13 +22,12 @@ function CallbackHandler() {
 
     (async () => {
       try {
-        // Exchange the one-time code for a token server-side — never logs the JWT in the URL (H3)
+        // Exchange the one-time code for a token server-side — never logs the JWT in the URL (H3).
+        // The server also sets the HttpOnly bp_token cookie; only the non-sensitive user is cached.
         const { data } = await api.post('/auth/oauth/exchange', { code });
         const { access_token, user } = data;
         if (!access_token || !user) throw new Error('Invalid exchange response');
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('user', JSON.stringify(user));
-        hydrate();
+        setSession(access_token, user);
 
         if (user.role === 'admin' || user.role === 'super_admin') {
           router.push(`/${locale}/admin/dashboard`);
@@ -40,7 +39,7 @@ function CallbackHandler() {
         router.push(`/${locale}/auth/login`);
       }
     })();
-  }, [searchParams, router, hydrate, locale]);
+  }, [searchParams, router, setSession, locale]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/10">

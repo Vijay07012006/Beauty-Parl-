@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useAuthStore } from '@/store/authStore';
 import { MessageCircle, X, Send, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -42,8 +43,11 @@ export function ChatWidget() {
     if (!isOpen || !userProfile) return;
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://beauty-parl-api.onrender.com';
-    const token = localStorage.getItem('token');
+    // Token now lives in the HttpOnly cookie (set by the server); the in-memory store
+    // token is passed as a socket.io handshake fallback for cross-site connections.
+    const token = useAuthStore.getState().token;
     const newSocket = io(baseUrl, {
+      withCredentials: true,
       auth: {
         token: token || undefined,
       },

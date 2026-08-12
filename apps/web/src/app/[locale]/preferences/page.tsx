@@ -23,7 +23,7 @@ export default function EmailPreferencesPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const [preferences, setPreferences] = useState<Preferences>({
     marketing: true,
     order_updates: true,
@@ -56,13 +56,13 @@ export default function EmailPreferencesPage() {
   };
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       router.push(`/${locale}/auth/login`);
       return;
     }
     fetchPreferences();
     fetchAlerts();
-  }, [token, locale]);
+  }, [user, locale]);
 
   const fetchPreferences = async () => {
     setLoading(true);

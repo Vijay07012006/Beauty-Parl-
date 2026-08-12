@@ -8,6 +8,22 @@ import * as crypto from 'crypto';
 import { UserSession } from './user-session.entity';
 import { User } from './user.entity';
 
+const COOKIE_NAME = 'bp_token';
+
+// HttpOnly cookie is the primary transport (XSS can't read it); the Authorization
+// header remains as a fallback for clients that cannot send cross-site cookies.
+function extractFromCookie(req: any): string | null {
+  const cookieHeader = req?.headers?.cookie;
+  if (!cookieHeader || typeof cookieHeader !== 'string') return null;
+  for (const part of cookieHeader.split(';')) {
+    const pair = part.trim();
+    if (pair.startsWith(`${COOKIE_NAME}=`)) {
+      return pair.substring(COOKIE_NAME.length + 1);
+    }
+  }
+  return null;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -22,7 +38,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new Error('JWT_SECRET environment variable is required. Refusing to start with an insecure default secret.');
     }
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        extractFromCookie,
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
       algorithms: ['HS256'],
@@ -33,11 +52,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(req: any, payload: any) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const rawToken = extractFromCookie(req) || (
+      req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.substring(7) : null
+    );
+    if (!rawToken) {
       throw new UnauthorizedException('Invalid token');
     }
-    const rawToken = authHeader.substring(7);
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex').substring(0, 64);
 
     const session = await this.userSessionRepository.findOne({

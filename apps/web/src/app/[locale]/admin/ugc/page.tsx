@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { api } from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
 import { Check, X, Shield, Image as ImageIcon, Camera, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -18,7 +17,6 @@ interface UgcPhoto {
 }
 
 export default function AdminUgcPage() {
-  const { token } = useAuthStore();
   const [pendingPhotos, setPendingPhotos] = useState<UgcPhoto[]>([]);
   const [approvedPhotos, setApprovedPhotos] = useState<UgcPhoto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,10 +29,9 @@ export default function AdminUgcPage() {
   const fetchUgcData = async () => {
     setLoading(true);
     try {
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
+      // Auth is carried by the HttpOnly bp_token cookie sent via withCredentials
       // Fetch pending queue
-      const pendingRes = await api.get('/ugc/admin/pending', { headers });
+      const pendingRes = await api.get('/ugc/admin/pending');
       setPendingPhotos(Array.isArray(pendingRes.data) ? pendingRes.data : []);
 
       // Fetch approved gallery
@@ -50,8 +47,7 @@ export default function AdminUgcPage() {
 
   const handleApprove = async (id: number) => {
     try {
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await api.put(`/ugc/admin/approve/${id}`, {}, { headers });
+      await api.put(`/ugc/admin/approve/${id}`, {});
       toast.success('Photo approved for public lookbook!');
       fetchUgcData();
     } catch {
@@ -62,8 +58,7 @@ export default function AdminUgcPage() {
   const handleReject = async (id: number) => {
     if (!confirm('Are you sure you want to permanently delete/reject this photo?')) return;
     try {
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await api.delete(`/ugc/admin/reject/${id}`, { headers });
+      await api.delete(`/ugc/admin/reject/${id}`);
       toast.success('Photo rejected and removed.');
       fetchUgcData();
     } catch {

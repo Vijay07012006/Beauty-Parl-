@@ -20,7 +20,7 @@ interface UgcGalleryProps {
 }
 
 export function UgcGallery({ productId }: UgcGalleryProps) {
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
   const [photos, setPhotos] = useState<UgcPhoto[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,8 +49,8 @@ export function UgcGallery({ productId }: UgcGalleryProps) {
     if (!isAdmin) return;
     setLoadingAdmin(true);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.get('/ugc/admin/pending', { headers });
+      // Auth is carried by the HttpOnly bp_token cookie sent via withCredentials
+      const res = await api.get('/ugc/admin/pending');
       setPendingPhotos(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to load pending UGC:', err);
@@ -75,8 +75,8 @@ export function UgcGallery({ productId }: UgcGalleryProps) {
 
     setSubmitting(true);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await api.post('/ugc', { productId, imageUrl, caption }, { headers });
+      // Auth is carried by the HttpOnly bp_token cookie sent via withCredentials
+      await api.post('/ugc', { productId, imageUrl, caption });
       toast.success('UGC submitted! It will appear in the gallery after admin review. 🌸');
       setImageUrl('');
       setCaption('');
@@ -90,8 +90,8 @@ export function UgcGallery({ productId }: UgcGalleryProps) {
 
   const handleApprove = async (id: number) => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await api.put(`/ugc/admin/approve/${id}`, {}, { headers });
+      // Auth is carried by the HttpOnly bp_token cookie sent via withCredentials
+      await api.put(`/ugc/admin/approve/${id}`, {});
       toast.success('Photo approved!');
       fetchPendingPhotos();
       fetchPhotos();
@@ -102,8 +102,8 @@ export function UgcGallery({ productId }: UgcGalleryProps) {
 
   const handleReject = async (id: number) => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await api.delete(`/ugc/admin/reject/${id}`, { headers });
+      // Auth is carried by the HttpOnly bp_token cookie sent via withCredentials
+      await api.delete(`/ugc/admin/reject/${id}`);
       toast.success('Photo rejected/deleted');
       fetchPendingPhotos();
     } catch {

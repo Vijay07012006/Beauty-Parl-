@@ -123,11 +123,12 @@ Verified `orders.controller.ts` `GET /orders/:id` already requires ownership (JW
 ## ⚪ Documented Residual Risks / Recommendations
 | Item | Notes |
 |---|---|
-| JWT stored in localStorage | XSS risk; migrating to HttpOnly cookies is a large refactor. Documented, not done. |
-| Touch targets < 44px | Many icon-only buttons (`p-1`/`p-1.5`); broad CSS change deferred. |
-| DB access tokens in OAuth callback URL | Extracted previously; recommended to use code-exchange flow. |
+| ~~JWT stored in localStorage~~ | ✅ **Fixed:** JWT now lives in an HttpOnly `bp_token` cookie (login / OAuth exchange / 2FA login), never localStorage. JS cannot read it, so XSS can't exfiltrate the session. Bearer header kept as a socket.io/fallback transport. Session revocation + deactivated-account checks still enforced in `JwtStrategy`. |
+| ~~DB access tokens in OAuth callback URL~~ | ✅ **Fixed:** Already using one-time code exchange (`issueOauthCode`/`exchangeOauthCode`, 60s, single-use, `POST /auth/oauth/exchange`) — the JWT never appears in the URL. |
+| Touch targets < 44px | Many icon-only buttons (`p-1`/`p-1.5`); broad CSS change deferred — recommended as follow-up. |
 | `synchronize` auto-create on fresh prod DB | Prod now defaults off — a fresh prod DB must set `DB_SYNCHRONIZE=true` once (or run migrations). |
 | Redis `beauty-local-redis` password | Local dev only; prod uses `REDIS_URL` env (external managed Redis). |
+| Cross-site cookie nuances | Cookie is `SameSite=None; Secure` in prod (Vercel → Render cross-origin) and `Lax` in dev; requires credentialed CORS (already enabled). Browser third-party-cookie policies apply. |
 
 ---
 

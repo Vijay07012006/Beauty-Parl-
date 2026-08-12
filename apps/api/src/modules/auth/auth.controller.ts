@@ -8,9 +8,27 @@ import { UserRole } from './user.entity';
 import { GoogleAuthGuard } from './google-auth.guard';
 import { FacebookAuthGuard } from './facebook-auth.guard';
 
+const AUTH_COOKIE = 'bp_token';
+
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  // HttpOnly cookie — JS cannot read it, so an XSS cannot exfiltrate the session.
+  private setAuthCookie(res: any, token: string) {
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie(AUTH_COOKIE, token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // matches config jwt.expiresIn
+    });
+  }
+
+  private clearAuthCookie(res: any) {
+    res.clearCookie(AUTH_COOKIE, { path: '/' });
+  }
 
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
@@ -26,7 +44,7 @@ export class AuthController {
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: { email?: string; password?: string }, @Request() req: any) {
+  async login(@Body() loginDto: { email?: string; password?: string }, @Request() req: any, @Res({ passthrough: true }) res: any) {
     const email = typeof loginDto?.email === 'string' ? loginDto.email.trim().toLowerCase() : '';
     const password = typeof loginDto?.password === 'string' ? loginDto.password : '';
     if (!email || !password) {
@@ -38,7 +56,38 @@ export class AuthController {
     }
     const ipAddress = req.ip;
     const userAgent = req.headers['user-agent'];
-    return this.authService.login(user, { ipAddress, userAgent });
+    const result = await this.authService.login(user, { ipAddress, userAgent });
+    if (result.access_token) {
+      this.setAuthCookie(res, result.access_token);
+    }
+    return result;
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Request() req: any, @Res({ passthrough: true }) res: any) {
+    // Revoke the server-side session (if a valid token was presented) and clear the cookie.
+    try {
+      const cookieHeader = req.headers?.cookie;
+      let cookieToken = '';
+      if (cookieHeader && typeof cookieHeader === 'string') {
+        for (const part of cookieHeader.split(';')) {
+          const pair = part.trim();
+          if (pair.startsWith(`${AUTH_COOKIE}=`)) {
+            cookieToken = pair.substring(AUTH_COOKIE.length + 1);
+            break;
+          }
+        }
+      }
+      const rawToken = cookieToken || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.substring(7) : '');
+      if (rawToken) {
+        await this.authService.revokeToken(rawToken);
+      }
+    } catch (error: any) {
+      console.error('Logout session revoke failed:', error.message);
+    }
+    this.clearAuthCookie(res);
+    return { success: true, message: 'Logged out' };
   }
 
   @Get('profile')
@@ -173,8 +222,10 @@ export class AuthController {
   @Post('oauth/exchange')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async exchangeOauthCode(@Body() body: { code: string }) {
-    return this.authService.exchangeOauthCode(body.code);
+  async exchangeOauthCode(@Body() body: { code: string }, @Res({ passthrough: true }) res: any) {
+    const result = await this.authService.exchangeOauthCode(body.code);
+    this.setAuthCookie(res, result.access_token);
+    return result;
   }
 
   @Get('2fa/generate')
@@ -215,12 +266,17 @@ export class AuthController {
   async verifyTwoFactorLogin(
     @Body() body: { email: string; token: string },
     @Request() req: any,
+    @Res({ passthrough: true }) res: any,
   ) {
     if (!body.email || !body.token) {
       throw new BadRequestException('email and token are required');
     }
     const ipAddress = req.ip;
     const userAgent = req.headers['user-agent'];
-    return this.authService.verifyTwoFactorLogin(body.email, body.token, { ipAddress, userAgent });
+    const result = await this.authService.verifyTwoFactorLogin(body.email, body.token, { ipAddress, userAgent });
+    if (result.access_token) {
+      this.setAuthCookie(res, result.access_token);
+    }
+    return result;
   }
 }

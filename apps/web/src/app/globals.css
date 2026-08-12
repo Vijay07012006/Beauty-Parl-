@@ -88,6 +88,20 @@
   h1, h2, h3, h4, h5, h6 { font-family: var(--font-playfair), serif; }
 }
 
+/* Touch targets >= 44px on coarse pointers (WCAG 2.5.8). Scoped to icon-only
+   controls (button/link whose only child is an svg) — the small `p-1`/`p-1.5`
+   icon taps flagged in the audit. Text buttons already exceed the height. */
+@media (pointer: coarse) {
+  a, button, [role="button"], summary, [tabindex] {
+    touch-action: manipulation;
+  }
+  button:has(> svg:only-child), [role="button"]:has(> svg:only-child),
+  a:has(> svg:only-child) {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
 @layer utilities {
   .no-scrollbar {
     -ms-overflow-style: none;

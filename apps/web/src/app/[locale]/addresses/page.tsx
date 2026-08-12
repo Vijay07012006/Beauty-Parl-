@@ -17,7 +17,7 @@ export default function AddressesPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
   const [addresses, setAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -25,12 +25,12 @@ export default function AddressesPage() {
   const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       router.push(`/${locale}/auth/login`);
       return;
     }
     fetchAddresses();
-  }, [token, locale]);
+  }, [user, locale]);
 
   const fetchAddresses = async () => {
     setLoading(true);

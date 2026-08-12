@@ -15,24 +15,24 @@ export default function ReferralPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const [stats, setStats] = useState({ code: null as string | null, referrals: 0, conversions: 0 });
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       toast.error('Please sign in to view your referral dashboard');
       router.push(`/${locale}/auth/login`);
       return;
     }
     fetchStats();
-  }, [token, locale]);
+  }, [user, locale]);
 
   const fetchStats = async () => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.get('/referral/stats', { headers });
+      // The HttpOnly bp_token cookie is sent automatically via withCredentials
+      const res = await api.get('/referral/stats');
       setStats(res.data);
     } catch (err) {
       console.error('Failed to load referral stats:', err);
@@ -44,8 +44,7 @@ export default function ReferralPage() {
   const handleGenerateCode = async () => {
     setGenerating(true);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.post('/referral/generate', {}, { headers });
+      const res = await api.post('/referral/generate', {});
       toast.success('Unique referral code generated! 🤝');
       fetchStats();
     } catch {

@@ -50,9 +50,8 @@ export function RecommendationsSection({
         }
         
         // Fetch from API
-        const token = localStorage.getItem('token');
-        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-        const res = await api.get(endpoint, { headers });
+        // Auth is carried by the HttpOnly bp_token cookie sent via withCredentials
+        const res = await api.get(endpoint);
         setProducts(res.data);
       } catch (err) {
         console.error('Failed to load recommendations:', err);

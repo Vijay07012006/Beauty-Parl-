@@ -30,23 +30,23 @@ export default function SubscriptionsPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       toast.error('Please sign in to manage your subscriptions');
       router.push(`/${locale}/auth/login`);
       return;
     }
     fetchSubscriptions();
-  }, [token, locale]);
+  }, [user, locale]);
 
   const fetchSubscriptions = async () => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.get('/subscriptions', { headers });
+      // The HttpOnly bp_token cookie is sent automatically via withCredentials
+      const res = await api.get('/subscriptions');
       setSubscriptions(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to load subscriptions:', err);
@@ -57,12 +57,11 @@ export default function SubscriptionsPage() {
 
   const handleToggleActive = async (id: number, currentActive: boolean) => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
       // Simulate patch
       const sub = subscriptions.find((s) => s.id === id);
       if (sub) {
         sub.isActive = !currentActive;
-        await api.put(`/subscriptions/${id}`, { frequency: sub.frequency, quantity: sub.quantity }, { headers });
+        await api.put(`/subscriptions/${id}`, { frequency: sub.frequency, quantity: sub.quantity });
         setSubscriptions([...subscriptions]);
         toast.success(currentActive ? 'Subscription paused ⏸️' : 'Subscription resumed ▶️');
       }
@@ -81,8 +80,7 @@ export default function SubscriptionsPage() {
         else nextDate.setDate(nextDate.getDate() + 90);
 
         sub.nextDeliveryDate = nextDate.toISOString();
-        const headers = { Authorization: `Bearer ${token}` };
-        await api.put(`/subscriptions/${id}`, { frequency: sub.frequency, quantity: sub.quantity }, { headers });
+        await api.put(`/subscriptions/${id}`, { frequency: sub.frequency, quantity: sub.quantity });
         setSubscriptions([...subscriptions]);
         toast.success('Next replenishment delivery skipped! 🚚');
       }
@@ -93,8 +91,7 @@ export default function SubscriptionsPage() {
 
   const handleCancel = async (id: number) => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await api.delete(`/subscriptions/${id}`, { headers });
+      await api.delete(`/subscriptions/${id}`);
       setSubscriptions(subscriptions.filter((s) => s.id !== id));
       toast.success('Subscription cancelled');
     } catch {

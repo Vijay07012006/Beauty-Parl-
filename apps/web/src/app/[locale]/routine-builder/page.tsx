@@ -24,7 +24,7 @@ export default function RoutineBuilderPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const { addItem } = useCartStore();
 
   const [step, setStep] = useState(1);
@@ -64,15 +64,15 @@ export default function RoutineBuilderPage() {
   };
 
   const handleSave = async () => {
-    if (!token) {
+    if (!user) {
       toast.error('Please sign in to save your routines to your account');
       router.push(`/${locale}/auth/login`);
       return;
     }
 
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await api.post('/routine-builder/save', { name: routine.name, products: routine }, { headers });
+      // The HttpOnly bp_token cookie is sent automatically via withCredentials
+      await api.post('/routine-builder/save', { name: routine.name, products: routine });
       toast.success('Routine saved to your profile! 💾');
     } catch {
       toast.error('Failed to save routine');

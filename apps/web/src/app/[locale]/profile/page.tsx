@@ -14,7 +14,7 @@ export default function ProfilePage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
 
-  const { user, token, updateProfile } = useAuthStore();
+  const { user, updateProfile } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -24,10 +24,10 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       router.push(`/${locale}/auth/login`);
     }
-  }, [token, router, locale]);
+  }, [user, router, locale]);
 
   useEffect(() => {
     if (user) {
