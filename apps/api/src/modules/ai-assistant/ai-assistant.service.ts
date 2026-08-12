@@ -23,6 +23,31 @@ export class AiAssistantService implements OnModuleInit {
     return role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN;
   }
 
+  // Strict whitelist of all pages JARVIS is allowed to navigate to.
+  // This prevents open-redirect attacks — nothing outside this set will be accepted.
+  private static readonly ALLOWED_PAGES = new Set([
+    'profile', 'orders', 'cart', 'wishlist', 'addresses', 'checkout',
+    'beauty-box', 'loyalty', 'referral', 'gamification', 'preferences',
+    'quiz', 'routine-builder', 'skin-analysis', 'virtual-try-on',
+    'subscriptions', 'ai-history',
+    'products', 'categories', 'compare', 'looks', 'clean-beauty', 'live-shopping',
+    'about', 'contact', 'faq', 'blog', 'booking', 'shipping', 'returns', 'privacy', 'terms',
+    'admin/dashboard', 'admin/products', 'admin/orders', 'admin/users',
+    'admin/coupons', 'admin/reviews', 'admin/settings', 'admin/ugc',
+    'admin/chat', 'admin/live-shopping',
+  ]);
+
+  private sanitizeRoute(page: string | undefined): string | null {
+    if (!page || typeof page !== 'string') return null;
+    // Strip any leading slashes and locale prefixes (e.g. /en/cart -> cart)
+    const stripped = page.replace(/^\/+/, '').replace(/^[a-z]{2}\//i, '');
+    // Only allow routes in the static whitelist
+    if (AiAssistantService.ALLOWED_PAGES.has(stripped)) {
+      return `/${stripped}`;
+    }
+    return null;
+  }
+
   private tools: any[] = [
     {
       type: 'function',
@@ -72,13 +97,27 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'navigate_to',
-        description: 'Navigate the client browser tab to a specific page or route. Examples: /en/products, /en/orders, /en/profile, etc.',
+        description: 'Navigate the client browser to a specific page. Use ONLY the page slug values listed in the enum. Do NOT include /en/ prefix or locale — the frontend will add it. For user pages: profile, orders, cart, wishlist, addresses, checkout, beauty-box, loyalty, referral, gamification, preferences, quiz, routine-builder, skin-analysis, virtual-try-on, subscriptions. For product pages: products, categories, compare, looks, clean-beauty, live-shopping. For info pages: about, contact, faq, blog, shipping, returns, privacy, terms. For admin pages: admin/dashboard, admin/products, admin/orders, admin/users, admin/coupons, admin/reviews, admin/settings, admin/ugc, admin/chat, admin/live-shopping.',
         parameters: {
           type: 'object',
           properties: {
-            route: { type: 'string', description: 'Destination route path' },
+            page: {
+              type: 'string',
+              description: 'The page slug to navigate to (without locale prefix). Examples: "cart", "profile", "products", "orders", "admin/dashboard".',
+              enum: [
+                'profile', 'orders', 'cart', 'wishlist', 'addresses', 'checkout',
+                'beauty-box', 'loyalty', 'referral', 'gamification', 'preferences',
+                'quiz', 'routine-builder', 'skin-analysis', 'virtual-try-on',
+                'subscriptions', 'ai-history',
+                'products', 'categories', 'compare', 'looks', 'clean-beauty', 'live-shopping',
+                'about', 'contact', 'faq', 'blog', 'booking', 'shipping', 'returns', 'privacy', 'terms',
+                'admin/dashboard', 'admin/products', 'admin/orders', 'admin/users',
+                'admin/coupons', 'admin/reviews', 'admin/settings', 'admin/ugc',
+                'admin/chat', 'admin/live-shopping',
+              ],
+            },
           },
-          required: ['route'],
+          required: ['page'],
         },
       },
     },
@@ -245,8 +284,15 @@ export class AiAssistantService implements OnModuleInit {
           } else if (name === 'get_order_details') {
             toolResult = await this.getOrderDetailsTool(toolArgs, userId, role);
           } else if (name === 'navigate_to') {
-            navigationRoute = toolArgs.route;
-            toolResult = { success: true, route: toolArgs.route };
+            // Use 'page' (new param name) with fallback to old 'route' for backward compat
+            const rawPage = toolArgs.page || toolArgs.route;
+            const sanitized = this.sanitizeRoute(rawPage);
+            if (sanitized) {
+              navigationRoute = sanitized;
+              toolResult = { success: true, route: sanitized };
+            } else {
+              toolResult = { error: `Page '${rawPage}' is not a valid navigation destination.` };
+            }
           } else if (name === 'generate_chart') {
             chartData = toolArgs;
             toolResult = { success: true, chart: toolArgs };

@@ -6,13 +6,44 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { api } from '@/lib/api';
 import { SvgChart } from './SvgChart';
+import { JarvisVisualOverlay, type VisualOverlayData } from './JarvisVisualOverlay';
 import { 
   Bot, MessageSquare, Send, X, Download, RefreshCw, 
-  Sparkles, ArrowRight, ShoppingCart, User, HelpCircle 
+  Sparkles, ArrowRight, ShoppingCart, User, HelpCircle, Layers
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+
+// ===========================================================
+// CLIENT-SIDE ROUTE SANITIZER
+// Must match the server-side ALLOWED_PAGES whitelist exactly.
+// ===========================================================
+const ALLOWED_PAGES = new Set([
+  'profile', 'orders', 'cart', 'wishlist', 'addresses', 'checkout',
+  'beauty-box', 'loyalty', 'referral', 'gamification', 'preferences',
+  'quiz', 'routine-builder', 'skin-analysis', 'virtual-try-on',
+  'subscriptions', 'ai-history',
+  'products', 'categories', 'compare', 'looks', 'clean-beauty', 'live-shopping',
+  'about', 'contact', 'faq', 'blog', 'booking', 'shipping', 'returns', 'privacy', 'terms',
+  'admin/dashboard', 'admin/products', 'admin/orders', 'admin/users',
+  'admin/coupons', 'admin/reviews', 'admin/settings', 'admin/ugc',
+  'admin/chat', 'admin/live-shopping',
+]);
+
+/**
+ * Sanitizes a navigation route received from the API.
+ * Returns a safe relative path or null if the route is disallowed.
+ */
+function sanitizeNavigationRoute(route: string | undefined | null): string | null {
+  if (!route || typeof route !== 'string') return null;
+  // Block any external URLs, protocol-relative URLs, or javascript:
+  if (/^(https?:|\/\/|javascript:|data:)/i.test(route)) return null;
+  // Normalise: strip leading slashes and locale prefix (e.g. /en/cart → cart)
+  const stripped = route.replace(/^\/+/, '').replace(/^[a-z]{2}\//i, '');
+  if (ALLOWED_PAGES.has(stripped)) return `/${stripped}`;
+  return null;
+}
 
 interface Message {
   id: string;
@@ -20,6 +51,7 @@ interface Message {
   text: string;
   products?: any[];
   chart?: any;
+  navigation?: string;
   time: string;
 }
 
@@ -36,11 +68,13 @@ export function JarvisChat() {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState('');
 
+  // Visual overlay state
+  const [overlayData, setOverlayData] = useState<VisualOverlayData | null>(null);
+
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setSessionId(`sess_jarvis_${Date.now()}`);
-    // Load a welcome message
     setMessages([
       {
         id: 'welcome',
@@ -50,7 +84,7 @@ export function JarvisChat() {
 How can I assist you today? You can ask me to:
 - 💄 **Recommend products** matching skin concerns or shade queries.
 - 📦 **View order details** ("check my order #5").
-- ${user?.role === 'admin' || user?.role === 'super_admin' ? '- 📊 **Check sales statistics** ("show revenue today/this week").\n' : ''}- ⚙️ **Navigate the website** ("go to coupons page").
+- ${user?.role === 'admin' || user?.role === 'super_admin' ? '📊 **Check sales statistics** ("show revenue today/this week").\n- ' : ''}- ⚙️ **Navigate the website** ("navigate cart", "go to profile", "open wishlist").
 - 📝 **Download this conversation** as a PDF file.`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }
@@ -81,7 +115,7 @@ How can I assist you today? You can ask me to:
       return;
     }
 
-    const userText = input;
+    const userText = input.trim();
     setInput('');
     const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const userMsgId = `user_${Date.now()}`;
@@ -107,25 +141,64 @@ How can I assist you today? You can ask me to:
         {
           id: assistantMsgId,
           role: 'assistant',
-          text: data.reply,
+          text: data.reply || 'Done!',
           products: data.products,
           chart: data.chart,
+          navigation: data.navigation,
           time: assistantTime,
         }
       ]);
 
-      // If AI requested navigation
+      // ── Visual overlay: open when AI returns structured data ─────────────
+      const hasVisuals = (data.products?.length > 0) || data.chart || data.navigation;
+      if (hasVisuals) {
+        const overlayPayload: VisualOverlayData = {};
+        if (data.products?.length > 0) {
+          overlayPayload.visual_type = 'products';
+          overlayPayload.products = data.products;
+        }
+        if (data.chart) {
+          overlayPayload.visual_type = 'chart';
+          overlayPayload.chart = data.chart;
+        }
+        if (data.navigation) {
+          // Sanitize the navigation route on the client side before using it
+          const safeRoute = sanitizeNavigationRoute(data.navigation);
+          if (safeRoute) {
+            overlayPayload.navigation = safeRoute;
+            overlayPayload.visual_type = 'navigation';
+          }
+        }
+        setOverlayData(overlayPayload);
+      }
+
+      // ── Automatic navigation: only executes if server confirmed a safe route ─
       if (data.navigation) {
-        toast.info(`Redirecting you to ${data.navigation}... 🚀`);
-        setTimeout(() => {
-          router.push(`/${locale}${data.navigation}`);
-          setIsOpen(false);
-        }, 1800);
+        const safeRoute = sanitizeNavigationRoute(data.navigation);
+        if (safeRoute) {
+          toast.info(`Navigating to ${safeRoute}... 🚀`);
+          setTimeout(() => {
+            router.push(`/${locale}${safeRoute}`);
+            setIsOpen(false);
+          }, 2000);
+        } else {
+          console.warn('JARVIS returned an unsafe navigation route — ignored:', data.navigation);
+        }
       }
 
     } catch (err: any) {
       console.error('Failed to get reply from JARVIS', err);
-      toast.error('Error connecting to JARVIS. Try again.');
+      const errMsg = err?.response?.data?.error || 'Error connecting to JARVIS. Try again.';
+      toast.error(errMsg);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `error_${Date.now()}`,
+          role: 'assistant',
+          text: `⚠️ ${errMsg}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -183,6 +256,12 @@ How can I assist you today? You can ask me to:
 
   return (
     <>
+      {/* Visual Overlay Panel — outside the chat drawer */}
+      <JarvisVisualOverlay
+        data={overlayData}
+        onClose={() => setOverlayData(null)}
+      />
+
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -215,6 +294,16 @@ How can I assist you today? You can ask me to:
             </div>
 
             <div className="flex items-center gap-1">
+              {/* Toggle overlay button */}
+              {overlayData && (
+                <button
+                  onClick={() => setOverlayData(null)}
+                  className="p-2 text-primary hover:bg-primary/10 rounded-xl transition cursor-pointer"
+                  title="Close visual panel"
+                >
+                  <Layers className="w-4 h-4" />
+                </button>
+              )}
               <button
                 onClick={handleExportPDF}
                 disabled={messages.length <= 1}
@@ -260,7 +349,7 @@ How can I assist you today? You can ask me to:
                       ? 'bg-primary text-white border-primary/20 rounded-tr-none' 
                       : 'bg-card text-foreground border-border/50 rounded-tl-none shadow-sm'
                   }`}>
-                    {/* Render plain text with markdown support (bolding and bullet lists) */}
+                    {/* Render plain text with markdown-lite support */}
                     <div className="whitespace-pre-line space-y-1.5">
                       {msg.text.split('\n').map((line, idx) => {
                         let content: any = line;
@@ -283,33 +372,40 @@ How can I assist you today? You can ask me to:
                     </div>
                   </div>
 
-                  {/* Render Visual Products widget if attached */}
+                  {/* Inline product thumbnail strip (compact) */}
                   {msg.products && msg.products.length > 0 && (
-                    <div className="flex gap-3 overflow-x-auto py-1 pr-4 w-full no-scrollbar max-w-[280px] sm:max-w-[320px]">
-                      {msg.products.map((prod) => (
-                        <div key={prod.id} className="bg-card w-36 shrink-0 p-2.5 rounded-2xl border border-border/40 shadow-sm flex flex-col justify-between space-y-2">
-                          <div className="space-y-1">
-                            <div className="aspect-square bg-secondary/35 rounded-xl flex items-center justify-center text-xl relative overflow-hidden">
-                              {prod.image ? (
-                                <img src={prod.image} alt={prod.name} className="object-cover w-full h-full" />
-                              ) : '💄'}
-                            </div>
-                            <h5 className="font-bold text-[9px] text-foreground truncate">{prod.name}</h5>
-                            <p className="text-[9px] font-bold text-primary">${Number(prod.price).toFixed(2)}</p>
+                    <div className="flex gap-2 overflow-x-auto py-1 pr-4 w-full no-scrollbar max-w-[280px] sm:max-w-[320px]">
+                      {msg.products.slice(0, 3).map((prod) => (
+                        <div key={prod.id} className="bg-card w-24 shrink-0 p-2 rounded-2xl border border-border/40 shadow-sm flex flex-col gap-1.5">
+                          <div className="aspect-square bg-secondary/35 rounded-lg flex items-center justify-center overflow-hidden">
+                            {prod.image ? (
+                              <img src={prod.image} alt={prod.name} className="object-cover w-full h-full" />
+                            ) : '💄'}
                           </div>
+                          <p className="font-bold text-[8px] text-foreground truncate">{prod.name}</p>
+                          <p className="text-[8px] font-bold text-primary">₹{Number(prod.price).toFixed(2)}</p>
                           <button
                             onClick={() => handleAddToCart(prod)}
-                            className="w-full py-1.5 bg-primary/10 text-primary hover:bg-primary text-white rounded-lg text-[8px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                            className="w-full py-1 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg text-[7px] font-bold transition flex items-center justify-center gap-0.5 cursor-pointer"
                           >
-                            <ShoppingCart className="w-2.5 h-2.5" />
+                            <ShoppingCart className="w-2 h-2" />
                             <span>Add</span>
                           </button>
                         </div>
                       ))}
+                      {msg.products.length > 3 && (
+                        <div
+                          className="w-24 shrink-0 rounded-2xl border border-primary/30 bg-primary/5 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-primary/10 transition p-2"
+                          onClick={() => setOverlayData({ visual_type: 'products', products: msg.products })}
+                        >
+                          <span className="text-[10px] font-bold text-primary">+{msg.products.length - 3} more</span>
+                          <ArrowRight className="w-3 h-3 text-primary" />
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Render Visual Svg Chart widget if attached */}
+                  {/* Inline chart */}
                   {msg.chart && (
                     <div className="w-full max-w-[280px] sm:max-w-[320px]">
                       <SvgChart 
@@ -318,6 +414,14 @@ How can I assist you today? You can ask me to:
                         labels={msg.chart.labels} 
                         values={msg.chart.values} 
                       />
+                    </div>
+                  )}
+
+                  {/* Navigation pill */}
+                  {msg.navigation && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-primary font-semibold bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+                      <ArrowRight className="w-3 h-3" />
+                      <span>Navigating to {msg.navigation}</span>
                     </div>
                   )}
                   
@@ -351,7 +455,7 @@ How can I assist you today? You can ask me to:
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask JARVIS about sales, products, coupons..."
+              placeholder="Ask JARVIS about products, orders, navigate cart..."
               className="flex-1 p-3 rounded-2xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-xs"
               required
               disabled={loading}
