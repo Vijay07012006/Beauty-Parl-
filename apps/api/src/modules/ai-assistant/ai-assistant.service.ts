@@ -9,6 +9,7 @@ import { User } from '../auth/user.entity';
 import { UserRole } from '../auth/user.entity';
 import { AiConversation } from './entities/ai-conversation.entity';
 import { AiGeneration } from './entities/ai-generation.entity';
+import { SupportTicket } from '../support/support-ticket.entity';
 
 // OpenRouter currently serves this model and it supports OpenAI-style tool calling.
 // (meta-llama/llama-3-70b-instruct and mistralai/mistral-7b-instruct are both retired from the catalog.)
@@ -216,7 +217,33 @@ export class AiAssistantService implements OnModuleInit {
     private conversationRepo: Repository<AiConversation>,
     @InjectRepository(AiGeneration)
     private generationRepo: Repository<AiGeneration>,
+    @InjectRepository(SupportTicket)
+    private ticketRepo: Repository<SupportTicket>,
   ) { }
+
+  async trainFromTicket(ticketId: number, aiSummary: string) {
+    await this.ticketRepo.update(ticketId, { aiSummary });
+    return { success: true };
+  }
+
+  async lookupResolvedTickets(messageText: string): Promise<string | null> {
+    try {
+      const tickets = await this.ticketRepo.find({
+        where: { status: 'resolved' },
+      });
+      const matched = tickets.find((t) => {
+        if (!t.aiSummary) return false;
+        const words = t.subject.split(/\s+/).concat(t.message.split(/\s+/));
+        const matchedWords = words.filter(
+          (word) => word.length > 3 && messageText.toLowerCase().includes(word.toLowerCase())
+        );
+        return matchedWords.length >= 2;
+      });
+      return matched?.aiSummary || null;
+    } catch {
+      return null;
+    }
+  }
 
   onModuleInit() {
     const apiKey = this.config.get<string>('openrouterApiKey') || process.env.OPENROUTER_API_KEY;
@@ -261,11 +288,17 @@ export class AiAssistantService implements OnModuleInit {
       take: 20,
     });
 
+    const matchedSolution = await this.lookupResolvedTickets(messageText);
+    let systemInstruction = `You are Beauty Parlé's JARVIS-level AI Assistant. You have tools to get products, get sales statistics, get order details, trigger client-side page routing, or request interactive animated charts. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If user asks to save the conversation, acknowledge it and explain that conversation is saved to database automatically.`;
+    if (matchedSolution) {
+      systemInstruction += `\n\n[JARVIS KNOWLEDGE ALERT] A similar past issue was resolved with the following verified solution: "${matchedSolution}". If the user is asking about this problem, offer them this solution immediately.`;
+    }
+
     // 2. Prepare OpenAI messages structure
     const messages: any[] = [];
     messages.push({
       role: 'system',
-      content: `You are Beauty Parlé's JARVIS-level AI Assistant. You have tools to get products, get sales statistics, get order details, trigger client-side page routing, or request interactive animated charts. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If user asks to save the conversation, acknowledge it and explain that conversation is saved to database automatically.`
+      content: systemInstruction,
     });
 
     for (const msg of dbMessages) {

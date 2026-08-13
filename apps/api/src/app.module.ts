@@ -21,6 +21,9 @@ import { AuditLog } from './modules/audit-logs/audit-log.entity';
 import { ActiveSession } from './modules/audit-logs/active-session.entity';
 import { FailedLogin } from './modules/audit-logs/failed-login.entity';
 import { EmailModule } from './modules/email/email.module';
+import { SupportTicket } from './modules/support/support-ticket.entity';
+import { TicketReply } from './modules/support/ticket-reply.entity';
+import { Notification } from './modules/support/notification.entity';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
@@ -87,6 +90,7 @@ import { SemanticSearchModule } from './modules/semantic-search/semantic-search.
 import { AiAssistantModule } from './modules/ai-assistant/ai-assistant.module';
 import { AiConversation } from './modules/ai-assistant/entities/ai-conversation.entity';
 import { AiGeneration } from './modules/ai-assistant/entities/ai-generation.entity';
+import { SupportModule } from './modules/support/support.module';
 
 import configuration from './config/configuration';
 
@@ -112,7 +116,8 @@ import configuration from './config/configuration';
           Subscription, BeautyBox, UserRoutine, LiveEvent, LoyaltyTransaction,
           LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
           ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
-          AuditLog, AiConversation, AiGeneration, Role, ActiveSession, FailedLogin
+          AuditLog, AiConversation, AiGeneration, Role, ActiveSession, FailedLogin,
+          SupportTicket, TicketReply, Notification
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -173,6 +178,7 @@ import configuration from './config/configuration';
     SemanticSearchModule,
     AiAssistantModule,
     RolesModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [

@@ -5,6 +5,7 @@ import { Order } from '../orders/order.entity';
 import { User } from '../auth/user.entity';
 import { AiConversation } from './entities/ai-conversation.entity';
 import { AiGeneration } from './entities/ai-generation.entity';
+import { SupportTicket } from '../support/support-ticket.entity';
 import { AiAssistantService } from './ai-assistant.service';
 import { AiAssistantController } from './ai-assistant.controller';
 
@@ -16,6 +17,7 @@ import { AiAssistantController } from './ai-assistant.controller';
       User,
       AiConversation,
       AiGeneration,
+      SupportTicket,
     ]),
   ],
   controllers: [AiAssistantController],

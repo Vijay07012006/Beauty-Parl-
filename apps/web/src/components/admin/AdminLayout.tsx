@@ -21,7 +21,9 @@ import {
   FileText,
   UserCog,
   ChevronRight,
+  HelpCircle,
 } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
@@ -32,6 +34,7 @@ const navItems = [
   { icon: Star, label: 'Reviews', href: '/admin/reviews' },
   { icon: ImageIcon, label: 'UGC Photos', href: '/admin/ugc' },
   { icon: Video, label: 'Live Shopping', href: '/admin/live-shopping' },
+  { icon: HelpCircle, label: 'Support Tickets', href: '/admin/tickets' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 
@@ -172,16 +175,22 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border/40 shrink-0">
-          <h1 className="text-lg font-bold text-primary">Beauty Parlé</h1>
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors"
-            aria-label="Toggle sidebar"
-          >
-            {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+        {/* Top Header for Desktop & Mobile */}
+        <header className="flex items-center justify-between lg:justify-end px-4 md:px-8 py-3 bg-card/65 backdrop-blur-md border-b border-border/40 shrink-0 gap-4">
+          <div className="flex items-center gap-2 lg:hidden">
+            <h1 className="text-lg font-bold text-primary">Beauty Parlé</h1>
+          </div>
+          
+          <div className="flex items-center gap-3 ml-auto">
+            <NotificationBell />
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden p-2 rounded-xl hover:bg-secondary transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">

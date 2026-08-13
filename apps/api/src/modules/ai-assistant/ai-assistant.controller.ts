@@ -31,4 +31,11 @@ export class AiAssistantController {
     const userId = req.user.id;
     return this.aiService.getUserHistory(userId);
   }
+
+  @Post('train-ticket')
+  async trainTicket(
+    @Body() body: { ticketId: number; aiSummary: string },
+  ) {
+    return this.aiService.trainFromTicket(body.ticketId, body.aiSummary);
+  }
 }

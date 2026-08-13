@@ -545,4 +545,89 @@ export class EmailService {
     );
     await this.apiInstance.sendTransacEmail(email);
   }
+
+  async sendTicketConfirmation(to: string, ticketId: number, subject: string, message: string) {
+    const email = this.buildEmail(
+      to,
+      `We've received your support request (Ticket #${ticketId})`,
+      `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px;">
+            <h2 style="color: #4A1A2C; font-size: 20px; margin-top: 0; margin-bottom: 16px;">Support Ticket #${ticketId} Raised</h2>
+            <p style="color: #2D1B2E; font-size: 15px; line-height: 1.6;">
+              Thank you for contacting Beauty Parlé Support. We have received your request and our support team will respond within 24 hours.
+            </p>
+            <div style="margin: 20px 0; padding: 16px; background: #secondary/10; border-radius: 12px; border-left: 4px solid #E8A0BF; font-size: 13px; color: #4A1A2C;">
+              <p style="margin: 0 0 8px 0;"><strong>Subject:</strong> ${subject}</p>
+              <p style="margin: 0;"><strong>Message:</strong> ${message}</p>
+            </div>
+            <p style="color: #6B4C5A; font-size: 13px; line-height: 1.6;">
+              You can track your support status on the portal or chat with JARVIS at any time.
+            </p>
+          </div>
+          <p style="color: #6B4C5A; font-size: 11px; margin-top: 24px; text-align: center;">Beauty Parlé — Where Beauty Speaks Your Language 🌸</p>
+        </div>
+      `
+    );
+    await this.apiInstance.sendTransacEmail(email);
+  }
+
+  async sendTicketAdminAlert(ticketId: number, userName: string, subject: string, message: string) {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@beautyparle.com';
+    const email = this.buildEmail(
+      adminEmail,
+      `🚨 New Support Ticket #${ticketId} from ${userName}`,
+      `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF5F5; border-radius: 20px; border: 1px solid #FED7D7;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #E53E3E; font-size: 32px; margin: 0;">🚨 New Support Request</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px;">
+            <h2 style="color: #2D3748; font-size: 18px; margin-top: 0; margin-bottom: 16px;">Ticket Details</h2>
+            <p style="color: #4A5568; font-size: 14px; line-height: 1.6;">
+              A new support request has been raised by <strong>${userName}</strong>.
+            </p>
+            <hr style="border: 0; border-top: 1px solid #E2E8F0; margin: 20px 0;" />
+            <table style="width: 100%; font-size: 13px; color: #4A5568;">
+              <tr><td style="font-weight: bold; padding: 4px 0; width: 100px;">Ticket ID:</td><td>#${ticketId}</td></tr>
+              <tr><td style="font-weight: bold; padding: 4px 0;">Subject:</td><td>${subject}</td></tr>
+              <tr><td style="font-weight: bold; padding: 4px 0;">Message:</td><td>${message}</td></tr>
+            </table>
+            <div style="text-align: center; margin-top: 24px;">
+              <a href="${this.frontendUrl}/en/admin/tickets" style="background: #E53E3E; color: white; padding: 12px 30px; border-radius: 99px; text-decoration: none; font-weight: bold; display: inline-block;">View Ticket Dashboard</a>
+            </div>
+          </div>
+        </div>
+      `
+    );
+    await this.apiInstance.sendTransacEmail(email);
+  }
+
+  async sendTicketResolvedEmail(to: string, ticketId: number) {
+    const email = this.buildEmail(
+      to,
+      `✨ Support Ticket #${ticketId} Resolved`,
+      `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #F0FDF4; border-radius: 20px; border: 1px solid #BBF7D0;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #16A34A; font-size: 32px; margin: 0;">✨ Ticket Resolved</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px; text-align: center;">
+            <h2 style="color: #14532D; font-size: 20px; margin-top: 0; margin-bottom: 12px;">Great News!</h2>
+            <p style="color: #166534; font-size: 15px; line-height: 1.6;">
+              Your support ticket <strong>#${ticketId}</strong> has been marked as <strong>Resolved</strong> by our support team.
+            </p>
+            <p style="color: #6B4C5A; font-size: 13px; line-height: 1.6; margin-top: 16px;">
+              We hope this has fully answered your query. If you need any further assistance, feel free to reply or open a new request with JARVIS!
+            </p>
+          </div>
+          <p style="color: #6B4C5A; font-size: 11px; margin-top: 24px; text-align: center;">Beauty Parlé — Where Beauty Speaks Your Language 🌸</p>
+        </div>
+      `
+    );
+    await this.apiInstance.sendTransacEmail(email);
+  }
 }

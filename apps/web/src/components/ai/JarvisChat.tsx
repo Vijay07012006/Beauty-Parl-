@@ -147,6 +147,55 @@ How can I help?
     }
 
     // ── Client-side quick navigation shortcut (for voice commands) ──────
+    // Support Ticket Intent Detection
+    const supportIntentKeywords = [
+      'raise a ticket',
+      'i have an issue',
+      'help me',
+      'support',
+      'complaint',
+      'problem with my order',
+      'open a ticket'
+    ];
+    const isSupportIntent = supportIntentKeywords.some(keyword => text.toLowerCase().includes(keyword));
+
+    if (isSupportIntent) {
+      const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setMessages((prev) => [...prev, { id: `u_${Date.now()}`, role: 'user', text, time: userTime }]);
+      setLoading(true);
+
+      try {
+        const orderMatch = text.match(/order\s*#?(\d+)/i);
+        const orderId = orderMatch ? parseInt(orderMatch[1], 10) : undefined;
+        
+        const res = await api.post('/support/tickets', {
+          subject: `Support Request via JARVIS`,
+          message: text,
+          orderId,
+        });
+
+        const assistantTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const replyText = `🛠️ **Support Ticket Raised Successfully!**\n\nI have created support ticket **#${res.data.id}** for you.\n\nOur team has been notified and we will follow up via email immediately. You can track this in your dashboard.`;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `a_${Date.now()}`,
+            role: 'assistant',
+            text: replyText,
+            time: assistantTime,
+          },
+        ]);
+        if (ttsEnabled && voiceService.current) {
+          voiceService.current.speak("I have successfully raised a support ticket for you.");
+        }
+      } catch (err: any) {
+        toast.error('Failed to raise support ticket');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     const navMatch = text.match(/(?:go to|open|navigate to|show)\s*(?:the\s*)?(profile|orders|cart|wishlist|addresses|checkout|loyalty|referral|products|categories|compare|live-shopping|about|contact|faq|blog|booking|admin)/i);
     if (navMatch) {
       const page = navMatch[1].toLowerCase().replace(/\s+/g, '-');
