@@ -18,6 +18,8 @@ import { RedisModule } from './modules/redis/redis.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AuditLog } from './modules/audit-logs/audit-log.entity';
+import { ActiveSession } from './modules/audit-logs/active-session.entity';
+import { FailedLogin } from './modules/audit-logs/failed-login.entity';
 import { EmailModule } from './modules/email/email.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
@@ -110,7 +112,7 @@ import configuration from './config/configuration';
           Subscription, BeautyBox, UserRoutine, LiveEvent, LoyaltyTransaction,
           LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
           ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
-          AuditLog, AiConversation, AiGeneration, Role
+          AuditLog, AiConversation, AiGeneration, Role, ActiveSession, FailedLogin
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true

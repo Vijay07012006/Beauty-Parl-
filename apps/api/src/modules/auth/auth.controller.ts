@@ -7,12 +7,16 @@ import { Roles } from './roles.decorator';
 import { UserRole } from './user.entity';
 import { GoogleAuthGuard } from './google-auth.guard';
 import { FacebookAuthGuard } from './facebook-auth.guard';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 const AUTH_COOKIE = 'bp_token';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private auditLogsService: AuditLogsService,
+  ) {}
 
   // HttpOnly cookie — JS cannot read it, so an XSS cannot exfiltrate the session.
   private setAuthCookie(res: any, token: string) {
@@ -52,6 +56,7 @@ export class AuthController {
     }
     const user = await this.authService.validateUser(email, password);
     if (!user) {
+      await this.auditLogsService.recordFailedLogin(email, req.ip, req.headers['user-agent']);
       throw new BadRequestException('Invalid credentials');
     }
     const ipAddress = req.ip;

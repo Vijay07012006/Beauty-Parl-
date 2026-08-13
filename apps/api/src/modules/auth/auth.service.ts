@@ -1,4 +1,4 @@
-﻿import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -103,6 +103,14 @@ export class AuthService {
 
   async revokeToken(token: string): Promise<void> {
     if (!token) return;
+    try {
+      const decoded: any = this.jwtService.decode(token);
+      if (decoded && decoded.sid) {
+        await this.auditLogsService.terminateSession(decoded.sid);
+      }
+    } catch (e) {
+      console.error('Failed to revoke session from token:', e);
+    }
     await this.userSessionRepository.delete({ tokenHash: this.hashToken(token) });
   }
 
@@ -227,7 +235,8 @@ export class AuthService {
       };
     }
     
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const sessionId = crypto.randomBytes(16).toString('hex');
+    const payload = { sub: user.id, email: user.email, role: user.role, sid: sessionId };
     const token = this.jwtService.sign(payload, { expiresIn: '15m' });
 
     await this.createUserSession(
@@ -237,7 +246,23 @@ export class AuthService {
       metadata?.userAgent,
     );
 
-    await this.auditLogsService.log('USER_LOGIN', user.email, user.id);
+    // Track active session
+    await this.auditLogsService.trackSession(
+      user.id,
+      sessionId,
+      metadata?.ipAddress,
+      metadata?.userAgent,
+    );
+
+    // Advanced audit logging
+    await this.auditLogsService.log({
+      action: 'USER_LOGIN',
+      userEmail: user.email,
+      userId: user.id,
+      ipAddress: metadata?.ipAddress,
+      userAgent: metadata?.userAgent,
+      sessionId,
+    });
     
     return {
       access_token: token,

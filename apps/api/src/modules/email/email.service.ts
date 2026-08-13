@@ -458,4 +458,60 @@ export class EmailService {
     );
     await this.apiInstance.sendTransacEmail(email);
   }
+
+  async sendSecurityAlertEmail(to: string, type: 'failed_logins' | 'suspicious_login', details: { ipAddress?: string; userAgent?: string; location?: string; count?: number }) {
+    const isFailed = type === 'failed_logins';
+    const subject = isFailed
+      ? `🚨 Security Alert: Multiple Failed Login Attempts Detected`
+      : `⚠️ Security Alert: Login from New Device/Location`;
+
+    const htmlContent = isFailed
+      ? `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF5F5; border-radius: 20px; border: 1px solid #FED7D7;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #E53E3E; font-size: 32px; margin: 0;">🚨 Security Alert</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px;">
+            <h2 style="color: #2D3748; font-size: 18px; margin-top: 0;">Suspicious Activity Detected</h2>
+            <p style="color: #4A5568; font-size: 14px; line-height: 1.6;">
+              We detected <strong>${details.count || 3} failed login attempts</strong> to your account within a short period.
+            </p>
+            <hr style="border: 0; border-top: 1px solid #E2E8F0; margin: 20px 0;" />
+            <table style="width: 100%; font-size: 13px; color: #4A5568;">
+              <tr><td style="font-weight: bold; padding: 4px 0;">IP Address:</td><td>${details.ipAddress || 'Unknown'}</td></tr>
+              <tr><td style="font-weight: bold; padding: 4px 0;">Device/Browser:</td><td>${details.userAgent || 'Unknown'}</td></tr>
+              <tr><td style="font-weight: bold; padding: 4px 0;">Location:</td><td>${details.location || 'Unknown'}</td></tr>
+            </table>
+            <p style="color: #718096; font-size: 12px; margin-top: 20px;">
+              If this wasn't you, we recommend resetting your password immediately.
+            </p>
+          </div>
+        </div>
+      `
+      : `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFFAF0; border-radius: 20px; border: 1px solid #FEEBC8;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #DD6B20; font-size: 32px; margin: 0;">⚠️ New Login Detected</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px;">
+            <h2 style="color: #2D3748; font-size: 18px; margin-top: 0;">New Device or Location</h2>
+            <p style="color: #4A5568; font-size: 14px; line-height: 1.6;">
+              Your Beauty Parlé account was recently logged into from a new location or device that we haven't seen before.
+            </p>
+            <hr style="border: 0; border-top: 1px solid #E2E8F0; margin: 20px 0;" />
+            <table style="width: 100%; font-size: 13px; color: #4A5568;">
+              <tr><td style="font-weight: bold; padding: 4px 0;">IP Address:</td><td>${details.ipAddress || 'Unknown'}</td></tr>
+              <tr><td style="font-weight: bold; padding: 4px 0;">Device/Browser:</td><td>${details.userAgent || 'Unknown'}</td></tr>
+              <tr><td style="font-weight: bold; padding: 4px 0;">Location:</td><td>${details.location || 'Unknown'}</td></tr>
+            </table>
+            <p style="color: #718096; font-size: 12px; margin-top: 20px;">
+              If this was you, you can safely ignore this email. If this wasn't you, please secure your account immediately.
+            </p>
+          </div>
+        </div>
+      `;
+
+    const email = this.buildEmail(to, subject, htmlContent);
+    await this.apiInstance.sendTransacEmail(email);
+  }
 }

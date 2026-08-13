@@ -216,7 +216,7 @@ export class AiAssistantService implements OnModuleInit {
     private conversationRepo: Repository<AiConversation>,
     @InjectRepository(AiGeneration)
     private generationRepo: Repository<AiGeneration>,
-  ) {}
+  ) { }
 
   onModuleInit() {
     const apiKey = this.config.get<string>('openrouterApiKey') || process.env.OPENROUTER_API_KEY;
@@ -350,7 +350,7 @@ export class AiAssistantService implements OnModuleInit {
 
         if (['get_sales_stats', 'get_sales_insights', 'get_category_performance', 'get_all_orders'].includes(name)) {
           if (!isAdmin) {
-            toolResult = { error: '⛔ Access Denied. Sales and business analytics are only available to Admin users.' };
+            toolResult = { error: '⛔ Access Denied. Sal es and business analytics are only available to Admin users.' };
           }
         } else if (['get_system_logs', 'manage_admins', 'delete_user'].includes(name)) {
           if (!isSuperAdmin) {
@@ -591,7 +591,7 @@ export class AiAssistantService implements OnModuleInit {
       const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
       if (!response.ok) throw new Error('DuckDuckGo search request failed');
       const data: any = await response.json();
-      
+
       let results = (data.RelatedTopics || [])
         .map((t: any) => {
           if (t.Topics) {

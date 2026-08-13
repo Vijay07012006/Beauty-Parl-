@@ -39,6 +39,8 @@ const superAdminItems = [
   { icon: Shield, label: 'Roles', href: '/admin/roles' },
   { icon: FileText, label: 'Audit Logs', href: '/admin/audit-logs' },
   { icon: UserCog, label: 'User Management', href: '/admin/user-management' },
+  { icon: Users, label: 'Active Sessions', href: '/admin/active-sessions' },
+  { icon: LayoutDashboard, label: 'Audit Dashboard', href: '/admin/audit-dashboard' },
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
