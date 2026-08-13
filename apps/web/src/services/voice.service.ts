@@ -1,83 +1,70 @@
-// Web Speech API interfaces
-export interface VoiceServiceRecognitionEvent {
-  results: {
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-      };
-      isFinal: boolean;
-    };
-    length: number;
-  };
-}
-
 export class VoiceService {
   private recognition: any = null;
   private synthesis: SpeechSynthesis | null = null;
   private isListening = false;
   private activeUtterance: SpeechSynthesisUtterance | null = null;
 
-  initSpeechRecognition(
-    onResult: (text: string, isFinal: boolean) => void,
-    onEnd: () => void,
-    onError: (err: any) => void
-  ) {
+  init() {
     if (typeof window === 'undefined') return null;
-
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      throw new Error('Speech recognition not supported in this browser.');
+    }
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    this.recognition = new SpeechRecognition();
+    this.recognition.lang = 'en-US';
+    this.recognition.continuous = false;
+    this.recognition.interimResults = true;
+    this.recognition.maxAlternatives = 1;
+    return this.recognition;
+  }
 
-    if (!SpeechRecognition) {
-      console.warn('Speech recognition is not supported in this browser.');
-      return null;
-    }
-
-    try {
-      this.recognition = new SpeechRecognition();
-      this.recognition.lang = 'en-US';
-      this.recognition.continuous = false;
-      this.recognition.interimResults = true;
+  startListening(onInterim?: (text: string) => void): Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (!this.recognition) {
+        reject(new Error('Speech recognition not initialized.'));
+        return;
+      }
+      this.isListening = true;
+      let finalTranscript = '';
+      this.stopSpeaking(); // Stop speaking when starting to listen
 
       this.recognition.onresult = (event: any) => {
         let interimTranscript = '';
-        let finalTranscript = '';
-
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
+            finalTranscript = event.results[i][0].transcript.trim();
           } else {
             interimTranscript += event.results[i][0].transcript;
           }
         }
+        if (onInterim && interimTranscript) {
+          onInterim(interimTranscript);
+        }
+        if (finalTranscript) {
+          this.isListening = false;
+          resolve(finalTranscript);
+        }
+      };
 
-        const text = finalTranscript || interimTranscript;
-        const isFinal = finalTranscript.length > 0;
-        onResult(text, isFinal);
+      this.recognition.onerror = (event: any) => {
+        this.isListening = false;
+        reject(new Error(`Voice input error: ${event.error}`));
       };
 
       this.recognition.onend = () => {
         this.isListening = false;
-        onEnd();
+        if (!finalTranscript) {
+          reject(new Error('No speech detected.'));
+        }
       };
 
-      this.recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        onError(event);
-      };
-
-      return this.recognition;
-    } catch (e) {
-      console.error('Error initializing SpeechRecognition:', e);
-      return null;
-    }
-  }
-
-  startListening() {
-    if (this.recognition && !this.isListening) {
-      this.recognition.start();
-      this.isListening = true;
-      this.stopSpeaking(); // Stop speaking when we start listening
-    }
+      try {
+        this.recognition.start();
+      } catch (e) {
+        reject(e);
+      }
+    });
   }
 
   stopListening() {

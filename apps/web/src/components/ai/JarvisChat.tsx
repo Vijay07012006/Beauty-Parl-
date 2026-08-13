@@ -85,7 +85,13 @@ export function JarvisChat() {
   // Instantiate VoiceService
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      voiceService.current = new VoiceService();
+      const service = new VoiceService();
+      try {
+        service.init();
+        voiceService.current = service;
+      } catch (err: any) {
+        console.error('VoiceService init error:', err);
+      }
     }
   }, []);
 
@@ -126,45 +132,6 @@ How can I help?
     }]);
   }, [user]);
 
-  // Speech Recognition setup when listening status toggles
-  useEffect(() => {
-    if (isListening && voiceService.current && sttEnabled) {
-      const rec = voiceService.current.initSpeechRecognition(
-        (text, isFinal) => {
-          setInput(text);
-          if (isFinal && text.trim().length > 0) {
-            submitMessage(text);
-            setInput('');
-          }
-        },
-        () => {
-          setIsListening(false);
-        },
-        () => {
-          setIsListening(false);
-          toast.error('Voice input error. Please try speaking again.');
-        }
-      );
-
-      if (rec) {
-        voiceService.current.startListening();
-      } else {
-        setIsListening(false);
-        toast.error('Speech recognition is not supported in this browser.');
-      }
-    } else if (!isListening && voiceService.current) {
-      voiceService.current.stopListening();
-    }
-  }, [isListening, sttEnabled]);
-
-  const toggleListening = useCallback(() => {
-    if (!sttEnabled) {
-      toast.info('Please enable Voice Input in settings first.');
-      return;
-    }
-    setIsListening((prev) => !prev);
-  }, [sttEnabled]);
-
   // ── Send message ──────────────────────────────────────────────────────────
   const submitMessage = useCallback(async (text: string) => {
     if (!text || loading) return;
@@ -177,6 +144,38 @@ How can I help?
     // Stop speaking when user submits a new prompt
     if (voiceService.current) {
       voiceService.current.stopSpeaking();
+    }
+
+    // ── Client-side quick navigation shortcut (for voice commands) ──────
+    const navMatch = text.match(/(?:go to|open|navigate to|show)\s*(?:the\s*)?(profile|orders|cart|wishlist|addresses|checkout|loyalty|referral|products|categories|compare|live-shopping|about|contact|faq|blog|booking|admin)/i);
+    if (navMatch) {
+      const page = navMatch[1].toLowerCase().replace(/\s+/g, '-');
+      const safeRoute = sanitizeNavigationRoute(page);
+      if (safeRoute) {
+        const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        setMessages((prev) => [...prev, { id: `u_${Date.now()}`, role: 'user', text, time: userTime }]);
+
+        const assistantTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const replyText = `🧭 Opening ${page} page for you...`;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `a_${Date.now()}`,
+            role: 'assistant',
+            text: replyText,
+            time: assistantTime,
+          },
+        ]);
+        if (ttsEnabled && voiceService.current) {
+          voiceService.current.speak(replyText);
+        }
+        toast.info(`Navigating to ${safeRoute}...`);
+        setTimeout(() => {
+          setIsOpen(false);
+          router.push(`/${locale}${safeRoute}`);
+        }, 1500);
+        return;
+      }
     }
 
     const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -247,6 +246,52 @@ How can I help?
       setLoading(false);
     }
   }, [loading, sessionId, user, locale, router, ttsEnabled]);
+
+  // Speech Recognition setup when listening status toggles
+  useEffect(() => {
+    let active = true;
+    if (isListening && voiceService.current && sttEnabled) {
+      voiceService.current.startListening(
+        (interimText) => {
+          if (active) setInput(interimText);
+        }
+      ).then(
+        (finalText) => {
+          if (active && finalText.trim().length > 0) {
+            setInput('');
+            setIsListening(false);
+            submitMessage(finalText);
+          }
+        },
+        (error) => {
+          if (active) {
+            setIsListening(false);
+            const msg = error.message || '';
+            if (msg.includes('not-allowed') || msg.includes('permission')) {
+              toast.error('Microphone permission denied. Please allow microphone access in your browser settings.');
+            } else if (msg.includes('no-speech') || msg.includes('No speech')) {
+              // Ignore silent timeouts
+            } else {
+              toast.error(msg || 'Speech input failed. Please try speaking again.');
+            }
+          }
+        }
+      );
+    } else if (!isListening && voiceService.current) {
+      voiceService.current.stopListening();
+    }
+    return () => {
+      active = false;
+    };
+  }, [isListening, sttEnabled, submitMessage]);
+
+  const toggleListening = useCallback(() => {
+    if (!sttEnabled) {
+      toast.info('Please enable Voice Input in settings first.');
+      return;
+    }
+    setIsListening((prev) => !prev);
+  }, [sttEnabled]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();

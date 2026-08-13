@@ -210,6 +210,13 @@ export class AiAssistantService implements OnModuleInit {
     }
 
     const modelId = this.config.get<string>('openrouterModel') || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+    const isAdmin = role === 'admin' || role === 'super_admin';
+    const allowedTools = this.tools.filter(t => {
+      if (t.function.name === 'get_sales_stats') {
+        return isAdmin;
+      }
+      return true;
+    });
 
     // 1. Fetch conversation history
     const dbMessages = await this.conversationRepo.find({
@@ -257,7 +264,7 @@ export class AiAssistantService implements OnModuleInit {
     let response = await this.openai.chat.completions.create({
       model: modelId,
       messages,
-      tools: this.tools,
+      tools: allowedTools.length > 0 ? allowedTools : undefined,
     });
 
     let responseMessage = response.choices[0].message;
@@ -384,7 +391,7 @@ export class AiAssistantService implements OnModuleInit {
       response = await this.openai.chat.completions.create({
         model: modelId,
         messages,
-        tools: this.tools,
+        tools: allowedTools.length > 0 ? allowedTools : undefined,
       });
       responseMessage = response.choices[0].message;
       responseText = responseMessage.content || '';
