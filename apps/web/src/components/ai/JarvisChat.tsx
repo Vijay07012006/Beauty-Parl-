@@ -372,10 +372,11 @@ How can I help?
         onSttChange={handleSttChange}
       />
 
-      {/* Floating Action Button — always visible */}
+      {/* Floating Action Button — always on top, safe area aware */}
       <button
         onClick={handleOpen}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-tr from-primary to-purple-600 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer border border-white/10 group"
+        className="fixed bottom-6 right-6 z-[9999] w-14 h-14 bg-gradient-to-tr from-primary to-purple-600 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer border border-white/10 group"
+        style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom, 1.5rem))' }}
         aria-label="Open JARVIS AI"
       >
         {isOpen

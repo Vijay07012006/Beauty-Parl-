@@ -224,13 +224,14 @@ export default function RolesPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active</label>
                 <button
+                  type="button"
                   onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
-                  className={`relative w-10 h-5.5 rounded-full transition-colors ${form.isActive ? 'bg-primary' : 'bg-border/60'}`}
+                  className={`relative inline-flex w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${form.isActive ? 'bg-primary' : 'bg-border'}`}
                 >
-                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.isActive ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <span className={`inline-block w-5 h-5 mt-0.5 bg-white rounded-full shadow-sm transition-transform duration-200 ${form.isActive ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
             </div>

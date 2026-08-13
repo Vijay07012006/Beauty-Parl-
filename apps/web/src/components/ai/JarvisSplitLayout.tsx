@@ -149,7 +149,7 @@ export function JarvisSplitLayout({
   return (
     // Fixed overlay — does NOT affect page layout at all
     <div
-      className="fixed inset-0 z-50 flex"
+      className="fixed inset-0 z-[9998] flex"
       role="dialog"
       aria-modal="true"
       aria-label="JARVIS Mission Control"
