@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query, Request, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query, Request, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -9,6 +9,7 @@ import { Product } from '../products/product.entity';
 import { Order } from '../orders/order.entity';
 import { OrdersService } from '../orders/orders.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { EmailService } from '../email/email.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -23,6 +24,7 @@ export class AdminController {
     private orderRepo: Repository<Order>,
     private ordersService: OrdersService,
     private auditLogsService: AuditLogsService,
+    private emailService: EmailService,
   ) {}
 
   // Dashboard Stats
@@ -187,5 +189,74 @@ export class AdminController {
   @Get('orders/:id')
   async getOrderDetail(@Param('id') id: number) {
     return this.orderRepo.findOne({ where: { id } });
+  }
+
+  @Delete('users/:id/permanent')
+  @Roles(UserRole.SUPER_ADMIN)
+  async permanentDeleteUser(@Param('id') id: number, @Request() req: any) {
+    const targetId = Number(id);
+    if (!Number.isInteger(targetId)) {
+      throw new BadRequestException('Invalid user id');
+    }
+    if (req.user && req.user.id === targetId) {
+      throw new BadRequestException('You cannot permanently delete your own account.');
+    }
+    await this.userRepo.delete(targetId);
+    await this.auditLogsService.log('SUPERADMIN_PERMANENT_DELETE_USER', req.user?.email, req.user?.id, { targetUserId: id });
+    return { success: true };
+  }
+
+  @Put('users/:id/suspend')
+  @Roles(UserRole.SUPER_ADMIN)
+  async suspendUser(
+    @Param('id') id: number,
+    @Body() body: { reason: string; duration: '1d' | '7d' | '30d' | 'permanent' },
+    @Request() req: any
+  ) {
+    const targetId = Number(id);
+    if (!Number.isInteger(targetId)) {
+      throw new BadRequestException('Invalid user id');
+    }
+    if (req.user && req.user.id === targetId) {
+      throw new BadRequestException('You cannot suspend your own account.');
+    }
+
+    const target = await this.userRepo.findOne({ where: { id: targetId } });
+    if (!target) {
+      throw new BadRequestException('User not found');
+    }
+
+    let suspendedUntil: Date | null = null;
+    const now = new Date();
+    if (body.duration === '1d') {
+      suspendedUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    } else if (body.duration === '7d') {
+      suspendedUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    } else if (body.duration === '30d') {
+      suspendedUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    } else {
+      // Permanent suspension: set to far future date
+      suspendedUntil = new Date(now.getTime() + 100 * 365 * 24 * 60 * 60 * 1000);
+    }
+
+    await this.userRepo.update(targetId, {
+      isActive: false,
+      suspendedUntil,
+      suspensionReason: body.reason,
+    });
+
+    try {
+      await this.emailService.sendSuspensionEmail(target.email, body.reason, body.duration);
+    } catch (err) {
+      console.error('Failed to send suspension email:', err);
+    }
+
+    await this.auditLogsService.log('SUPERADMIN_SUSPEND_USER', req.user?.email, req.user?.id, {
+      targetUserId: id,
+      reason: body.reason,
+      duration: body.duration,
+    });
+
+    return { success: true };
   }
 }

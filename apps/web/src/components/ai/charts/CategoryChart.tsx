@@ -1,6 +1,7 @@
 'use client';
 
 import { Doughnut, Pie } from 'react-chartjs-2';
+import { useTheme } from 'next-themes';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -21,6 +22,10 @@ interface CategoryChartProps {
 }
 
 export function CategoryChart({ data, type = 'pie' }: CategoryChartProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  const textColor = isDark ? '#f8fafc' : '#0f172a';
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -29,7 +34,7 @@ export function CategoryChart({ data, type = 'pie' }: CategoryChartProps) {
         display: true,
         position: 'right' as const,
         labels: {
-          color: 'hsl(var(--foreground))',
+          color: textColor,
           boxWidth: 12,
           font: { family: 'inherit', size: 10 }
         }
@@ -37,12 +42,14 @@ export function CategoryChart({ data, type = 'pie' }: CategoryChartProps) {
       title: {
         display: true,
         text: data.title || 'Category Performance',
-        color: 'hsl(var(--foreground))',
+        color: textColor,
         font: { family: 'inherit', size: 13, weight: 'bold' }
       },
       tooltip: {
         padding: 10,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
         titleFont: { family: 'inherit', size: 12 },
         bodyFont: { family: 'inherit', size: 11 }
       }
@@ -63,7 +70,7 @@ export function CategoryChart({ data, type = 'pie' }: CategoryChartProps) {
           'rgba(239, 68, 68, 0.7)',   // red-500
         ],
         borderColor: [
-          'hsl(var(--card))',
+          isDark ? '#1e293b' : '#ffffff',
         ],
         borderWidth: 2,
       },

@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Role } from '../roles/role.entity';
 import { EncryptionTransformer } from '../security/encryption.transformer';
 import { JsonEncryptionTransformer } from '../security/json-encryption.transformer';
 
@@ -43,6 +44,16 @@ export class User {
 
   @Column({ default: true })
   isActive!: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  suspendedUntil?: Date;
+
+  @Column({ nullable: true })
+  suspensionReason?: string;
+
+  @ManyToMany(() => Role)
+  @JoinTable({ name: 'user_roles' })
+  roles!: Role[];
 
   @Column({ nullable: true, transformer: new EncryptionTransformer() })
   phone!: string;

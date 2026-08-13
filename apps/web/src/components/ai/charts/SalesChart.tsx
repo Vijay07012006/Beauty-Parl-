@@ -1,6 +1,7 @@
 'use client';
 
 import { Bar, Line } from 'react-chartjs-2';
+import { useTheme } from 'next-themes';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -36,6 +37,11 @@ interface SalesChartProps {
 }
 
 export function SalesChart({ data, type = 'bar' }: SalesChartProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  const textColor = isDark ? '#f8fafc' : '#0f172a';
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(15, 23, 42, 0.06)';
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -44,31 +50,33 @@ export function SalesChart({ data, type = 'bar' }: SalesChartProps) {
         display: true,
         position: 'top' as const,
         labels: {
-          color: 'hsl(var(--foreground))',
+          color: textColor,
           font: { family: 'inherit', size: 11 }
         }
       },
       title: {
         display: true,
         text: data.title || 'Sales Overview',
-        color: 'hsl(var(--foreground))',
+        color: textColor,
         font: { family: 'inherit', size: 13, weight: 'bold' }
       },
       tooltip: {
         padding: 10,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
         titleFont: { family: 'inherit', size: 12 },
         bodyFont: { family: 'inherit', size: 11 }
       }
     },
     scales: {
       x: {
-        grid: { color: 'rgba(0, 0, 0, 0.05)' },
-        ticks: { color: 'hsl(var(--muted-foreground))', font: { size: 10 } }
+        grid: { color: gridColor },
+        ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } }
       },
       y: {
-        grid: { color: 'rgba(0, 0, 0, 0.05)' },
-        ticks: { color: 'hsl(var(--muted-foreground))', font: { size: 10 } }
+        grid: { color: gridColor },
+        ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } }
       }
     }
   };

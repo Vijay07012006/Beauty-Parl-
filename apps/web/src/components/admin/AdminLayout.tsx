@@ -91,36 +91,39 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <aside className={`
           fixed lg:sticky top-0 z-40 w-64 max-w-[85vw] h-screen bg-card border-r border-border/50 transition-transform duration-300
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          flex flex-col justify-between overflow-y-auto no-scrollbar
         `}>
-          <div className="p-6">
-            <h2 className="text-2xl font-playfair font-bold text-primary">Beauty Parlé</h2>
-            <p className="text-xs text-muted-foreground">Admin Panel</p>
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="p-6 shrink-0">
+              <h2 className="text-2xl font-playfair font-bold text-primary">Beauty Parlé</h2>
+              <p className="text-xs text-muted-foreground">Admin Panel</p>
+            </div>
+
+            <nav className="px-3 flex-1 overflow-y-auto space-y-1">
+              {navItems.map((item) => {
+                const hrefWithLocale = `/${locale}${item.href}`;
+                const isActive = pathname === hrefWithLocale || pathname?.startsWith(hrefWithLocale + '/');
+                return (
+                  <Link
+                    key={item.href}
+                    href={hrefWithLocale}
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`
+                      flex items-center gap-3 px-4 py-3 rounded-xl transition-colors
+                      ${isActive 
+                        ? 'bg-primary/10 text-primary font-medium' 
+                        : 'hover:bg-secondary/50 text-muted-foreground hover:text-foreground'}
+                    `}
+                  >
+                    <item.icon size={20} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
-          <nav className="px-3 space-y-1">
-            {navItems.map((item) => {
-              const hrefWithLocale = `/${locale}${item.href}`;
-              const isActive = pathname === hrefWithLocale || pathname?.startsWith(hrefWithLocale + '/');
-              return (
-                <Link
-                  key={item.href}
-                  href={hrefWithLocale}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`
-                    flex items-center gap-3 px-4 py-3 rounded-xl transition-colors
-                    ${isActive 
-                      ? 'bg-primary/10 text-primary font-medium' 
-                      : 'hover:bg-secondary/50 text-muted-foreground hover:text-foreground'}
-                  `}
-                >
-                  <item.icon size={20} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="absolute bottom-6 left-3 right-3">
+          <div className="p-3 border-t border-border/40 bg-card shrink-0">
             <button
               onClick={() => {
                 logout();
@@ -131,7 +134,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <LogOut size={20} />
               <span>Logout</span>
             </button>
-            <p className="text-xs text-muted-foreground mt-4 text-center truncate">
+            <p className="text-[10px] text-muted-foreground mt-2 text-center truncate">
               {user.name} ({user.email})
             </p>
           </div>

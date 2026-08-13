@@ -5,6 +5,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { UserThrottlerGuard } from './modules/auth/user-throttler.guard';
+import { Role } from './modules/roles/role.entity';
+import { RolesModule } from './modules/roles/roles.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -108,7 +110,7 @@ import configuration from './config/configuration';
           Subscription, BeautyBox, UserRoutine, LiveEvent, LoyaltyTransaction,
           LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
           ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
-          AuditLog, AiConversation, AiGeneration
+          AuditLog, AiConversation, AiGeneration, Role
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -168,6 +170,7 @@ import configuration from './config/configuration';
     AiChatModule,
     SemanticSearchModule,
     AiAssistantModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [

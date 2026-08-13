@@ -124,6 +124,32 @@ export class EmailService {
     await this.apiInstance.sendTransacEmail(email);
   }
 
+  async sendSuspensionEmail(to: string, reason: string, duration: string) {
+    const email = this.buildEmail(
+      to,
+      '⚠️ Account Suspended — Beauty Parlé',
+      `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px;">
+            <h2 style="color: #4A1A2C; font-size: 20px; margin-top: 0; margin-bottom: 12px;">⚠️ Account Suspended</h2>
+            <p style="color: #2D1B2E; font-size: 14px; line-height: 1.6;">
+              Please be notified that your account has been suspended for violating our policies.
+            </p>
+            <div style="background: #FDF0F0; border-radius: 12px; padding: 16px; margin: 16px 0;">
+              <p style="margin: 0; font-size: 13px; color: #4A1A2C;"><strong>Reason:</strong> ${this.escapeHtml(reason)}</p>
+              <p style="margin: 4px 0 0 0; font-size: 13px; color: #4A1A2C;"><strong>Duration:</strong> ${this.escapeHtml(duration)}</p>
+            </div>
+            <p style="color: #6B4C5A; font-size: 12px;">If you believe this is a mistake, please reach out to our helpdesk.</p>
+          </div>
+        </div>
+      `
+    );
+    await this.apiInstance.sendTransacEmail(email);
+  }
+
   async sendPasswordResetEmail(to: string, resetToken: string) {
     const resetLink = `${this.frontendUrl}/en/auth/reset-password/${resetToken}`;
     const email = this.buildEmail(
