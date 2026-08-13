@@ -7,6 +7,7 @@ import { Roles } from '../auth/roles.decorator';
 import { User, UserRole, sanitizeUser } from '../auth/user.entity';
 import { Product } from '../products/product.entity';
 import { Order } from '../orders/order.entity';
+import { AuditLog } from '../audit-logs/audit-log.entity';
 import { OrdersService } from '../orders/orders.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { EmailService } from '../email/email.service';
@@ -22,6 +23,8 @@ export class AdminController {
     private productRepo: Repository<Product>,
     @InjectRepository(Order)
     private orderRepo: Repository<Order>,
+    @InjectRepository(AuditLog)
+    private auditLogRepo: Repository<AuditLog>,
     private ordersService: OrdersService,
     private auditLogsService: AuditLogsService,
     private emailService: EmailService,
@@ -258,5 +261,50 @@ export class AdminController {
     });
 
     return { success: true };
+  }
+
+  @Put('users/:id/reactivate')
+  @Roles(UserRole.SUPER_ADMIN)
+  async reactivateUser(@Param('id') id: number, @Request() req: any) {
+    const targetId = Number(id);
+    if (!Number.isInteger(targetId)) {
+      throw new BadRequestException('Invalid user id');
+    }
+    await this.userRepo.update(targetId, {
+      isActive: true,
+      suspendedUntil: undefined,
+      suspensionReason: undefined,
+    });
+    await this.auditLogsService.log('SUPERADMIN_REACTIVATE_USER', req.user?.email, req.user?.id, { targetUserId: id });
+    return { success: true };
+  }
+
+  @Get('audit-logs')
+  async getAuditLogs(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('action') action?: string,
+  ) {
+    const pageNum = Math.max(1, parseInt(page || '', 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit || '', 10) || 20));
+    const qb = this.auditLogRepo.createQueryBuilder('log').orderBy('log.createdAt', 'DESC');
+    if (action) {
+      qb.where('log.action ILIKE :action', { action: `%${action}%` });
+    }
+    const [logs, total] = await qb.skip((pageNum - 1) * limitNum).take(limitNum).getManyAndCount();
+    return { logs, total, page: pageNum, limit: limitNum };
+  }
+
+  @Get('users/:id/details')
+  async getUserDetails(@Param('id') id: number) {
+    const user = await this.userRepo.findOne({ where: { id: Number(id) } });
+    if (!user) throw new BadRequestException('User not found');
+    const orders = await this.orderRepo.find({
+      where: { userId: Number(id) },
+      order: { createdAt: 'DESC' },
+      take: 10,
+    });
+    const totalSpent = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    return { user: sanitizeUser(user), orders, totalSpent };
   }
 }
