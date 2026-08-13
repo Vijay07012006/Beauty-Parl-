@@ -90,6 +90,7 @@ import { SemanticSearchModule } from './modules/semantic-search/semantic-search.
 import { AiAssistantModule } from './modules/ai-assistant/ai-assistant.module';
 import { AiConversation } from './modules/ai-assistant/entities/ai-conversation.entity';
 import { AiGeneration } from './modules/ai-assistant/entities/ai-generation.entity';
+import { AiMemory } from './modules/ai-assistant/entities/ai-memory.entity';
 import { SupportModule } from './modules/support/support.module';
 
 import configuration from './config/configuration';
@@ -117,7 +118,7 @@ import configuration from './config/configuration';
           LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
           ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
           AuditLog, AiConversation, AiGeneration, Role, ActiveSession, FailedLogin,
-          SupportTicket, TicketReply, Notification
+          SupportTicket, TicketReply, Notification, AiMemory
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true

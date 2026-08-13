@@ -181,4 +181,34 @@ export class SupportService {
     await this.notificationRepo.update({ userId: adminId }, { isRead: true });
     return { success: true };
   }
+
+  async getMyTickets(userId: number) {
+    return this.ticketRepo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getMyTicketDetails(id: number, userId: number) {
+    const ticket = await this.ticketRepo.findOne({ where: { id, userId } });
+    if (!ticket) throw new Error('Ticket not found or unauthorized');
+    const replies = await this.replyRepo.find({
+      where: { ticketId: id },
+      order: { createdAt: 'ASC' },
+    });
+    return { ticket, replies };
+  }
+
+  async getMyNotifications(userId: number) {
+    return this.notificationRepo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      take: 20,
+    });
+  }
+
+  async markMyNotificationsRead(userId: number) {
+    await this.notificationRepo.update({ userId }, { isRead: true });
+    return { success: true };
+  }
 }

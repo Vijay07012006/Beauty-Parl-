@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import * as SibApiV3Sdk from '@sendinblue/client';
 import PDFDocument from 'pdfkit';
 import { User } from '../auth/user.entity';
@@ -576,34 +576,42 @@ export class EmailService {
   }
 
   async sendTicketAdminAlert(ticketId: number, userName: string, subject: string, message: string) {
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@beautyparle.com';
-    const email = this.buildEmail(
-      adminEmail,
-      `🚨 New Support Ticket #${ticketId} from ${userName}`,
-      `
-        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF5F5; border-radius: 20px; border: 1px solid #FED7D7;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #E53E3E; font-size: 32px; margin: 0;">🚨 New Support Request</h1>
-          </div>
-          <div style="background: white; padding: 24px; border-radius: 16px;">
-            <h2 style="color: #2D3748; font-size: 18px; margin-top: 0; margin-bottom: 16px;">Ticket Details</h2>
-            <p style="color: #4A5568; font-size: 14px; line-height: 1.6;">
-              A new support request has been raised by <strong>${userName}</strong>.
-            </p>
-            <hr style="border: 0; border-top: 1px solid #E2E8F0; margin: 20px 0;" />
-            <table style="width: 100%; font-size: 13px; color: #4A5568;">
-              <tr><td style="font-weight: bold; padding: 4px 0; width: 100px;">Ticket ID:</td><td>#${ticketId}</td></tr>
-              <tr><td style="font-weight: bold; padding: 4px 0;">Subject:</td><td>${subject}</td></tr>
-              <tr><td style="font-weight: bold; padding: 4px 0;">Message:</td><td>${message}</td></tr>
-            </table>
-            <div style="text-align: center; margin-top: 24px;">
-              <a href="${this.frontendUrl}/en/admin/tickets" style="background: #E53E3E; color: white; padding: 12px 30px; border-radius: 99px; text-decoration: none; font-weight: bold; display: inline-block;">View Ticket Dashboard</a>
+    try {
+      const admins = await this.userRepo.find({
+        where: { role: In(['admin', 'super_admin']) },
+      });
+      for (const admin of admins) {
+        const email = this.buildEmail(
+          admin.email,
+          `🚨 New Support Ticket #${ticketId} from ${userName}`,
+          `
+            <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF5F5; border-radius: 20px; border: 1px solid #FED7D7;">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #E53E3E; font-size: 32px; margin: 0;">🚨 New Support Request</h1>
+              </div>
+              <div style="background: white; padding: 24px; border-radius: 16px;">
+                <h2 style="color: #2D3748; font-size: 18px; margin-top: 0; margin-bottom: 16px;">Ticket Details</h2>
+                <p style="color: #4A5568; font-size: 14px; line-height: 1.6;">
+                  A new support request has been raised by <strong>${userName}</strong>.
+                </p>
+                <hr style="border: 0; border-top: 1px solid #E2E8F0; margin: 20px 0;" />
+                <table style="width: 100%; font-size: 13px; color: #4A5568;">
+                  <tr><td style="font-weight: bold; padding: 4px 0; width: 100px;">Ticket ID:</td><td>#${ticketId}</td></tr>
+                  <tr><td style="font-weight: bold; padding: 4px 0;">Subject:</td><td>${subject}</td></tr>
+                  <tr><td style="font-weight: bold; padding: 4px 0;">Message:</td><td>${message}</td></tr>
+                </table>
+                <div style="text-align: center; margin-top: 24px;">
+                  <a href="${this.frontendUrl}/en/admin/tickets" style="background: #E53E3E; color: white; padding: 12px 30px; border-radius: 99px; text-decoration: none; font-weight: bold; display: inline-block;">View Ticket Dashboard</a>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      `
-    );
-    await this.apiInstance.sendTransacEmail(email);
+          `
+        );
+        await this.apiInstance.sendTransacEmail(email);
+      }
+    } catch (err: any) {
+      console.error('Failed to send admin ticket alerts:', err.message);
+    }
   }
 
   async sendTicketResolvedEmail(to: string, ticketId: number) {

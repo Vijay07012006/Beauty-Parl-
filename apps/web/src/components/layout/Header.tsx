@@ -10,6 +10,7 @@ import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { useTranslations } from 'next-intl';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { UserNotificationBell } from '@/components/ui/NotificationBell';
 
 const languages = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
@@ -242,6 +243,9 @@ export function Header() {
             </span>
           </Link>
 
+          {/* User Notification Bell */}
+          {mounted && <UserNotificationBell />}
+
           {/* Auth Button */}
           {user ? (
             <div className="hidden lg:flex items-center gap-4 text-xs font-semibold">
@@ -255,6 +259,9 @@ export function Header() {
               </Link>
               <Link href={`/${locale}/orders`} className="hover:text-primary transition-colors">
                 {t('orders')}
+              </Link>
+              <Link href={`/${locale}/profile/tickets`} className="hover:text-primary transition-colors">
+                My Tickets
               </Link>
               <Link href={`/${locale}/subscriptions`} className="hover:text-primary transition-colors">
                 Subscriptions
@@ -397,6 +404,9 @@ export function Header() {
                   <div className="border-t border-border/40 my-2 pt-2" />
                   <Link href={`/${locale}/profile`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
                     {t('profile')}
+                  </Link>
+                  <Link href={`/${locale}/profile/tickets`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                    My Tickets
                   </Link>
                   <Link href={`/${locale}/orders`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
                     {t('orders')}

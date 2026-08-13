@@ -67,4 +67,28 @@ export class SupportController {
   async markNotificationsRead(@Request() req: any) {
     return this.supportService.markNotificationsRead(req.user.id);
   }
+
+  @Get('my-tickets')
+  @UseGuards(JwtAuthGuard)
+  async getMyTickets(@Request() req: any) {
+    return this.supportService.getMyTickets(req.user.id);
+  }
+
+  @Get('my-tickets/:id')
+  @UseGuards(JwtAuthGuard)
+  async getMyTicketDetails(@Param('id') id: number, @Request() req: any) {
+    return this.supportService.getMyTicketDetails(Number(id), req.user.id);
+  }
+
+  @Get('my-notifications')
+  @UseGuards(JwtAuthGuard)
+  async getMyNotifications(@Request() req: any) {
+    return this.supportService.getMyNotifications(req.user.id);
+  }
+
+  @Put('my-notifications/read')
+  @UseGuards(JwtAuthGuard)
+  async markMyNotificationsRead(@Request() req: any) {
+    return this.supportService.markMyNotificationsRead(req.user.id);
+  }
 }

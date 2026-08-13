@@ -10,6 +10,7 @@ import { UserRole } from '../auth/user.entity';
 import { AiConversation } from './entities/ai-conversation.entity';
 import { AiGeneration } from './entities/ai-generation.entity';
 import { SupportTicket } from '../support/support-ticket.entity';
+import { AiMemory } from './entities/ai-memory.entity';
 
 // OpenRouter currently serves this model and it supports OpenAI-style tool calling.
 // (meta-llama/llama-3-70b-instruct and mistralai/mistral-7b-instruct are both retired from the catalog.)
@@ -219,7 +220,60 @@ export class AiAssistantService implements OnModuleInit {
     private generationRepo: Repository<AiGeneration>,
     @InjectRepository(SupportTicket)
     private ticketRepo: Repository<SupportTicket>,
+    @InjectRepository(AiMemory)
+    private memoryRepo: Repository<AiMemory>,
   ) { }
+
+  async saveMemory(userId: number | null, sessionId: string | null, question: string, answer: string) {
+    try {
+      const memory = this.memoryRepo.create({
+        userId: userId || null,
+        sessionId: sessionId || null,
+        question,
+        answer,
+      });
+      await this.memoryRepo.save(memory);
+    } catch (err: any) {
+      console.error('Failed to save JARVIS Memory:', err.message);
+    }
+  }
+
+  async searchMemory(userId: number | null, query: string): Promise<string> {
+    try {
+      const memories = await this.memoryRepo.find({
+        where: userId ? { userId } : {},
+        order: { createdAt: 'DESC' },
+        take: 30,
+      });
+
+      const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      if (queryWords.length === 0) return '';
+
+      const matched = memories
+        .map(m => {
+          let score = 0;
+          const textToSearch = `${m.question} ${m.answer}`.toLowerCase();
+          queryWords.forEach(word => {
+            if (textToSearch.includes(word)) {
+              score += 1;
+            }
+          });
+          return { memory: m, score };
+        })
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+      if (matched.length > 0) {
+        return matched
+          .slice(0, 3)
+          .map(item => `[User asked]: "${item.memory.question}"\n[JARVIS responded]: "${item.memory.answer}"`)
+          .join('\n\n');
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  }
 
   async trainFromTicket(ticketId: number, aiSummary: string) {
     await this.ticketRepo.update(ticketId, { aiSummary });
@@ -289,7 +343,14 @@ export class AiAssistantService implements OnModuleInit {
     });
 
     const matchedSolution = await this.lookupResolvedTickets(messageText);
-    let systemInstruction = `You are Beauty Parlé's JARVIS-level AI Assistant. You have tools to get products, get sales statistics, get order details, trigger client-side page routing, or request interactive animated charts. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If user asks to save the conversation, acknowledge it and explain that conversation is saved to database automatically.`;
+    const memoryContext = await this.searchMemory(userId, sessionId);
+    
+    let systemInstruction = `You are JARVIS, a super-intelligent AI assistant for Beauty Parlé. You can browse the web, navigate the website, show products, and remember past conversations. Be conversational, helpful, and witty. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If you don't know something, reply with "I don't know, but I'll learn" and remember it.`;
+    
+    if (memoryContext) {
+      systemInstruction += `\n\n[JARVIS MEMORY RETRIEVAL] You recall the following relevant interactions with this user in the past:\n${memoryContext}\nUse this past conversation history to inform your current response if applicable.`;
+    }
+    
     if (matchedSolution) {
       systemInstruction += `\n\n[JARVIS KNOWLEDGE ALERT] A similar past issue was resolved with the following verified solution: "${matchedSolution}". If the user is asking about this problem, offer them this solution immediately.`;
     }
@@ -510,6 +571,9 @@ export class AiAssistantService implements OnModuleInit {
       finalVisualType = 'image';
       finalData = generatedImage;
     }
+
+    // Save current user conversation question-answer pair to RAG Memory
+    await this.saveMemory(userId, sessionId, messageText, responseText);
 
     return {
       reply: responseText,
