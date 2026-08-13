@@ -310,6 +310,70 @@ export class AdminController {
     return { success: true };
   }
 
+  @Delete('users/:id/terminate')
+  @Roles(UserRole.SUPER_ADMIN)
+  async terminateUser(
+    @Param('id') id: number,
+    @Body() body: { reason: string },
+    @Request() req: any,
+  ) {
+    const targetId = Number(id);
+    if (!Number.isInteger(targetId)) {
+      throw new BadRequestException('Invalid user id');
+    }
+    if (req.user && req.user.id === targetId) {
+      throw new BadRequestException('You cannot terminate yourself.');
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: targetId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const superAdminCount = await this.userRepo.count({
+      where: { role: UserRole.SUPER_ADMIN, isActive: true },
+    });
+    if (user.role === UserRole.SUPER_ADMIN && superAdminCount <= 1) {
+      throw new BadRequestException('Cannot terminate the only Super Admin.');
+    }
+
+    const beforeValue = { isActive: user.isActive, suspendedUntil: user.suspendedUntil };
+    
+    await this.userRepo.update(targetId, {
+      isActive: false,
+      suspendedUntil: new Date('2099-12-31'),
+      suspensionReason: body.reason,
+    });
+
+    const afterValue = { isActive: false, suspendedUntil: new Date('2099-12-31') };
+
+    await this.auditLogsService.log({
+      action: 'user.terminated',
+      userEmail: req.user?.email,
+      userId: req.user?.id,
+      entityType: 'User',
+      entityId: targetId,
+      beforeValue,
+      afterValue,
+      details: { reason: body.reason },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    try {
+      await this.emailService.sendTerminationEmail(
+        user.email,
+        user.name,
+        body.reason,
+        req.user?.name || 'Super Admin',
+      );
+    } catch (emailError: any) {
+      console.error('Failed to send termination email:', emailError.message);
+    }
+
+    return { success: true, message: `User ${user.email} terminated successfully.` };
+  }
+
   @Put('users/:id/reactivate')
   @Roles(UserRole.SUPER_ADMIN)
   async reactivateUser(@Param('id') id: number, @Request() req: any) {

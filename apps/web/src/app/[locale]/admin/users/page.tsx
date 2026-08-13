@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { Search, Download, UserX, UserCheck, Trash2, Eye, Users, ShieldCheck, UserMinus } from 'lucide-react';
+import { Search, Download, UserX, UserCheck, Trash2, Eye, Users, ShieldCheck, UserMinus, Ban } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -31,6 +31,9 @@ export default function AdminUsersPage() {
   const [suspendModal, setSuspendModal] = useState<{ open: boolean; user: User | null }>({ open: false, user: null });
   const [suspendReason, setSuspendReason] = useState('');
   const [suspendDuration, setSuspendDuration] = useState<'1d' | '7d' | '30d' | 'permanent'>('7d');
+  
+  const [terminateModal, setTerminateModal] = useState<{ open: boolean; user: User | null }>({ open: false, user: null });
+  const [terminateReason, setTerminateReason] = useState('');
   const isSuperAdmin = me?.role === 'super_admin';
 
   const fetchUsers = async () => {
@@ -81,6 +84,21 @@ export default function AdminUsersPage() {
       fetchUsers();
     } catch {
       toast.error('Failed to delete user');
+    }
+  };
+
+  const handleTerminate = async () => {
+    if (!terminateModal.user) return;
+    try {
+      await api.delete(`/admin/users/${terminateModal.user.id}/terminate`, {
+        data: { reason: terminateReason || 'Policy violation' }
+      });
+      toast.success(`User "${terminateModal.user.name}" terminated successfully`);
+      setTerminateModal({ open: false, user: null });
+      setTerminateReason('');
+      fetchUsers();
+    } catch {
+      toast.error('Failed to terminate user');
     }
   };
 
@@ -228,6 +246,13 @@ export default function AdminUsersPage() {
                               >
                                 <Trash2 size={15} />
                               </button>
+                              <button
+                                onClick={() => setTerminateModal({ open: true, user: u })}
+                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                                title="Terminate Account"
+                              >
+                                <Ban size={15} />
+                              </button>
                             </>
                           )}
                         </div>
@@ -300,6 +325,47 @@ export default function AdminUsersPage() {
                 className="flex-1 py-2.5 rounded-xl bg-amber-500 text-white hover:bg-amber-600 text-sm font-medium transition"
               >
                 Suspend User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Terminate Modal */}
+      {terminateModal.open && terminateModal.user && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border/60 rounded-3xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 text-red-600 mb-3">
+              <Ban size={24} />
+              <h2 className="text-lg font-bold">Terminate User Account</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-5">
+              You are terminating <strong>{terminateModal.user.name}</strong> permanently. This user will not be able to log in, and an immediate email notification will be dispatched.
+            </p>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Termination Reason</label>
+              <input
+                type="text"
+                placeholder="e.g. Terms violation, severe abuse..."
+                value={terminateReason}
+                onChange={e => setTerminateReason(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setTerminateModal({ open: false, user: null })}
+                className="flex-1 py-2.5 rounded-xl border border-border/60 hover:bg-secondary/40 text-sm font-medium transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTerminate}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 text-sm font-medium transition"
+              >
+                Terminate User
               </button>
             </div>
           </div>

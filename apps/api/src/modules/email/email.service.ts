@@ -514,4 +514,35 @@ export class EmailService {
     const email = this.buildEmail(to, subject, htmlContent);
     await this.apiInstance.sendTransacEmail(email);
   }
+
+  async sendTerminationEmail(to: string, name: string, reason: string, adminName: string) {
+    const email = this.buildEmail(
+      to,
+      'Your Beauty Parlé Account Has Been Terminated',
+      `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #E8A0BF; font-size: 32px; margin: 0;">💄 Beauty Parlé</h1>
+          </div>
+          <div style="background: white; padding: 24px; border-radius: 16px;">
+            <h2 style="color: #4A1A2C; font-size: 20px; margin-top: 0; margin-bottom: 16px;">Dear ${name},</h2>
+            <p style="color: #2D1B2E; font-size: 15px; line-height: 1.6;">
+              Your account on Beauty Parlé has been <strong style="color: #db2777;">terminated</strong> by <strong>${adminName}</strong> (Super Admin).
+            </p>
+            <div style="margin: 20px 0; padding: 16px; background: #FFF5F5; border-radius: 12px; border-left: 4px solid #db2777;">
+              <p style="color: #4A1A2C; font-size: 14px; margin: 0;"><strong>Reason:</strong> ${reason}</p>
+            </div>
+            <p style="color: #6B4C5A; font-size: 13px; line-height: 1.6;">
+              If you believe this action was taken in error or want to dispute this decision, please contact our support team at:
+            </p>
+            <p style="text-align: center; margin-top: 20px;">
+              <a href="mailto:support@beautyparle.com" style="color: #db2777; font-weight: bold; text-decoration: underline;">support@beautyparle.com</a>
+            </p>
+          </div>
+          <p style="color: #6B4C5A; font-size: 11px; margin-top: 24px; text-align: center;">Beauty Parlé — Where Beauty Speaks Your Language 🌸</p>
+        </div>
+      `
+    );
+    await this.apiInstance.sendTransacEmail(email);
+  }
 }
