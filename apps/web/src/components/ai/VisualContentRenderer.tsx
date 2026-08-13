@@ -13,6 +13,7 @@ import { SalesChart } from './charts/SalesChart';
 import { CategoryChart } from './charts/CategoryChart';
 import { ProductComparison, type ComparisonProduct } from './ProductComparison';
 import { InsightCard } from './InsightCard';
+import { TemporaryImageDisplay } from './TemporaryImageDisplay';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ export interface ComparisonRow {
 }
 
 export interface VisualContent {
-  visualType: 'products' | 'chart' | 'comparison' | 'web_search' | 'image' | 'insights' | 'empty';
+  visualType: 'products' | 'chart' | 'comparison' | 'web_search' | 'image' | 'insights' | 'temporary_images' | 'empty';
   products?: VisualProduct[];
   chart?: VisualChart;
   comparison?: { headers: string[]; rows: ComparisonRow[] };
@@ -53,6 +54,7 @@ export interface VisualContent {
   imageUrl?: string;
   imagePrompt?: string;
   insight?: { message: string; trend: 'up' | 'down' | 'neutral'; value: string; recommendation?: string };
+  temporaryImages?: { query: string; images: string[] };
 }
 
 // ─── Star Rating ─────────────────────────────────────────────────────────────
@@ -483,6 +485,13 @@ export function VisualContentRenderer({ content }: { content: VisualContent | nu
       return content.imageUrl ? <ImageRenderer url={content.imageUrl} prompt={content.imagePrompt} /> : <EmptyState />;
     case 'insights':
       return content.insight ? <InsightCard insight={content.insight} /> : <EmptyState />;
+    case 'temporary_images':
+      return content.temporaryImages ? (
+        <TemporaryImageDisplay
+          images={content.temporaryImages.images}
+          onClear={() => {}}
+        />
+      ) : <EmptyState />;
     default:
       return <EmptyState />;
   }

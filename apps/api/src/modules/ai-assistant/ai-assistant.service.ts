@@ -11,6 +11,7 @@ import { AiConversation } from './entities/ai-conversation.entity';
 import { AiGeneration } from './entities/ai-generation.entity';
 import { SupportTicket } from '../support/support-ticket.entity';
 import { AiMemory } from './entities/ai-memory.entity';
+import { Notification } from '../support/notification.entity';
 
 // OpenRouter currently serves this model and it supports OpenAI-style tool calling.
 // (meta-llama/llama-3-70b-instruct and mistralai/mistral-7b-instruct are both retired from the catalog.)
@@ -204,6 +205,33 @@ export class AiAssistantService implements OnModuleInit {
         },
       },
     },
+    {
+      type: 'function',
+      function: {
+        name: 'get_notifications',
+        description: 'Get the user\'s latest notifications list.',
+        parameters: {
+          type: 'object',
+          properties: {
+            limit: { type: 'number', default: 5 },
+          },
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'temporary_search_image',
+        description: 'Search and temporarily display images from the web in the side panel.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string' },
+          },
+          required: ['query'],
+        },
+      },
+    },
   ];
 
   constructor(
@@ -222,7 +250,24 @@ export class AiAssistantService implements OnModuleInit {
     private ticketRepo: Repository<SupportTicket>,
     @InjectRepository(AiMemory)
     private memoryRepo: Repository<AiMemory>,
+    @InjectRepository(Notification)
+    private notificationRepo: Repository<Notification>,
   ) { }
+
+  async temporarySearchImageTool(query: string) {
+    const mockUrls = [
+      `https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&q=80&sig=1`,
+      `https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&q=80&sig=2`,
+      `https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&q=80&sig=3`,
+    ];
+    return {
+      visualType: 'temporary_images',
+      data: {
+        query,
+        images: mockUrls,
+      }
+    };
+  }
 
   async saveMemory(userId: number | null, sessionId: string | null, question: string, answer: string) {
     try {
@@ -343,7 +388,7 @@ export class AiAssistantService implements OnModuleInit {
     });
 
     const matchedSolution = await this.lookupResolvedTickets(messageText);
-    const memoryContext = await this.searchMemory(userId, sessionId);
+    const memoryContext = await this.searchMemory(userId, messageText);
     
     let systemInstruction = `You are JARVIS, a super-intelligent AI assistant for Beauty Parlé. You can browse the web, navigate the website, show products, and remember past conversations. Be conversational, helpful, and witty. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If you don't know something, reply with "I don't know, but I'll learn" and remember it.`;
     
@@ -408,6 +453,7 @@ export class AiAssistantService implements OnModuleInit {
     let productsList: any[] = [];
     let searchResults: any = null;
     let generatedImage: any = null;
+    let temporaryImages: any = null;
 
     while (toolCalls && toolCalls.length > 0 && attempts < maxAttempts) {
       attempts++;
@@ -508,6 +554,17 @@ export class AiAssistantService implements OnModuleInit {
             toolResult = await this.compareProductsTool(toolArgs);
           } else if (name === 'get_sales_insights') {
             toolResult = await this.getSalesInsightsTool(toolArgs);
+          } else if (name === 'get_notifications') {
+            const limit = toolArgs.limit || 5;
+            const notifs = await this.notificationRepo.find({
+              where: { userId: userId || undefined },
+              order: { createdAt: 'DESC' },
+              take: limit,
+            });
+            toolResult = notifs.map(n => ({ id: n.id, title: n.title, message: n.message, createdAt: n.createdAt }));
+          } else if (name === 'temporary_search_image') {
+            toolResult = await this.temporarySearchImageTool(toolArgs.query);
+            temporaryImages = toolResult.data;
           } else {
             console.warn('Unknown tool called: ' + name);
             toolResult = { error: 'Requested tool is not available.' };
@@ -570,6 +627,9 @@ export class AiAssistantService implements OnModuleInit {
     } else if (generatedImage) {
       finalVisualType = 'image';
       finalData = generatedImage;
+    } else if (temporaryImages) {
+      finalVisualType = 'temporary_images';
+      finalData = temporaryImages;
     }
 
     // Save current user conversation question-answer pair to RAG Memory
@@ -581,6 +641,7 @@ export class AiAssistantService implements OnModuleInit {
       products: productsList.length > 0 ? productsList : undefined,
       chart: chartData,
       navigation: navigationRoute,
+      temporaryImages,
       sessionId,
       visualType: finalVisualType || null,
       data: finalData || null,

@@ -267,6 +267,8 @@ How can I help?
           setVisualContent({ visualType: 'comparison', comparisonProducts: data.data });
         } else if (data.visualType === 'insights' || data.visualType === 'get_sales_insights') {
           setVisualContent({ visualType: 'insights', insight: data.data });
+        } else if (data.visualType === 'temporary_images') {
+          setVisualContent({ visualType: 'temporary_images', temporaryImages: data.data });
         }
       } else if (data.products?.length > 0) {
         setVisualContent({ visualType: 'products', products: data.products });
