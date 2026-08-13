@@ -3,13 +3,16 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
-import { SvgChart } from './SvgChart';
 import {
   ShoppingCart, Star, X, Package, TrendingUp, Table as TableIcon,
   Search, Image as ImageIcon, ChevronLeft, ChevronRight, ExternalLink,
-  Plus, Minus, Check
+  Plus, Minus, Check, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SalesChart } from './charts/SalesChart';
+import { CategoryChart } from './charts/CategoryChart';
+import { ProductComparison, type ComparisonProduct } from './ProductComparison';
+import { InsightCard } from './InsightCard';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -30,7 +33,7 @@ export interface VisualProduct {
 }
 
 export interface VisualChart {
-  type: 'bar' | 'line' | 'pie';
+  type: 'bar' | 'line' | 'pie' | 'doughnut';
   title: string;
   labels: string[];
   values: number[];
@@ -41,13 +44,15 @@ export interface ComparisonRow {
 }
 
 export interface VisualContent {
-  visualType: 'products' | 'chart' | 'comparison' | 'web_search' | 'image' | 'empty';
+  visualType: 'products' | 'chart' | 'comparison' | 'web_search' | 'image' | 'insights' | 'empty';
   products?: VisualProduct[];
   chart?: VisualChart;
   comparison?: { headers: string[]; rows: ComparisonRow[] };
+  comparisonProducts?: ComparisonProduct[];
   webSearch?: { title: string; url: string; snippet: string }[];
   imageUrl?: string;
   imagePrompt?: string;
+  insight?: { message: string; trend: 'up' | 'down' | 'neutral'; value: string; recommendation?: string };
 }
 
 // ─── Star Rating ─────────────────────────────────────────────────────────────
@@ -316,15 +321,12 @@ function ChartRenderer({ chart }: { chart: VisualChart }) {
         <TrendingUp className="w-4 h-4 text-primary" />
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Analytics Chart</p>
       </div>
-      <div className="flex-1 flex items-center">
-        <div className="w-full">
-          <SvgChart
-            type={chart.type}
-            title={chart.title}
-            labels={chart.labels}
-            values={chart.values}
-          />
-        </div>
+      <div className="flex-1 flex items-center justify-center min-h-[220px]">
+        {chart.type === 'pie' || chart.type === 'doughnut' ? (
+          <CategoryChart data={chart} type={chart.type} />
+        ) : (
+          <SalesChart data={chart} type={chart.type as any} />
+        )}
       </div>
     </div>
   );
@@ -471,11 +473,16 @@ export function VisualContentRenderer({ content }: { content: VisualContent | nu
     case 'chart':
       return content.chart ? <ChartRenderer chart={content.chart} /> : <EmptyState />;
     case 'comparison':
+      if (content.comparisonProducts && content.comparisonProducts.length > 0) {
+        return <ProductComparison products={content.comparisonProducts} />;
+      }
       return content.comparison ? <ComparisonRenderer data={content.comparison} /> : <EmptyState />;
     case 'web_search':
       return content.webSearch ? <WebSearchRenderer results={content.webSearch} /> : <EmptyState />;
     case 'image':
       return content.imageUrl ? <ImageRenderer url={content.imageUrl} prompt={content.imagePrompt} /> : <EmptyState />;
+    case 'insights':
+      return content.insight ? <InsightCard insight={content.insight} /> : <EmptyState />;
     default:
       return <EmptyState />;
   }

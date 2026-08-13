@@ -214,6 +214,10 @@ How can I help?
           setVisualContent({ visualType: 'web_search', webSearch: data.data });
         } else if (data.visualType === 'image') {
           setVisualContent({ visualType: 'image', imageUrl: data.data.url, imagePrompt: data.data.prompt });
+        } else if (data.visualType === 'comparison' || data.visualType === 'product_comparison') {
+          setVisualContent({ visualType: 'comparison', comparisonProducts: data.data });
+        } else if (data.visualType === 'insights' || data.visualType === 'get_sales_insights') {
+          setVisualContent({ visualType: 'insights', insight: data.data });
         }
       } else if (data.products?.length > 0) {
         setVisualContent({ visualType: 'products', products: data.products });
