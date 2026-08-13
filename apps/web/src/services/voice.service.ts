@@ -109,8 +109,23 @@ export class VoiceService {
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'en-US';
-    utterance.rate = 1.05;
-    utterance.pitch = 1.0;
+    
+    // Choose female voice
+    const voices = this.synthesis.getVoices();
+    const femaleVoice = voices.find(v => 
+      v.name.includes('Google UK English Female') ||
+      v.name.includes('Microsoft Zira') ||
+      v.name.includes('Samantha') ||
+      v.name.includes('Female') ||
+      v.name.includes('female')
+    );
+    
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+    }
+    
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
 
     if (onStart) utterance.onstart = onStart;
     utterance.onend = () => {
