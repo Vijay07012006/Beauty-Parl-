@@ -48,6 +48,12 @@ export function Header() {
     setMounted(true);
   }, []);
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+    setIsExploreOpen(false);
+  }, [pathname]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -82,8 +88,8 @@ export function Header() {
           <Sparkles size={16} className="text-accent animate-pulse" />
         </Link>
  
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-5 lg:gap-6 xl:gap-8">
+        {/* Desktop Navigation — visible from md (768px) */}
+        <nav className="hidden md:flex items-center gap-4 md:gap-5 lg:gap-6 xl:gap-8">
           <Link href={`/${locale}/products`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
             {t('products')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
@@ -248,7 +254,7 @@ export function Header() {
 
           {/* Auth Button */}
           {user ? (
-            <div className="hidden lg:flex items-center gap-4 text-xs font-semibold">
+            <div className="hidden md:flex items-center gap-3 lg:gap-4 text-xs font-semibold">
               {user.loyaltyPoints !== undefined && (
                 <Link href={`/${locale}/loyalty`} className="px-2 py-0.5 bg-primary/10 border border-primary/20 text-primary rounded-full font-mono font-bold text-[10px]" title="Loyalty Points">
                   ⭐ {user.loyaltyPoints} pts
@@ -257,16 +263,16 @@ export function Header() {
               <Link href={`/${locale}/profile`} className="hover:text-primary transition-colors">
                 {t('profile')}
               </Link>
-              <Link href={`/${locale}/orders`} className="hover:text-primary transition-colors">
+              <Link href={`/${locale}/orders`} className="hidden lg:block hover:text-primary transition-colors">
                 {t('orders')}
               </Link>
-              <Link href={`/${locale}/profile/tickets`} className="hover:text-primary transition-colors">
+              <Link href={`/${locale}/profile/tickets`} className="hidden lg:block hover:text-primary transition-colors">
                 My Tickets
               </Link>
-              <Link href={`/${locale}/subscriptions`} className="hover:text-primary transition-colors">
+              <Link href={`/${locale}/subscriptions`} className="hidden xl:block hover:text-primary transition-colors">
                 Subscriptions
               </Link>
-              <Link href={`/${locale}/ai-history`} className="hover:text-primary transition-colors">
+              <Link href={`/${locale}/ai-history`} className="hidden xl:block hover:text-primary transition-colors">
                 AI History
               </Link>
               <button onClick={logout} className="hover:text-primary transition-colors cursor-pointer">
@@ -274,14 +280,14 @@ export function Header() {
               </button>
             </div>
           ) : (
-            <Link href={`/${locale}/auth/login`} className="hidden lg:block text-sm hover:text-primary transition-colors font-medium">
+            <Link href={`/${locale}/auth/login`} className="hidden md:block text-sm hover:text-primary transition-colors font-medium">
               {t('sign_in')}
             </Link>
           )}
  
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Menu Toggle — only on mobile (<md) */}
           <button 
-            className="lg:hidden p-2 hover:bg-secondary rounded-full transition-colors cursor-pointer text-foreground"
+            className="md:hidden p-2 hover:bg-secondary rounded-full transition-colors cursor-pointer text-foreground"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -297,7 +303,7 @@ export function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden border-t border-border/50 bg-card overflow-hidden shadow-lg transition-colors duration-300"
+            className="md:hidden border-t border-border/50 bg-card overflow-hidden shadow-lg transition-colors duration-300"
           >
             <nav className="container mx-auto px-4 py-4 flex flex-col gap-1.5">
               
