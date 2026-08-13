@@ -19,7 +19,26 @@ export class VoiceService {
     return this.recognition;
   }
 
-  startListening(onInterim?: (text: string) => void): Promise<string> {
+  async requestMicrophonePermission(): Promise<boolean> {
+    try {
+      if (typeof window === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Your browser does not support microphone access.');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop()); // release stream
+      return true;
+    } catch (error) {
+      console.error('Microphone permission error:', error);
+      return false;
+    }
+  }
+
+  async startListening(onInterim?: (text: string) => void): Promise<string> {
+    const hasPermission = await this.requestMicrophonePermission();
+    if (!hasPermission) {
+      throw new Error('Microphone permission denied. Please allow microphone access in your browser settings.');
+    }
+
     return new Promise((resolve, reject) => {
       if (!this.recognition) {
         reject(new Error('Speech recognition not initialized.'));

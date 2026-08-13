@@ -267,8 +267,8 @@ How can I help?
           if (active) {
             setIsListening(false);
             const msg = error.message || '';
-            if (msg.includes('not-allowed') || msg.includes('permission')) {
-              toast.error('Microphone permission denied. Please allow microphone access in your browser settings.');
+            if (msg.includes('not-allowed') || msg.includes('permission') || msg.includes('denied')) {
+              toast.error('Microphone permission denied. Click the lock icon in address bar, allow microphone, and try again.');
             } else if (msg.includes('no-speech') || msg.includes('No speech')) {
               // Ignore silent timeouts
             } else {
