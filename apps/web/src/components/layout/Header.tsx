@@ -70,7 +70,7 @@ export function Header() {
   const activeLang = languages.find(l => l.code === locale) || languages[0];
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 transition-colors duration-300">
+    <header className="sticky top-0 z-50 glassmorphic transition-colors duration-300">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         
         {/* Logo */}
@@ -104,7 +104,7 @@ export function Header() {
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
 
-          {/* Explore Dropdown */}
+          {/* Explore Mega Menu Dropdown */}
           <div className="relative" ref={exploreRef}>
             <button
               onClick={() => setIsExploreOpen(!isExploreOpen)}
@@ -117,38 +117,64 @@ export function Header() {
             <AnimatePresence>
               {isExploreOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-full left-0 mt-2 bg-card rounded-2xl shadow-xl border border-border/50 p-2 w-48 z-50 space-y-0.5"
+                  exit={{ opacity: 0, y: 15 }}
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-card/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-border/50 p-6 w-[560px] z-50 grid grid-cols-3 gap-6"
                 >
-                  <Link href={`/${locale}/quiz`} onClick={() => setIsExploreOpen(false)} className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                    Beauty Quiz
-                  </Link>
-                  <Link href={`/${locale}/skin-analysis`} onClick={() => setIsExploreOpen(false)} className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                    Skin Analysis
-                  </Link>
-                  <Link href={`/${locale}/routine-builder`} onClick={() => setIsExploreOpen(false)} className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                    Routine Builder
-                  </Link>
-                  <Link href={`/${locale}/beauty-box`} onClick={() => setIsExploreOpen(false)} className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                    Beauty Box
-                  </Link>
-                  <Link href={`/${locale}/gamification`} onClick={() => setIsExploreOpen(false)} className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                    Achievements
-                  </Link>
-                  <Link href={`/${locale}/referral`} onClick={() => setIsExploreOpen(false)} className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                    Referrals
-                  </Link>
-                  <Link href={`/${locale}/looks`} onClick={() => setIsExploreOpen(false)} className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors text-primary font-bold">
-                    Shop by Look
-                  </Link>
-                  <Link href={`/${locale}/clean-beauty`} onClick={() => setIsExploreOpen(false)} className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors text-emerald-600 font-bold">
-                    Clean Beauty
-                  </Link>
-                  <Link href={`/${locale}/about`} onClick={() => setIsExploreOpen(false)} className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                    {t('about')}
-                  </Link>
+                  {/* Column 1: AI Features */}
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest">AI Assistants</p>
+                    <div className="flex flex-col gap-1">
+                      <Link href={`/${locale}/quiz`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        ✨ Beauty Quiz
+                        <span className="block text-[9px] text-muted-foreground font-normal">Personalized skin routine finder</span>
+                      </Link>
+                      <Link href={`/${locale}/skin-analysis`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        📸 Skin Analysis
+                        <span className="block text-[9px] text-muted-foreground font-normal">AI scan from camera selfie</span>
+                      </Link>
+                      <Link href={`/${locale}/routine-builder`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        🗓 Routine Builder
+                        <span className="block text-[9px] text-muted-foreground font-normal">Day & night custom routines</span>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 2: Curation */}
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-accent uppercase tracking-widest">Special Curation</p>
+                    <div className="flex flex-col gap-1">
+                      <Link href={`/${locale}/looks`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold text-primary hover:bg-secondary/70 transition-colors">
+                        💄 Shop by Look
+                        <span className="block text-[9px] text-muted-foreground font-normal">Get inspired by premium grids</span>
+                      </Link>
+                      <Link href={`/${locale}/clean-beauty`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold text-emerald-600 hover:bg-secondary/70 transition-colors">
+                        🌱 Clean Beauty
+                        <span className="block text-[9px] text-muted-foreground font-normal">100% natural, toxic-free</span>
+                      </Link>
+                      <Link href={`/${locale}/beauty-box`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        📦 Beauty Box
+                        <span className="block text-[9px] text-muted-foreground font-normal">Custom curated monthly boxes</span>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 3: Perks & Info */}
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Rewards & Info</p>
+                    <div className="flex flex-col gap-1">
+                      <Link href={`/${locale}/gamification`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        🏆 Achievements
+                      </Link>
+                      <Link href={`/${locale}/referral`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        🤝 Referrals
+                      </Link>
+                      <Link href={`/${locale}/about`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        🌸 {t('about')}
+                      </Link>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

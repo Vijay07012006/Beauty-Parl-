@@ -72,7 +72,7 @@ export default function LooksPage() {
                 className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-300 border shadow-sm cursor-pointer select-none
                   ${activeFilter === occ 
                     ? 'bg-primary border-primary text-white shadow-md' 
-                    : 'bg-card border-border/50 text-foreground hover:bg-secondary/40'
+                    : 'glassmorphic text-foreground hover:bg-secondary/40'
                   }`}
               >
                 {occ}
@@ -88,13 +88,18 @@ export default function LooksPage() {
               ))}
             </div>
           ) : filteredLooks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredLooks.map((look) => (
-                <LookCard key={look.id} look={look} />
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+              {filteredLooks.map((look, idx) => {
+                const isLarge = idx % 4 === 1;
+                return (
+                  <div key={look.id} className={`${isLarge ? 'md:col-span-2 lg:col-span-2' : 'col-span-1'} transition-transform duration-300`}>
+                    <LookCard look={look} />
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <div className="text-center py-20 bg-card rounded-3xl border border-border/40 shadow-sm">
+            <div className="text-center py-20 bg-card/65 glassmorphic rounded-3xl border border-border/40 shadow-sm">
               <p className="text-muted-foreground text-sm font-medium">No looks found for this category.</p>
             </div>
           )}
