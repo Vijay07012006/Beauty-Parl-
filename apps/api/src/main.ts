@@ -27,6 +27,11 @@ async function bootstrap() {
 
   app.use(helmet());
 
+  app.use((req: any, res: any, next: any) => {
+    res.setHeader('Permissions-Policy', 'microphone=*');
+    next();
+  });
+
   // Trust the first hop so req.ip reflects the real client behind the Render/Vercel proxy
   // (required for per-IP rate limiting — otherwise every request shares the proxy IP bucket)
   const httpAdapter = app.getHttpAdapter().getInstance();
