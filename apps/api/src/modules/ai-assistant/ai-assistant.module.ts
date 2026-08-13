@@ -7,6 +7,7 @@ import { AiConversation } from './entities/ai-conversation.entity';
 import { AiGeneration } from './entities/ai-generation.entity';
 import { SupportTicket } from '../support/support-ticket.entity';
 import { AiMemory } from './entities/ai-memory.entity';
+import { Notification } from '../support/notification.entity';
 import { AiAssistantService } from './ai-assistant.service';
 import { AiAssistantController } from './ai-assistant.controller';
 
@@ -20,6 +21,7 @@ import { AiAssistantController } from './ai-assistant.controller';
       AiGeneration,
       SupportTicket,
       AiMemory,
+      Notification,
     ]),
   ],
   controllers: [AiAssistantController],
