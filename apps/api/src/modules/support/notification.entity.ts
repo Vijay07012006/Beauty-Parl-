@@ -1,26 +1,31 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from '../auth/user.entity';
 
 @Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ name: 'user_id', nullable: true })
-  userId!: number | null; // Target admin/user ID
+  @Column({ type: 'int', name: 'user_id', nullable: true })
+  userId!: number | null;
 
-  @Column()
-  type!: string; // e.g. "new_ticket", "reply", "status_change"
+  @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user!: User | null;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50 })
+  type!: string;
+
+  @Column({ type: 'varchar', length: 255 })
   title!: string;
 
   @Column({ type: 'text' })
   message!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   link!: string | null;
 
-  @Column({ name: 'is_read', default: false })
+  @Column({ type: 'boolean', name: 'is_read', default: false })
   isRead!: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
