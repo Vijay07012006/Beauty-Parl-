@@ -7,6 +7,7 @@ import { useCartStore } from '@/store/cartStore';
 import { api } from '@/lib/api';
 import { JarvisSplitLayout } from './JarvisSplitLayout';
 import type { VisualContent } from './VisualContentRenderer';
+import { VoiceService } from '@/services/voice.service';
 import { Bot, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
@@ -62,6 +63,51 @@ export function JarvisChat() {
   const [sessionId, setSessionId] = useState('');
   const [visualContent, setVisualContent] = useState<VisualContent | null>(null);
 
+  // Voice States
+  const [isListening, setIsListening] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('jarvis_tts_enabled');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
+  const [sttEnabled, setSttEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('jarvis_stt_enabled');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
+
+  const voiceService = useRef<VoiceService | null>(null);
+
+  // Instantiate VoiceService
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      voiceService.current = new VoiceService();
+    }
+  }, []);
+
+  // Set TTS preference to localStorage
+  const handleTtsChange = useCallback((enabled: boolean) => {
+    setTtsEnabled(enabled);
+    localStorage.setItem('jarvis_tts_enabled', String(enabled));
+    if (!enabled && voiceService.current) {
+      voiceService.current.stopSpeaking();
+    }
+  }, []);
+
+  // Set STT preference to localStorage
+  const handleSttChange = useCallback((enabled: boolean) => {
+    setSttEnabled(enabled);
+    localStorage.setItem('jarvis_stt_enabled', String(enabled));
+    if (!enabled && voiceService.current) {
+      voiceService.current.stopListening();
+      setIsListening(false);
+    }
+  }, []);
+
   // ── Init session + welcome message ────────────────────────────────────────
   useEffect(() => {
     setSessionId(`sess_jarvis_${Date.now()}`);
@@ -80,6 +126,45 @@ How can I help?
     }]);
   }, [user]);
 
+  // Speech Recognition setup when listening status toggles
+  useEffect(() => {
+    if (isListening && voiceService.current && sttEnabled) {
+      const rec = voiceService.current.initSpeechRecognition(
+        (text, isFinal) => {
+          setInput(text);
+          if (isFinal && text.trim().length > 0) {
+            submitMessage(text);
+            setInput('');
+          }
+        },
+        () => {
+          setIsListening(false);
+        },
+        () => {
+          setIsListening(false);
+          toast.error('Voice input error. Please try speaking again.');
+        }
+      );
+
+      if (rec) {
+        voiceService.current.startListening();
+      } else {
+        setIsListening(false);
+        toast.error('Speech recognition is not supported in this browser.');
+      }
+    } else if (!isListening && voiceService.current) {
+      voiceService.current.stopListening();
+    }
+  }, [isListening, sttEnabled]);
+
+  const toggleListening = useCallback(() => {
+    if (!sttEnabled) {
+      toast.info('Please enable Voice Input in settings first.');
+      return;
+    }
+    setIsListening((prev) => !prev);
+  }, [sttEnabled]);
+
   // ── Send message ──────────────────────────────────────────────────────────
   const submitMessage = useCallback(async (text: string) => {
     if (!text || loading) return;
@@ -87,6 +172,11 @@ How can I help?
     if (!user) {
       toast.error('Please log in to chat with JARVIS');
       return;
+    }
+
+    // Stop speaking when user submits a new prompt
+    if (voiceService.current) {
+      voiceService.current.stopSpeaking();
     }
 
     const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -109,6 +199,11 @@ How can I help?
           time: assistantTime,
         },
       ]);
+
+      // Speak response if voice response is enabled
+      if (ttsEnabled && voiceService.current && data.reply) {
+        voiceService.current.speak(data.reply);
+      }
 
       // ── Update visual panel ──────────────────────────────────────────────
       if (data.visualType && data.data) {
@@ -151,7 +246,7 @@ How can I help?
     } finally {
       setLoading(false);
     }
-  }, [loading, sessionId, user, locale, router]);
+  }, [loading, sessionId, user, locale, router, ttsEnabled]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,7 +291,14 @@ How can I help?
 
   // ── Open / close ─────────────────────────────────────────────────────────
   const handleOpen = () => setIsOpen(true);
-  const handleClose = () => setIsOpen(false);
+  const handleClose = () => {
+    setIsOpen(false);
+    if (voiceService.current) {
+      voiceService.current.stopSpeaking();
+      voiceService.current.stopListening();
+      setIsListening(false);
+    }
+  };
 
   return (
     <>
@@ -213,6 +315,12 @@ How can I help?
         onAddToCart={handleAddToCart}
         visualContent={visualContent}
         onQuickCommand={handleQuickCommand}
+        isListening={isListening}
+        onToggleListen={toggleListening}
+        ttsEnabled={ttsEnabled}
+        onTtsChange={handleTtsChange}
+        sttEnabled={sttEnabled}
+        onSttChange={handleSttChange}
       />
 
       {/* Floating Action Button — always visible */}

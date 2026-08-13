@@ -12,8 +12,9 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { Bot, X, Sparkles, Download, RefreshCw, Send, ShoppingCart, ArrowRight } from 'lucide-react';
+import { Bot, X, Sparkles, Download, RefreshCw, Send, ShoppingCart, ArrowRight, Mic, MicOff } from 'lucide-react';
 import { VisualContentRenderer, type VisualContent } from './VisualContentRenderer';
+import { VoiceSettings } from './VoiceSettings';
 
 export interface SplitMessage {
   id: string;
@@ -37,6 +38,12 @@ interface JarvisSplitLayoutProps {
   onAddToCart: (product: any) => void;
   visualContent: VisualContent | null;
   onQuickCommand?: (cmd: string) => void;
+  isListening: boolean;
+  onToggleListen: () => void;
+  ttsEnabled: boolean;
+  onTtsChange: (enabled: boolean) => void;
+  sttEnabled: boolean;
+  onSttChange: (enabled: boolean) => void;
 }
 
 // ─── Simple markdown-lite renderer ───────────────────────────────────────────
@@ -79,6 +86,12 @@ export function JarvisSplitLayout({
   onAddToCart,
   visualContent,
   onQuickCommand,
+  isListening,
+  onToggleListen,
+  ttsEnabled,
+  onTtsChange,
+  sttEnabled,
+  onSttChange,
 }: JarvisSplitLayoutProps) {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -168,37 +181,47 @@ export function JarvisSplitLayout({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="shrink-0 px-4 py-3 bg-gradient-to-r from-primary/10 to-purple-500/10 border-b border-border/50 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="relative w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                <Bot className="w-4 h-4" />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-background" />
+          <div className="shrink-0 px-4 py-3 bg-gradient-to-r from-primary/10 to-purple-500/10 border-b border-border/50 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="relative w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                  <Bot className="w-4 h-4" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-background" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-sm text-foreground flex items-center gap-1">
+                    JARVIS AI <Sparkles className="w-3 h-3 text-primary animate-pulse" />
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Mission Control</p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-bold text-sm text-foreground flex items-center gap-1">
-                  JARVIS AI <Sparkles className="w-3 h-3 text-primary animate-pulse" />
-                </h2>
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Mission Control</p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={onExportPDF}
+                  disabled={messages.length <= 1}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-xl transition cursor-pointer disabled:opacity-40"
+                  title="Export PDF"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-xl transition cursor-pointer"
+                  title="Close JARVIS"
+                  aria-label="Close JARVIS"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={onExportPDF}
-                disabled={messages.length <= 1}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-xl transition cursor-pointer disabled:opacity-40"
-                title="Export PDF"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-xl transition cursor-pointer"
-                title="Close JARVIS"
-                aria-label="Close JARVIS"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+
+            {/* Voice Settings Toggles */}
+            <VoiceSettings
+              ttsEnabled={ttsEnabled}
+              onTtsChange={onTtsChange}
+              sttEnabled={sttEnabled}
+              onSttChange={onSttChange}
+            />
           </div>
 
           {/* Messages */}
@@ -279,19 +302,44 @@ export function JarvisSplitLayout({
           </div>
 
           {/* Input */}
-          <form onSubmit={onSubmit} className="shrink-0 p-3 border-t border-border/50 bg-card flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => onInputChange(e.target.value)}
-              placeholder="Ask JARVIS anything..."
-              className="flex-1 px-3 py-2.5 rounded-2xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-xs"
-              disabled={loading}
-            />
+          <form onSubmit={onSubmit} className="shrink-0 p-3 border-t border-border/50 bg-card flex gap-2 items-center">
+            {sttEnabled && (
+              <button
+                type="button"
+                onClick={onToggleListen}
+                className={`p-2.5 rounded-2xl border transition duration-200 cursor-pointer flex items-center justify-center shrink-0 ${
+                  isListening
+                    ? 'bg-red-500 border-red-500 text-white animate-pulse'
+                    : 'bg-secondary/40 border-border/40 hover:bg-secondary text-muted-foreground hover:text-foreground'
+                }`}
+                title={isListening ? 'Stop listening' : 'Start listening'}
+              >
+                <Mic className="w-4 h-4" />
+              </button>
+            )}
+            
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => onInputChange(e.target.value)}
+                placeholder={isListening ? 'Listening...' : 'Ask JARVIS anything...'}
+                className="w-full px-3 py-2.5 rounded-2xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-xs"
+                disabled={loading}
+              />
+              {isListening && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 pointer-events-none">
+                  <span className="w-0.5 h-2.5 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <span className="w-0.5 h-3.5 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  <span className="w-0.5 h-2.5 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                </div>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="p-2.5 bg-primary text-white rounded-2xl hover:bg-primary/90 transition shadow-md shadow-primary/20 disabled:opacity-50 cursor-pointer"
+              className="p-2.5 bg-primary text-white rounded-2xl hover:bg-primary/90 transition shadow-md shadow-primary/20 disabled:opacity-50 cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
             </button>
