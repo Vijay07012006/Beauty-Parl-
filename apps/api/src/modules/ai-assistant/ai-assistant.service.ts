@@ -344,8 +344,24 @@ export class AiAssistantService implements OnModuleInit {
 
         let toolResult: any = null;
 
+        // Strict Role-Based Access Control (RBAC) Checks
+        const isAdmin = role === 'admin' || role === 'super_admin';
+        const isSuperAdmin = role === 'super_admin';
+
+        if (['get_sales_stats', 'get_sales_insights', 'get_category_performance', 'get_all_orders'].includes(name)) {
+          if (!isAdmin) {
+            toolResult = { error: '⛔ Access Denied. Sales and business analytics are only available to Admin users.' };
+          }
+        } else if (['get_system_logs', 'manage_admins', 'delete_user'].includes(name)) {
+          if (!isSuperAdmin) {
+            toolResult = { error: '⛔ Access Denied. This action requires Super Admin privileges.' };
+          }
+        }
+
         try {
-          if (name === 'get_products') {
+          if (toolResult !== null) {
+            // Access Denied
+          } else if (name === 'get_products') {
             toolResult = await this.getProductsTool(toolArgs);
             if (toolResult && toolResult.visualType === 'products') {
               productsList = productsList.concat(toolResult.data || []);
@@ -353,11 +369,7 @@ export class AiAssistantService implements OnModuleInit {
               productsList = productsList.concat(toolResult || []);
             }
           } else if (name === 'get_sales_stats') {
-            if (!this.isAdmin(role)) {
-              toolResult = { error: 'Only admins can access sales statistics.' };
-            } else {
-              toolResult = await this.getSalesStatsTool(toolArgs);
-            }
+            toolResult = await this.getSalesStatsTool(toolArgs);
           } else if (name === 'get_order_details') {
             toolResult = await this.getOrderDetailsTool(toolArgs, userId, role);
           } else if (name === 'navigate_to') {
@@ -401,11 +413,7 @@ export class AiAssistantService implements OnModuleInit {
           } else if (name === 'compare_products') {
             toolResult = await this.compareProductsTool(toolArgs);
           } else if (name === 'get_sales_insights') {
-            if (!this.isAdmin(role)) {
-              toolResult = { error: 'Only admins can access sales insights.' };
-            } else {
-              toolResult = await this.getSalesInsightsTool(toolArgs);
-            }
+            toolResult = await this.getSalesInsightsTool(toolArgs);
           } else {
             console.warn('Unknown tool called: ' + name);
             toolResult = { error: 'Requested tool is not available.' };
