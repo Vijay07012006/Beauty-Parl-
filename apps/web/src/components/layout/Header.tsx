@@ -30,6 +30,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   
   const { user, logout, hydrate } = useAuthStore();
   const pathname = usePathname();
@@ -38,6 +39,7 @@ export function Header() {
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const exploreRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   const { totalItems } = useCartStore();
   const wishlistCount = useWishlistStore((state) => state.items.length);
@@ -52,6 +54,7 @@ export function Header() {
   useEffect(() => {
     setIsMenuOpen(false);
     setIsExploreOpen(false);
+    setIsMoreOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -61,6 +64,9 @@ export function Header() {
       }
       if (exploreRef.current && !exploreRef.current.contains(event.target as Node)) {
         setIsExploreOpen(false);
+      }
+      if (moreRef.current && !moreRef.current.contains(event.target as Node)) {
+        setIsMoreOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -102,6 +108,80 @@ export function Header() {
             {t('book_appointment')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
+          <Link href={`/${locale}/looks`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
+            Looks
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
+
+          {/* More Dropdown */}
+          <div
+            className="relative"
+            ref={moreRef}
+            onMouseEnter={() => setIsMoreOpen(true)}
+            onMouseLeave={() => setIsMoreOpen(false)}
+          >
+            <button
+              onClick={() => setIsMoreOpen(!isMoreOpen)}
+              className="text-xs lg:text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 cursor-pointer select-none"
+            >
+              <span>More</span>
+              <ChevronDown size={12} className={`text-muted-foreground transition-transform duration-200 ${isMoreOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            <AnimatePresence>
+              {isMoreOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-full left-0 mt-2 bg-card rounded-2xl shadow-xl border border-border/50 p-2 w-48 z-50 flex flex-col gap-0.5"
+                >
+                  <Link
+                    href={`/${locale}/orders`}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
+                  >
+                    {t('orders')}
+                  </Link>
+                  <Link
+                    href={`/${locale}/profile/tickets`}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
+                  >
+                    My Tickets
+                  </Link>
+                  <Link
+                    href={`/${locale}/subscriptions`}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
+                  >
+                    Subscriptions
+                  </Link>
+                  <Link
+                    href={`/${locale}/ai-history`}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
+                  >
+                    AI History
+                  </Link>
+                  {user && (
+                    <>
+                      <div className="border-t border-border/40 my-1" />
+                      <button
+                        onClick={() => {
+                          logout();
+                          setIsMoreOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      >
+                        {t('logout')}
+                      </button>
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <Link href={`/${locale}/live-shopping`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
             Live Shopping
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
@@ -263,21 +343,6 @@ export function Header() {
               <Link href={`/${locale}/profile`} className="hover:text-primary transition-colors">
                 {t('profile')}
               </Link>
-              <Link href={`/${locale}/orders`} className="hidden lg:block hover:text-primary transition-colors">
-                {t('orders')}
-              </Link>
-              <Link href={`/${locale}/profile/tickets`} className="hidden lg:block hover:text-primary transition-colors">
-                My Tickets
-              </Link>
-              <Link href={`/${locale}/subscriptions`} className="hidden xl:block hover:text-primary transition-colors">
-                Subscriptions
-              </Link>
-              <Link href={`/${locale}/ai-history`} className="hidden xl:block hover:text-primary transition-colors">
-                AI History
-              </Link>
-              <button onClick={logout} className="hover:text-primary transition-colors cursor-pointer">
-                {t('logout')}
-              </button>
             </div>
           ) : (
             <Link href={`/${locale}/auth/login`} className="hidden md:block text-sm hover:text-primary transition-colors font-medium">
