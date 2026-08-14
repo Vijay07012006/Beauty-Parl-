@@ -1,6 +1,6 @@
 import createMiddleware from 'next-intl/middleware';
 
-export default createMiddleware({
+const intlMiddleware = createMiddleware({
   // A list of all locales that are supported
   locales: ['en', 'hi', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml', 'pa'],
   
@@ -8,6 +8,10 @@ export default createMiddleware({
   defaultLocale: 'en',
   localePrefix: 'always',
 });
+
+export function proxy(request: any) {
+  return intlMiddleware(request);
+}
 
 export const config = {
   // Match only internationalized pathnames
