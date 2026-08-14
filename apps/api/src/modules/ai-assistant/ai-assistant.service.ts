@@ -381,7 +381,10 @@ export class AiAssistantService implements OnModuleInit {
     }
   }
 
-  async processMessage(userId: number, sessionId: string, messageText: string, role?: string) {
+  async processMessage(user: any, sessionId: string, messageText: string) {
+    const userId = user?.id || null;
+    const role = user?.role || null;
+
     if (!this.isConfigured) {
       return {
         reply: '🌸 Hello! I am in rule-based fallback mode because OPENROUTER_API_KEY is not configured yet. Please configure it in your environment variables!',
@@ -617,7 +620,7 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
             toolResult = await this.temporarySearchImageTool(toolArgs.query);
             temporaryImages = toolResult.data;
           } else if (name === 'create_support_ticket') {
-            const userObj = userId ? await this.userRepo.findOne({ where: { id: userId } }) : null;
+            const userObj = user || null;
             try {
               toolResult = await this.supportService.createTicket(userObj, {
                 subject: toolArgs.subject,
@@ -627,7 +630,7 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
             } catch (serviceErr) {
               console.warn('SupportService.createTicket failed, falling back to direct DB write:', serviceErr);
               const ticket = this.ticketRepo.create({
-                userId: userId || null,
+                userId: userObj?.id || null,
                 guestEmail: userObj?.email || 'guest@beautyparle.com',
                 subject: toolArgs.subject,
                 message: toolArgs.message,

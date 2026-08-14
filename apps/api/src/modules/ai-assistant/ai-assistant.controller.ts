@@ -15,10 +15,8 @@ export class AiAssistantController {
     @Res() res: Response,
   ) {
     try {
-      const userId = req.user.id;
-      const role = req.user.role;
       const sessionId = body.sessionId || `sess_${Date.now()}`;
-      const response = await this.aiService.processMessage(userId, sessionId, body.message, role);
+      const response = await this.aiService.processMessage(req.user, sessionId, body.message);
       return res.json(response);
     } catch (error: any) {
       console.error('JARVIS Error:', error);

@@ -40,7 +40,7 @@ export default function MyTicketsPage() {
     const fetchTickets = async () => {
       try {
         console.log('🔑 Token present, fetching tickets...');
-        const response = await api.get('/support/tickets', { withCredentials: true });
+        const response = await api.get('/support/my-tickets', { withCredentials: true });
         console.log('✅ Tickets fetched:', response.data);
         setTickets(response.data || []);
       } catch (error) {
