@@ -95,6 +95,19 @@ export function JarvisChat() {
     }
   }, []);
 
+  // Listen to open-jarvis custom events from support or other pages
+  useEffect(() => {
+    const handleOpenJarvis = (e: Event) => {
+      setIsOpen(true);
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && typeof customEvent.detail === 'string') {
+        setInput(customEvent.detail);
+      }
+    };
+    window.addEventListener('open-jarvis', handleOpenJarvis);
+    return () => window.removeEventListener('open-jarvis', handleOpenJarvis);
+  }, []);
+
   // Set TTS preference to localStorage
   const handleTtsChange = useCallback((enabled: boolean) => {
     setTtsEnabled(enabled);

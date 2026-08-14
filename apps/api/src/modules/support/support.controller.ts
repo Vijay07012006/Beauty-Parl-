@@ -20,10 +20,13 @@ export class SupportController {
   }
 
   @Get('tickets')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async getTickets(@Query('status') status?: string) {
-    return this.supportService.getTickets(status);
+  @UseGuards(JwtAuthGuard)
+  async getTickets(@Request() req: any, @Query('status') status?: string) {
+    const isAdmin = req.user.role === UserRole.ADMIN || req.user.role === UserRole.SUPER_ADMIN;
+    if (isAdmin) {
+      return this.supportService.getTickets(status);
+    }
+    return this.supportService.getMyTickets(req.user.id);
   }
 
   @Get('tickets/:id')

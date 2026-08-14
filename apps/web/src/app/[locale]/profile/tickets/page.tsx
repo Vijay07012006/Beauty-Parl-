@@ -71,7 +71,7 @@ export default function MyTicketsPage() {
               Track issues, resolutions, and messages with our support team.
             </p>
           </div>
-          <Link href={`/${locale}/booking`}>
+          <Link href={`/${locale}/support`}>
             <button className="px-4 py-2 bg-primary hover:bg-primary/95 text-white rounded-full text-xs font-bold transition shadow-sm cursor-pointer select-none">
               Need Help?
             </button>
