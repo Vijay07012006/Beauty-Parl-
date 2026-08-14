@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useWishlistStore, WishlistItem } from '@/store/wishlistStore';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
+import { PriceAlertButton } from '@/components/wishlist/PriceAlertButton';
 
 export default function WishlistPage() {
   const params = useParams();
@@ -173,7 +174,10 @@ export default function WishlistPage() {
                         {/* Product Info */}
                         <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                           <div>
-                            <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">{item.name}</h3>
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors flex-1">{item.name}</h3>
+                              <PriceAlertButton productId={item.id} currentPrice={Number(item.price)} />
+                            </div>
                             <div className="flex items-baseline gap-2 mt-1">
                               <span className="text-primary font-bold text-sm">${Number(item.price).toFixed(2)}</span>
                               {item.mrp && Number(item.mrp) > Number(item.price) && (

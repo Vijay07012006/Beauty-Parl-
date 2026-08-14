@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
-import { Package, Eye, ShoppingBag } from 'lucide-react';
+import { Package, Eye, ShoppingBag, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -162,6 +162,24 @@ export default function OrdersPage() {
                         <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Total Amount</p>
                         <p className="font-bold text-lg text-primary">${Number(order.total).toFixed(2)}</p>
                       </div>
+                      <a
+                        href={`https://wa.me/919876543210?text=${encodeURIComponent(`Hello Support! I would like to get updates for my Order #${order.id}. Current status is: ${order.status}.`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-full transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+                        title="Inquire via WhatsApp"
+                      >
+                        <MessageCircle size={14} />
+                      </a>
+                      
+                      {['processing', 'shipped', 'delivered'].includes(order.status) && (
+                        <Link href={`/${locale}/tracking/${order.id}`}>
+                          <button className="px-4 py-2.5 bg-indigo-500/10 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-full transition-all active:scale-95 flex items-center gap-1 text-xs font-bold cursor-pointer select-none">
+                            📍 Track
+                          </button>
+                        </Link>
+                      )}
+
                       <Link href={`/${locale}/orders/${order.id}`}>
                         <button className="px-4 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-full transition-all active:scale-95 flex items-center gap-1.5 text-xs font-bold cursor-pointer select-none">
                           <Eye size={14} />

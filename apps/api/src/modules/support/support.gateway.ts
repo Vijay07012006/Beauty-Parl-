@@ -34,4 +34,11 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
       this.server.emit('ticket_update', { ticketId, status });
     }
   }
+
+  async notifyTrackingUpdate(orderId: number, data: any) {
+    if (this.server) {
+      this.server.emit(`order_tracking_${orderId}`, data);
+      this.server.emit('order_tracking', { orderId, ...data });
+    }
+  }
 }

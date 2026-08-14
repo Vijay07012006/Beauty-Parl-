@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useLocale } from '@/hooks/useLocale';
+import { QuickViewModal } from './QuickViewModal';
 
 interface Product {
   id: number;
@@ -34,6 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
   const locale = useLocale();
   const [isComparing, setIsComparing] = useState(false);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   useEffect(() => {
     const local = localStorage.getItem('comparison_ids');
@@ -167,6 +169,22 @@ export function ProductCard({ product }: ProductCardProps) {
               </span>
             </div>
           )}
+
+          {/* Quick View Button Overlay on Hover */}
+          {product.stock > 0 && (
+            <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setQuickViewOpen(true);
+                }}
+                className="px-4 py-2.5 bg-white/95 backdrop-blur-sm text-primary font-bold text-[10px] uppercase tracking-wider rounded-full shadow-lg border border-border/30 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 hover:bg-primary hover:text-white cursor-pointer"
+              >
+                Quick View
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
@@ -226,6 +244,11 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
       </div>
+      <QuickViewModal
+        product={product}
+        isOpen={quickViewOpen}
+        onClose={() => setQuickViewOpen(false)}
+      />
     </Link>
   );
 }

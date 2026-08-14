@@ -41,6 +41,8 @@ import { QuizResponse } from './modules/quizzes/quiz-response.entity';
 import { UgcPhoto } from './modules/ugc/ugc-photo.entity';
 import { SkinAnalysis } from './modules/skin-analysis/skin-analysis.entity';
 import { Subscription } from './modules/subscriptions/subscription.entity';
+import { Return } from './modules/returns/return.entity';
+import { Waitlist } from './modules/waitlist/waitlist.entity';
 import { BeautyBox } from './modules/beauty-boxes/beauty-box.entity';
 import { UserRoutine } from './modules/routines/user-routine.entity';
 import { LiveEvent } from './modules/live-shopping/live-event.entity';
@@ -94,6 +96,12 @@ import { AiMemory } from './modules/ai-assistant/entities/ai-memory.entity';
 import { SupportModule } from './modules/support/support.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 
+// Phase 8D Modules
+import { CheckoutModule } from './modules/checkout/checkout.module';
+import { ReturnsModule } from './modules/returns/returns.module';
+import { WaitlistModule } from './modules/waitlist/waitlist.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+
 import configuration from './config/configuration';
 
 @Module({
@@ -119,7 +127,7 @@ import configuration from './config/configuration';
           LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
           ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
           AuditLog, AiConversation, AiGeneration, Role, ActiveSession, FailedLogin,
-          SupportTicket, TicketReply, Notification, AiMemory
+          SupportTicket, TicketReply, Notification, AiMemory, Return, Waitlist
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -182,6 +190,10 @@ import configuration from './config/configuration';
     RolesModule,
     SupportModule,
     InventoryModule,
+    CheckoutModule,
+    ReturnsModule,
+    WaitlistModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

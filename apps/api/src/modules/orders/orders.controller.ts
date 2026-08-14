@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Get, Param, Put, NotFoundException, UseGuards, Request, ForbiddenException, BadRequestException, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
+import { TrackingService } from './tracking.service';
 import { Order } from './order.entity';
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -8,7 +9,10 @@ import { UserRole } from '../auth/user.entity';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private ordersService: OrdersService) {}
+  constructor(
+    private ordersService: OrdersService,
+    private trackingService: TrackingService,
+  ) {}
 
   @Post()
   @UseGuards(OptionalJwtAuthGuard)
@@ -76,5 +80,20 @@ export class OrdersController {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
     return order;
+  }
+
+  @Put(':id/tracking')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  async updateTracking(
+    @Param('id') id: string,
+    @Body() body: { latitude: number; longitude: number; status?: string },
+  ) {
+    return this.trackingService.updateTracking(Number(id), body.latitude, body.longitude, body.status);
+  }
+
+  @Get(':id/tracking')
+  async getTracking(@Param('id') id: string) {
+    return this.trackingService.getTracking(Number(id));
   }
 }

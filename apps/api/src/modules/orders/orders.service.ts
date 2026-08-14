@@ -12,6 +12,7 @@ import { GamificationService } from '../gamification/gamification.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { InventoryAlertService } from '../inventory/inventory-alert.service';
 import { SupportGateway } from '../support/support.gateway';
+import { WhatsappService } from '../notifications/whatsapp.service';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -34,6 +35,7 @@ export class OrdersService {
     private dataSource: DataSource,
     private inventoryAlertService: InventoryAlertService,
     private supportGateway: SupportGateway,
+    private whatsappService: WhatsappService,
   ) {}
 
   /**
@@ -229,6 +231,9 @@ export class OrdersService {
       if (email) {
         try {
           await this.emailService.sendOrderConfirmation(email, saved);
+          if (saved.shippingAddress?.phone) {
+            await this.whatsappService.sendOrderStatusUpdate(saved.shippingAddress.phone, saved.id, saved.status).catch(() => {});
+          }
         } catch (err) {
           console.error('Failed to send order confirmation email:', err);
         }
@@ -312,6 +317,9 @@ export class OrdersService {
       if (email) {
         try {
           await this.emailService.sendOrderStatusEmail(email, updated.id, data.status);
+          if (updated.shippingAddress?.phone) {
+            await this.whatsappService.sendOrderStatusUpdate(updated.shippingAddress.phone, updated.id, data.status).catch(() => {});
+          }
         } catch (err) {
           console.error('Failed to send order status update email:', err);
         }

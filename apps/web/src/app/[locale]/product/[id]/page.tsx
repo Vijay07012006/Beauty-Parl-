@@ -20,6 +20,7 @@ import { UgcGallery } from '@/components/ugc/UgcGallery';
 import { toast } from 'sonner';
 import { ReviewForm } from '@/components/reviews/ReviewForm';
 import { ReviewList } from '@/components/reviews/ReviewList';
+import { WaitlistButton } from '@/components/products/WaitlistButton';
 
 // Phase 5C imports
 import { TikTokShopButton } from '@/components/products/TikTokShopButton';
@@ -330,22 +331,24 @@ export default function ProductDetailPage() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col gap-3 pt-2">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={product.stock <= 0}
-                    className="flex-1 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/95 transition-all shadow-md shadow-primary/20 active:scale-95 disabled:opacity-50 cursor-pointer select-none"
-                  >
-                    Add to Cart
-                  </button>
-                  <button
-                    onClick={handleBuyNow}
-                    disabled={product.stock <= 0}
-                    className="flex-1 py-4 bg-accent text-white font-bold rounded-full hover:bg-accent/95 transition-all shadow-md shadow-accent/20 active:scale-95 disabled:opacity-50 cursor-pointer select-none"
-                  >
-                    Buy Now
-                  </button>
-                </div>
+                {product.stock <= 0 ? (
+                  <WaitlistButton productId={product.id} />
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={handleAddToCart}
+                      className="flex-1 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/95 transition-all shadow-md shadow-primary/20 active:scale-95 cursor-pointer select-none"
+                    >
+                      Add to Cart
+                    </button>
+                    <button
+                      onClick={handleBuyNow}
+                      className="flex-1 py-4 bg-accent text-white font-bold rounded-full hover:bg-accent/95 transition-all shadow-md shadow-accent/20 active:scale-95 cursor-pointer select-none"
+                    >
+                      Buy Now
+                    </button>
+                  </div>
+                )}
                 {['makeup', 'lips', 'lipstick', 'eyes', 'blush', 'face', 'cosmetics', 'shade', 'eye'].some(
                   cat => product.category?.toLowerCase().includes(cat) || product.name?.toLowerCase().includes(cat)
                 ) && (

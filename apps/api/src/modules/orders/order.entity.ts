@@ -58,6 +58,15 @@ export class Order {
   @Column({ type: 'integer', default: 0, nullable: true })
   pointsRedeemed?: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+  trackingLatitude?: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+  trackingLongitude?: number;
+
+  @Column({ type: 'jsonb', default: [] })
+  trackingHistory!: { status: string; description: string; timestamp: Date; latitude?: number; longitude?: number }[];
+
   @CreateDateColumn()
   createdAt!: Date;
 
