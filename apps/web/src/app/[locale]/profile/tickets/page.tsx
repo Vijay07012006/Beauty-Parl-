@@ -29,7 +29,8 @@ export default function MyTicketsPage() {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const response = await api.get('/support/tickets');
+        console.log('🔄 Fetching tickets with token...');
+        const response = await api.get('/support/tickets', { withCredentials: true });
         console.log('✅ Tickets fetched:', response.data);
         setTickets(response.data || []);
       } catch (error) {

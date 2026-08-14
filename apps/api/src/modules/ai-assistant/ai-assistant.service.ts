@@ -592,11 +592,25 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
             temporaryImages = toolResult.data;
           } else if (name === 'create_support_ticket') {
             const userObj = userId ? await this.userRepo.findOne({ where: { id: userId } }) : null;
-            toolResult = await this.supportService.createTicket(userObj, {
-              subject: toolArgs.subject,
-              message: toolArgs.message,
-              orderId: toolArgs.orderId,
-            });
+            try {
+              toolResult = await this.supportService.createTicket(userObj, {
+                subject: toolArgs.subject,
+                message: toolArgs.message,
+                orderId: toolArgs.orderId,
+              });
+            } catch (serviceErr) {
+              console.warn('SupportService.createTicket failed, falling back to direct DB write:', serviceErr);
+              const ticket = this.ticketRepo.create({
+                userId: userId || null,
+                guestEmail: userObj?.email || 'guest@beautyparle.com',
+                subject: toolArgs.subject,
+                message: toolArgs.message,
+                orderId: toolArgs.orderId || null,
+                status: 'open',
+                priority: 'medium',
+              });
+              toolResult = await this.ticketRepo.save(ticket);
+            }
           } else {
             console.warn('Unknown tool called: ' + name);
             toolResult = { error: 'Requested tool is not available.' };

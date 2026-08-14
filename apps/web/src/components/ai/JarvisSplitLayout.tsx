@@ -163,7 +163,7 @@ export function JarvisSplitLayout({
 
       {/* ── Overlay content — stops click propagation ─────────────────────── */}
       <div
-        className="relative z-10 flex w-full h-full pointer-events-none"
+        className="relative z-10 flex w-full h-full pointer-events-none items-end justify-end md:items-stretch md:justify-start"
         style={{ padding: '1rem' }}
       >
         {/* ── Left Panel: Chat (fixed 380px, full height) ───────────────────── */}
@@ -172,7 +172,7 @@ export function JarvisSplitLayout({
             pointer-events-auto
             flex flex-col
             w-full max-w-[380px]
-            h-full
+            h-[500px] max-h-[75vh] md:h-full
             bg-card/95 backdrop-blur-xl
             border border-border/50 rounded-3xl
             shadow-2xl overflow-hidden
