@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Inbox, Clock, CheckCircle2, AlertCircle, ArrowRight, MessageSquare } from 'lucide-react';
 
+import { useAuthStore } from '@/store/authStore';
+
 interface Ticket {
   id: number;
   subject: string;
@@ -17,6 +19,7 @@ interface Ticket {
 }
 
 export default function MyTicketsPage() {
+  const { token } = useAuthStore();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -24,18 +27,20 @@ export default function MyTicketsPage() {
   const locale = pathname?.split('/')[1] || 'en';
 
   useEffect(() => {
-    async function fetchMyTickets() {
+    const fetchTickets = async () => {
       try {
-        const res = await api.get('/support/my-tickets');
-        setTickets(res.data || []);
-      } catch {
-        toast.error('Failed to load your support tickets');
+        const response = await api.get('/support/tickets');
+        console.log('✅ Tickets fetched:', response.data);
+        setTickets(response.data || []);
+      } catch (error) {
+        console.error('❌ Failed to fetch tickets:', error);
+        setTickets([]);
       } finally {
         setLoading(false);
       }
-    }
-    fetchMyTickets();
-  }, []);
+    };
+    if (token) fetchTickets();
+  }, [token]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

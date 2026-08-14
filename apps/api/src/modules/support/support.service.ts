@@ -139,7 +139,10 @@ export class SupportService {
   }
 
   async resolveTicket(ticketId: number, adminId: number) {
-    const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
+    const ticket = await this.ticketRepo.findOne({
+      where: { id: ticketId },
+      relations: ['user'],
+    });
     if (!ticket) throw new Error('Ticket not found');
     
     ticket.status = 'resolved';
@@ -149,22 +152,29 @@ export class SupportService {
 
     await this.supportGateway.notifyTicketUpdate(ticketId, 'resolved');
 
-    // Notify user via email
-    let userEmail = ticket.guestEmail;
-    if (ticket.userId) {
-      const u = await this.userRepo.findOne({ where: { id: ticket.userId } });
-      if (u) {
-        userEmail = u.email;
+    // ✅ FIX: Send email to user
+    const userEmail = ticket.user?.email || ticket.guestEmail;
+    if (userEmail) {
+      try {
+        await this.emailService.sendTicketResolvedEmail(
+          userEmail,
+          ticket.id,
+          ticket.subject
+        );
+        console.log(`✅ Resolution email sent to ${userEmail}`);
+      } catch (emailError: any) {
+        console.error('❌ Failed to send resolution email:', emailError.message);
       }
     }
 
-    if (userEmail) {
-      try {
-        await this.emailService.sendTicketResolvedEmail(userEmail, ticket.id);
-      } catch (err: any) {
-        console.error('Failed to send ticket resolution email:', err.message);
-      }
-    }
+    // Save reply in ticket conversation
+    const reply = this.replyRepo.create({
+      ticketId: ticket.id,
+      userId: adminId,
+      isAdmin: true,
+      message: `Ticket resolved by Admin #${adminId}`,
+    });
+    await this.replyRepo.save(reply);
 
     return ticket;
   }
@@ -183,6 +193,13 @@ export class SupportService {
   }
 
   async getMyTickets(userId: number) {
+    return this.ticketRepo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getUserTickets(userId: number) {
     return this.ticketRepo.find({
       where: { userId },
       order: { createdAt: 'DESC' },

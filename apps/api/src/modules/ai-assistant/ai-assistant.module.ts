@@ -10,6 +10,7 @@ import { AiMemory } from './entities/ai-memory.entity';
 import { Notification } from '../support/notification.entity';
 import { AiAssistantService } from './ai-assistant.service';
 import { AiAssistantController } from './ai-assistant.controller';
+import { SupportModule } from '../support/support.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AiAssistantController } from './ai-assistant.controller';
       AiMemory,
       Notification,
     ]),
+    SupportModule,
   ],
   controllers: [AiAssistantController],
   providers: [AiAssistantService],

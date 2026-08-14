@@ -614,28 +614,18 @@ export class EmailService {
     }
   }
 
-  async sendTicketResolvedEmail(to: string, ticketId: number) {
-    const email = this.buildEmail(
-      to,
-      `✨ Support Ticket #${ticketId} Resolved`,
-      `
-        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #F0FDF4; border-radius: 20px; border: 1px solid #BBF7D0;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #16A34A; font-size: 32px; margin: 0;">✨ Ticket Resolved</h1>
-          </div>
-          <div style="background: white; padding: 24px; border-radius: 16px; text-align: center;">
-            <h2 style="color: #14532D; font-size: 20px; margin-top: 0; margin-bottom: 12px;">Great News!</h2>
-            <p style="color: #166534; font-size: 15px; line-height: 1.6;">
-              Your support ticket <strong>#${ticketId}</strong> has been marked as <strong>Resolved</strong> by our support team.
-            </p>
-            <p style="color: #6B4C5A; font-size: 13px; line-height: 1.6; margin-top: 16px;">
-              We hope this has fully answered your query. If you need any further assistance, feel free to reply or open a new request with JARVIS!
-            </p>
-          </div>
-          <p style="color: #6B4C5A; font-size: 11px; margin-top: 24px; text-align: center;">Beauty Parlé — Where Beauty Speaks Your Language 🌸</p>
-        </div>
-      `
-    );
+  async sendTicketResolvedEmail(to: string, ticketId: number, subject: string) {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #FFF8F0; border-radius: 20px;">
+        <h1 style="color: #E8A0BF;">💄 Beauty Parlé</h1>
+        <h2>✅ Your Support Ticket #${ticketId} has been Resolved</h2>
+        <p><strong>Issue:</strong> ${this.escapeHtml(subject)}</p>
+        <p>Your issue has been resolved. If you need further assistance, please reply to this email or raise a new ticket.</p>
+        <a href="${this.frontendUrl}/en/profile/tickets/${ticketId}" style="background: #E8A0BF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 999px; display: inline-block;">View Ticket</a>
+        <p>Beauty Parlé — Where Beauty Speaks Your Language 🌸</p>
+      </div>
+    `;
+    const email = this.buildEmail(to, `✅ Ticket #${ticketId} Resolved`, html);
     await this.apiInstance.sendTransacEmail(email);
   }
 }

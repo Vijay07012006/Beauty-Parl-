@@ -12,6 +12,7 @@ import { AiGeneration } from './entities/ai-generation.entity';
 import { SupportTicket } from '../support/support-ticket.entity';
 import { AiMemory } from './entities/ai-memory.entity';
 import { Notification } from '../support/notification.entity';
+import { SupportService } from '../support/support.service';
 
 // OpenRouter currently serves this model and it supports OpenAI-style tool calling.
 // (meta-llama/llama-3-70b-instruct and mistralai/mistral-7b-instruct are both retired from the catalog.)
@@ -232,6 +233,22 @@ export class AiAssistantService implements OnModuleInit {
         },
       },
     },
+    {
+      type: 'function',
+      function: {
+        name: 'create_support_ticket',
+        description: 'Create a support ticket for the user. Use this for any issue, complaint, or help request.',
+        parameters: {
+          type: 'object',
+          properties: {
+            subject: { type: 'string', description: 'Short summary of the issue' },
+            message: { type: 'string', description: 'Detailed description' },
+            orderId: { type: 'number', description: 'Optional order ID if related' },
+          },
+          required: ['subject', 'message'],
+        },
+      },
+    },
   ];
 
   constructor(
@@ -252,6 +269,7 @@ export class AiAssistantService implements OnModuleInit {
     private memoryRepo: Repository<AiMemory>,
     @InjectRepository(Notification)
     private notificationRepo: Repository<Notification>,
+    private supportService: SupportService,
   ) { }
 
   async temporarySearchImageTool(query: string) {
@@ -390,7 +408,14 @@ export class AiAssistantService implements OnModuleInit {
     const matchedSolution = await this.lookupResolvedTickets(messageText);
     const memoryContext = await this.searchMemory(userId, messageText);
     
-    let systemInstruction = `You are JARVIS, a super-intelligent AI assistant for Beauty Parlé. You can browse the web, navigate the website, show products, and remember past conversations. Be conversational, helpful, and witty. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If you don't know something, reply with "I don't know, but I'll learn" and remember it.`;
+    let systemInstruction = `You are JARVIS, the AI assistant for Beauty Parlé.
+
+CRITICAL TOOL CALLING RULES:
+1. If the user mentions "raise a ticket", "create a ticket", "I have an issue", "help me with", "problem", "complaint", or similar — you MUST call the "create_support_ticket" tool immediately.
+2. DO NOT respond with "I don't have the tools". ALWAYS use the tool.
+3. If the user doesn't provide details, ask them: "Please describe your issue" and then call the tool with the information.
+
+Be conversational, helpful, and witty. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If you don't know something, reply with "I don't know, but I'll learn" and remember it.`;
     
     if (memoryContext) {
       systemInstruction += `\n\n[JARVIS MEMORY RETRIEVAL] You recall the following relevant interactions with this user in the past:\n${memoryContext}\nUse this past conversation history to inform your current response if applicable.`;
@@ -565,6 +590,13 @@ export class AiAssistantService implements OnModuleInit {
           } else if (name === 'temporary_search_image') {
             toolResult = await this.temporarySearchImageTool(toolArgs.query);
             temporaryImages = toolResult.data;
+          } else if (name === 'create_support_ticket') {
+            const userObj = userId ? await this.userRepo.findOne({ where: { id: userId } }) : null;
+            toolResult = await this.supportService.createTicket(userObj, {
+              subject: toolArgs.subject,
+              message: toolArgs.message,
+              orderId: toolArgs.orderId,
+            });
           } else {
             console.warn('Unknown tool called: ' + name);
             toolResult = { error: 'Requested tool is not available.' };
