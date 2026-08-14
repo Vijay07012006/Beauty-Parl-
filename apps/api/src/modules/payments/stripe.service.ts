@@ -22,7 +22,7 @@ export class StripeService {
       console.warn('⚠️ [Payments] Stripe Secret Key is not defined. Stripe payments will fail.');
     } else {
       this.stripe = new Stripe(secretKey, {
-        apiVersion: '2024-12-18.accredited' as any,
+        apiVersion: '2025-02-24.acacia' as any,
       });
     }
   }

@@ -22,17 +22,25 @@ import {
   UserCog,
   ChevronRight,
   HelpCircle,
+  TrendingUp,
+  Activity,
+  AlertTriangle,
+  Upload,
 } from 'lucide-react';
-import { NotificationBell } from './NotificationBell';
+import { NotificationCenter } from './NotificationCenter';
 import { io } from 'socket.io-client';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
   { icon: Package, label: 'Products', href: '/admin/products' },
+  { icon: Upload, label: 'Bulk CSV Manager', href: '/admin/products/bulk' },
   { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
   { icon: Users, label: 'Users', href: '/admin/users' },
   { icon: Ticket, label: 'Coupons', href: '/admin/coupons' },
   { icon: Star, label: 'Reviews', href: '/admin/reviews' },
+  { icon: TrendingUp, label: 'Analytics', href: '/admin/analytics' },
+  { icon: Activity, label: 'Live View', href: '/admin/live' },
+  { icon: AlertTriangle, label: 'Inventory Alerts', href: '/admin/inventory' },
   { icon: ImageIcon, label: 'UGC Photos', href: '/admin/ugc' },
   { icon: Video, label: 'Live Shopping', href: '/admin/live-shopping' },
   { icon: HelpCircle, label: 'Support Tickets', href: '/admin/tickets' },
@@ -199,7 +207,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
           
           <div className="flex items-center gap-3 ml-auto">
-            <NotificationBell />
+            <NotificationCenter />
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="lg:hidden p-2 rounded-xl hover:bg-secondary transition-colors"

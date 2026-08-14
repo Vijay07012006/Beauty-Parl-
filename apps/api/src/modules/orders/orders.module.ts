@@ -10,6 +10,7 @@ import { CartModule } from '../cart/cart.module';
 import { LoyaltyModule } from '../loyalty/loyalty.module';
 import { GamificationModule } from '../gamification/gamification.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
+import { InventoryModule } from '../inventory/inventory.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuditLogsModule } from '../audit-logs/audit-logs.module';
     LoyaltyModule,
     GamificationModule,
     AuditLogsModule,
+    InventoryModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

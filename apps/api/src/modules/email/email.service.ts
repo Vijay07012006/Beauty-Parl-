@@ -628,4 +628,23 @@ export class EmailService {
     const email = this.buildEmail(to, `✅ Ticket #${ticketId} Resolved`, html);
     await this.apiInstance.sendTransacEmail(email);
   }
+
+  async sendInventoryAlertEmail(to: string, productName: string, stock: number) {
+    const html = `
+      <div style="font-family: Arial, sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #FFF0F0; border-radius: 20px;">
+        <h1 style="color: #FF5A5A; text-align: center;">💄 Beauty Parlé</h1>
+        <div style="background: white; padding: 20px; border-radius: 12px;">
+          <h2 style="color: #D32F2F; margin-top: 0;">🚨 Low Stock Alert!</h2>
+          <p style="font-size: 16px; color: #2D1B2E;">The inventory for product <strong>${this.escapeHtml(productName)}</strong> is running low.</p>
+          <div style="background: #FFEBEE; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: bold; color: #C62828; margin: 20px 0; text-align: center;">
+            Current Stock: ${stock} items (Threshold: < 10)
+          </div>
+          <p style="color: #6B4C5A;">Please restock this item soon to avoid out-of-stock situations.</p>
+          <p style="font-size: 12px; color: #6B4C5A; margin-top: 20px;">Timestamp: ${new Date().toLocaleString()}</p>
+        </div>
+      </div>
+    `;
+    const email = this.buildEmail(to, `🚨 Low Stock Alert: ${productName}`, html);
+    await this.apiInstance.sendTransacEmail(email);
+  }
 }

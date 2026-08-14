@@ -10,6 +10,8 @@ import { CartService } from '../cart/cart.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { GamificationService } from '../gamification/gamification.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { InventoryAlertService } from '../inventory/inventory-alert.service';
+import { SupportGateway } from '../support/support.gateway';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -30,6 +32,8 @@ export class OrdersService {
     private gamificationService: GamificationService,
     private auditLogsService: AuditLogsService,
     private dataSource: DataSource,
+    private inventoryAlertService: InventoryAlertService,
+    private supportGateway: SupportGateway,
   ) {}
 
   /**
@@ -107,7 +111,7 @@ export class OrdersService {
     const tax = round2(subtotal * 0.1);
     const shipping = subtotal > 50 ? 0 : 5;
 
-    return this.dataSource.transaction(async (em) => {
+    const saved = await this.dataSource.transaction(async (em) => {
       // ========== COUPON SERVER-SIDE VALIDATION ==========
       let discount = 0;
       if (couponCode) {
@@ -201,6 +205,16 @@ export class OrdersService {
       });
       const saved = await em.save(order);
 
+      // Broadcast real-time WebSocket order alert to admin dashboards
+      if (this.supportGateway && this.supportGateway.server) {
+        this.supportGateway.server.emit('new_order', {
+          orderId: saved.id,
+          total: saved.total,
+          email: guestEmail || 'guest@beautyparle.com',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       // Clear or mark cart checked out (best-effort, outside stock/price correctness)
       const email = guestEmail || (userId ? await this.getUserEmail(userId) : null);
       try {
@@ -234,6 +248,17 @@ export class OrdersService {
 
       return saved;
     });
+
+    if (saved && Array.isArray(saved.items)) {
+      for (const item of saved.items) {
+        const prod = await this.productRepo.findOne({ where: { id: item.productId } });
+        if (prod && prod.id !== undefined && prod.id !== null) {
+          await this.inventoryAlertService.checkAndAlert(prod.id, prod.stock);
+        }
+      }
+    }
+
+    return saved;
   }
 
   /** Restores stock when an order is cancelled (O2 rollback) */

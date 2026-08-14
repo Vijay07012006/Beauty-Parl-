@@ -35,6 +35,33 @@ export default function AdminUsersPage() {
   const [terminateModal, setTerminateModal] = useState<{ open: boolean; user: User | null }>({ open: false, user: null });
   const [terminateReason, setTerminateReason] = useState('');
   const isSuperAdmin = me?.role === 'super_admin';
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const handleBulkSuspend = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`⚠️ Suspend the ${selectedIds.length} selected users?`)) return;
+    try {
+      await api.post('/admin/users/bulk-suspend', { userIds: selectedIds });
+      toast.success(`${selectedIds.length} users suspended successfully`);
+      setSelectedIds([]);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Bulk suspend failed');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`⚠️ Permanently DELETE the ${selectedIds.length} selected users? This cannot be undone!`)) return;
+    try {
+      await api.post('/admin/users/bulk-delete', { userIds: selectedIds });
+      toast.success(`${selectedIds.length} users deleted successfully`);
+      setSelectedIds([]);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Bulk delete failed');
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -165,6 +192,35 @@ export default function AdminUsersPage() {
           />
         </div>
 
+        {/* Bulk Action Toolbar */}
+        {selectedIds.length > 0 && (
+          <div className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-1 text-sm">
+            <span className="font-semibold text-amber-200">
+              {selectedIds.length} user{selectedIds.length > 1 ? 's' : ''} selected
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={handleBulkSuspend}
+                className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg text-xs font-bold transition cursor-pointer"
+              >
+                Bulk Suspend
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-3.5 py-1.5 bg-rose-500/25 hover:bg-rose-500/35 text-rose-300 rounded-lg text-xs font-bold transition cursor-pointer"
+              >
+                Bulk Delete (Permanent)
+              </button>
+              <button
+                onClick={() => setSelectedIds([])}
+                className="px-3.5 py-1.5 bg-secondary text-muted-foreground hover:bg-secondary/80 rounded-lg text-xs font-bold transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         <div className="bg-card border border-border/40 rounded-2xl overflow-hidden">
           {loading ? (
@@ -176,6 +232,20 @@ export default function AdminUsersPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/40 bg-secondary/20">
+                    <th className="px-5 py-3.5 text-left w-12">
+                      <input
+                        type="checkbox"
+                        checked={filtered.length > 0 && selectedIds.length === filtered.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds(filtered.map(u => u.id));
+                          } else {
+                            setSelectedIds([]);
+                          }
+                        }}
+                        className="rounded bg-secondary border-border/60 text-primary focus:ring-primary/30 cursor-pointer"
+                      />
+                    </th>
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">User</th>
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Email</th>
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Role</th>
@@ -187,6 +257,20 @@ export default function AdminUsersPage() {
                 <tbody className="divide-y divide-border/30">
                   {filtered.map(u => (
                     <tr key={u.id} className="hover:bg-secondary/10 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(u.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedIds(prev => [...prev, u.id]);
+                            } else {
+                              setSelectedIds(prev => prev.filter(id => id !== u.id));
+                            }
+                          }}
+                          className="rounded bg-secondary border-border/60 text-primary focus:ring-primary/30 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/30 to-primary/60 flex items-center justify-center text-xs font-bold text-primary shrink-0">

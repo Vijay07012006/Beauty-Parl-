@@ -92,6 +92,7 @@ import { AiConversation } from './modules/ai-assistant/entities/ai-conversation.
 import { AiGeneration } from './modules/ai-assistant/entities/ai-generation.entity';
 import { AiMemory } from './modules/ai-assistant/entities/ai-memory.entity';
 import { SupportModule } from './modules/support/support.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 import configuration from './config/configuration';
 
@@ -180,6 +181,7 @@ import configuration from './config/configuration';
     AiAssistantModule,
     RolesModule,
     SupportModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [
