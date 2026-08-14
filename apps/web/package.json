@@ -7,8 +7,8 @@
     "node": ">=18.0.0"
   },
   "scripts": {
+    "build": "next build",
     "dev": "next dev",
-    "build": "pnpm --filter shared-types build && next build",
     "start": "next start",
     "lint": "eslint"
   },
