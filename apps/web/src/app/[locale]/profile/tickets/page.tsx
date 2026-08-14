@@ -19,7 +19,7 @@ interface Ticket {
 }
 
 export default function MyTicketsPage() {
-  const { token } = useAuthStore();
+  const { token, hydrate } = useAuthStore();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -27,9 +27,19 @@ export default function MyTicketsPage() {
   const locale = pathname?.split('/')[1] || 'en';
 
   useEffect(() => {
+    hydrate();
+  }, []);
+
+  useEffect(() => {
+    if (!token) {
+      console.log('⛔ No token, skipping API call');
+      setLoading(false);
+      return;
+    }
+
     const fetchTickets = async () => {
       try {
-        console.log('🔄 Fetching tickets with token...');
+        console.log('🔑 Token present, fetching tickets...');
         const response = await api.get('/support/tickets', { withCredentials: true });
         console.log('✅ Tickets fetched:', response.data);
         setTickets(response.data || []);
@@ -40,7 +50,8 @@ export default function MyTicketsPage() {
         setLoading(false);
       }
     };
-    if (token) fetchTickets();
+
+    fetchTickets();
   }, [token]);
 
   const getStatusBadge = (status: string) => {

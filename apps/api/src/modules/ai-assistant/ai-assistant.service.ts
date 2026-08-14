@@ -410,6 +410,26 @@ export class AiAssistantService implements OnModuleInit {
     
     let systemInstruction = `You are JARVIS, the AI assistant for Beauty Parlé.
 
+⚠️ CRITICAL: Intent Detection Rules:
+1. If user says "navigate", "go to", "open", "take me to" → ALWAYS use "navigate_to" tool.
+2. DO NOT create a ticket unless user explicitly says "raise a ticket", "create a ticket", "I have an issue", "problem", "complaint".
+3. Navigation and ticket creation are DIFFERENT actions.
+
+Navigation Routes:
+- "navigate to profile" → profile
+- "navigate to tickets" → profile/tickets
+- "navigate to notifications" → profile/notifications
+- "navigate to cart" → cart
+- "navigate to orders" → orders
+- "navigate to support" → support
+- "navigate to admin" → admin/dashboard (admin only)
+- "navigate to dashboard" → admin/dashboard (admin only)
+
+Role-Based Access:
+- If user is regular user → only user pages
+- If user is admin → admin pages + user pages
+- If user is super admin → all pages
+
 CRITICAL TOOL CALLING RULES:
 1. If the user mentions "raise a ticket", "create a ticket", "I have an issue", "help me with", "problem", "complaint", or similar — you MUST call the "create_support_ticket" tool immediately.
 2. DO NOT respond with "I don't have the tools". ALWAYS use the tool.
@@ -542,8 +562,14 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
             const rawPage = toolArgs.page || toolArgs.route;
             const sanitized = this.sanitizeRoute(rawPage);
             if (sanitized) {
-              navigationRoute = sanitized;
-              toolResult = { success: true, route: sanitized };
+              const isAdminUser = role === 'admin' || role === 'super_admin';
+              const isAdminRoute = sanitized.startsWith('/admin/');
+              if (isAdminRoute && !isAdminUser) {
+                toolResult = { error: '⛔ Access Denied. Admin pages are restricted to admin users.' };
+              } else {
+                navigationRoute = sanitized;
+                toolResult = { success: true, route: sanitized };
+              }
             } else {
               toolResult = { error: `Page '${rawPage}' is not a valid navigation destination.` };
             }

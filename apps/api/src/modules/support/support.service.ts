@@ -24,13 +24,13 @@ export class SupportService {
     private supportGateway: SupportGateway,
   ) {}
 
-  async createTicket(user: any, data: { subject: string; message: string; orderId?: number }) {
+  async createTicket(user: any, data: { subject: string; message: string; orderId?: number; guestEmail?: string }) {
     const isRegistered = user && user.id;
 
     // Create ticket
     const ticket = this.ticketRepo.create({
       userId: isRegistered ? user.id : null,
-      guestEmail: isRegistered ? user.email : 'guest@beautyparle.com',
+      guestEmail: user?.email || data.guestEmail || 'guest@beautyparle.com', // ✅ Capture real user email
       subject: data.subject,
       message: data.message,
       orderId: data.orderId || null,
@@ -39,7 +39,7 @@ export class SupportService {
     });
     
     const savedTicket = await this.ticketRepo.save(ticket);
-    const targetEmail = isRegistered ? user.email : 'guest@beautyparle.com';
+    const targetEmail = user?.email || data.guestEmail || 'guest@beautyparle.com';
     const userName = isRegistered ? user.name : 'Guest';
 
     // 1. Send confirmation email to user

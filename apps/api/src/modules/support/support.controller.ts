@@ -26,7 +26,9 @@ export class SupportController {
     if (isAdmin) {
       return this.supportService.getTickets(status);
     }
-    return this.supportService.getUserTickets(req.user.id);
+    const tickets = await this.supportService.getUserTickets(req.user.id);
+    console.log(`📋 Found ${tickets.length} tickets for user ${req.user.id}`);
+    return tickets;
   }
 
   @Get('tickets/:id')
