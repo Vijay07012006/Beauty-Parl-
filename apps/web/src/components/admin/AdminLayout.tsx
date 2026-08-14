@@ -24,6 +24,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
+import { io } from 'socket.io-client';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
@@ -55,6 +56,22 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const isSuperAdmin = user?.role === 'super_admin';
 
   useEffect(() => { hydrate(); }, []);
+
+  useEffect(() => {
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const socket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['websocket'],
+    });
+
+    socket.on('new_ticket', (data) => {
+      console.log('🔔 New ticket notification:', data);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     if (user && user.role !== 'admin' && user.role !== 'super_admin') {

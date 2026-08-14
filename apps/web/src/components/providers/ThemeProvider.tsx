@@ -10,13 +10,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
   return (
-    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
-      {children}
+    <NextThemesProvider 
+      attribute="class" 
+      defaultTheme="system" 
+      enableSystem
+      disableTransitionOnChange
+    >
+      {mounted ? children : <div style={{ visibility: 'hidden' }}>{children}</div>}
     </NextThemesProvider>
   );
 }
