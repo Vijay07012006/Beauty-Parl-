@@ -19,12 +19,12 @@ const ALLOWED_PAGES = new Set([
   'profile', 'orders', 'cart', 'wishlist', 'addresses', 'checkout',
   'beauty-box', 'loyalty', 'referral', 'gamification', 'preferences',
   'quiz', 'routine-builder', 'skin-analysis', 'virtual-try-on',
-  'subscriptions', 'ai-history',
+  'subscriptions', 'ai-history', 'profile/tickets', 'profile/notifications',
   'products', 'categories', 'compare', 'looks', 'clean-beauty', 'live-shopping',
   'about', 'contact', 'faq', 'blog', 'booking', 'shipping', 'returns', 'privacy', 'terms',
   'admin/dashboard', 'admin/products', 'admin/orders', 'admin/users',
   'admin/coupons', 'admin/reviews', 'admin/settings', 'admin/ugc',
-  'admin/chat', 'admin/live-shopping',
+  'admin/chat', 'admin/live-shopping', 'admin/tickets',
 ]);
 
 function sanitizeNavigationRoute(route: string | undefined | null): string | null {
@@ -146,6 +146,53 @@ How can I help?
       voiceService.current.stopSpeaking();
     }
 
+    // Buy / Add to Cart Intent Detection (Voice Commerce)
+    const buyIntentKeywords = ['buy this product', 'add this to cart', 'add to cart', 'buy this', 'add this product to cart'];
+    const isBuyIntent = buyIntentKeywords.some(keyword => text.toLowerCase().includes(keyword));
+
+    if (isBuyIntent) {
+      const userTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setMessages((prev) => [...prev, { id: `u_${Date.now()}`, role: 'user', text, time: userTime }]);
+      setLoading(true);
+
+      try {
+        let productToAdd: any = null;
+
+        // Option A: If we are displaying products in the visual panel
+        if (visualContent?.visualType === 'products' && visualContent.products && visualContent.products.length > 0) {
+          productToAdd = visualContent.products[0];
+        } 
+        // Option B: If we are on the product details page
+        else if (params?.id) {
+          const res = await api.get(`/products/${params.id}`);
+          productToAdd = res.data;
+        }
+
+        const assistantTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (productToAdd) {
+          addItem({ id: Number(productToAdd.id), name: productToAdd.name, price: Number(productToAdd.price), image: productToAdd.image || '', maxStock: productToAdd.stock ?? 99, quantity: 1 });
+          toast.success(`🛒 Added ${productToAdd.name} to cart!`);
+          
+          const replyText = `🛒 **Product Added!** I have added **${productToAdd.name}** to your cart.`;
+          setMessages((prev) => [...prev, { id: `a_${Date.now()}`, role: 'assistant', text: replyText, time: assistantTime }]);
+          if (ttsEnabled && voiceService.current) {
+            voiceService.current.speak(`I have added ${productToAdd.name} to your cart.`, locale);
+          }
+        } else {
+          const replyText = `🔍 I couldn't find which product you want to buy. Please specify a product or browse to a product page first!`;
+          setMessages((prev) => [...prev, { id: `a_${Date.now()}`, role: 'assistant', text: replyText, time: assistantTime }]);
+          if (ttsEnabled && voiceService.current) {
+            voiceService.current.speak(replyText, locale);
+          }
+        }
+      } catch (err) {
+        toast.error('Failed to add product to cart');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     // ── Client-side quick navigation shortcut (for voice commands) ──────
     // Support Ticket Intent Detection
     const supportIntentKeywords = [
@@ -186,7 +233,7 @@ How can I help?
           },
         ]);
         if (ttsEnabled && voiceService.current) {
-          voiceService.current.speak("I have successfully raised a support ticket for you.");
+          voiceService.current.speak("I have successfully raised a support ticket for you.", locale);
         }
       } catch (err: any) {
         toast.error('Failed to raise support ticket');
@@ -216,7 +263,7 @@ How can I help?
           },
         ]);
         if (ttsEnabled && voiceService.current) {
-          voiceService.current.speak(replyText);
+          voiceService.current.speak(replyText, locale);
         }
         toast.info(`Navigating to ${safeRoute}...`);
         setTimeout(() => {
@@ -250,7 +297,7 @@ How can I help?
 
       // Speak response if voice response is enabled
       if (ttsEnabled && voiceService.current && data.reply) {
-        voiceService.current.speak(data.reply);
+        voiceService.current.speak(data.reply, locale);
       }
 
       // ── Update visual panel ──────────────────────────────────────────────
@@ -300,13 +347,14 @@ How can I help?
     } finally {
       setLoading(false);
     }
-  }, [loading, sessionId, user, locale, router, ttsEnabled]);
+  }, [loading, sessionId, user, locale, router, ttsEnabled, visualContent]);
 
   // Speech Recognition setup when listening status toggles
   useEffect(() => {
     let active = true;
     if (isListening && voiceService.current && sttEnabled) {
       voiceService.current.startListening(
+        locale,
         (interimText) => {
           if (active) setInput(interimText);
         }
@@ -393,6 +441,7 @@ How can I help?
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => {
     setIsOpen(false);
+    setVisualContent(null);
     if (voiceService.current) {
       voiceService.current.stopSpeaking();
       voiceService.current.stopListening();

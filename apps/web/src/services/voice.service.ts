@@ -1,3 +1,16 @@
+const localeLanguages: Record<string, string> = {
+  en: 'en-US',
+  hi: 'hi-IN',
+  bn: 'bn-IN',
+  ta: 'ta-IN',
+  te: 'te-IN',
+  mr: 'mr-IN',
+  gu: 'gu-IN',
+  kn: 'kn-IN',
+  ml: 'ml-IN',
+  pa: 'pa-IN'
+};
+
 export class VoiceService {
   private recognition: any = null;
   private synthesis: SpeechSynthesis | null = null;
@@ -33,11 +46,13 @@ export class VoiceService {
     }
   }
 
-  async startListening(onInterim?: (text: string) => void): Promise<string> {
+  async startListening(locale: string = 'en', onInterim?: (text: string) => void): Promise<string> {
     const hasPermission = await this.requestMicrophonePermission();
     if (!hasPermission) {
       throw new Error('Microphone permission denied. Please allow microphone access in your browser settings.');
     }
+
+    const langTag = localeLanguages[locale] || 'en-US';
 
     return new Promise((resolve, reject) => {
       if (!this.recognition) {
@@ -45,6 +60,7 @@ export class VoiceService {
         return;
       }
       this.isListening = true;
+      this.recognition.lang = langTag;
       let finalTranscript = '';
       this.stopSpeaking(); // Stop speaking when starting to listen
 
@@ -93,7 +109,7 @@ export class VoiceService {
     }
   }
 
-  speak(text: string, onStart?: () => void, onEnd?: () => void) {
+  speak(text: string, locale: string = 'en', onStart?: () => void, onEnd?: () => void) {
     if (typeof window === 'undefined') return;
     this.synthesis = window.speechSynthesis;
     if (!this.synthesis) return;
@@ -108,20 +124,25 @@ export class VoiceService {
       .replace(/[`_*[\]()]/g, '');
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'en-US';
+    const langTag = localeLanguages[locale] || 'en-US';
+    utterance.lang = langTag;
     
-    // Choose female voice
+    // Choose appropriate voice for language, fallback to female english voice
     const voices = this.synthesis.getVoices();
-    const femaleVoice = voices.find(v => 
-      v.name.includes('Google UK English Female') ||
-      v.name.includes('Microsoft Zira') ||
-      v.name.includes('Samantha') ||
-      v.name.includes('Female') ||
-      v.name.includes('female')
-    );
+    let selectedVoice = voices.find(v => v.lang === langTag || v.lang.startsWith(langTag.split('-')[0]));
     
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
+    if (!selectedVoice) {
+      selectedVoice = voices.find(v => 
+        v.name.includes('Google UK English Female') ||
+        v.name.includes('Microsoft Zira') ||
+        v.name.includes('Samantha') ||
+        v.name.includes('Female') ||
+        v.name.includes('female')
+      );
+    }
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
     }
     
     utterance.rate = 0.9;

@@ -121,7 +121,6 @@ export function Header() {
             onMouseLeave={() => setIsMoreOpen(false)}
           >
             <button
-              onClick={() => setIsMoreOpen(!isMoreOpen)}
               className="text-xs lg:text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 cursor-pointer select-none"
             >
               <span>More</span>
@@ -191,10 +190,13 @@ export function Header() {
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
 
-          {/* Explore Mega Menu Dropdown */}
-          <div className="relative" ref={exploreRef}>
+          <div 
+            className="relative" 
+            ref={exploreRef}
+            onMouseEnter={() => setIsExploreOpen(true)}
+            onMouseLeave={() => setIsExploreOpen(false)}
+          >
             <button
-              onClick={() => setIsExploreOpen(!isExploreOpen)}
               className="text-xs lg:text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 cursor-pointer select-none"
             >
               <span>Explore</span>
