@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { JarvisChat } from '@/components/ai/JarvisChat';
+import { SocialProof } from '@/components/social/SocialProof';
 
 const locales = ['en', 'hi', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml', 'pa'];
 
@@ -62,6 +63,7 @@ export default async function RootLayout({
             <ThemeProvider>
               {children}
               <JarvisChat />
+              <SocialProof />
             </ThemeProvider>
           </ErrorBoundaryProvider>
         </NextIntlClientProvider>

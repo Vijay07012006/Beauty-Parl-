@@ -124,6 +124,15 @@ export class EmailService {
     await this.apiInstance.sendTransacEmail(email);
   }
 
+  async sendEmail(to: string, subject: string, htmlContent: string) {
+    const email = this.buildEmail(to, subject, htmlContent);
+    try {
+      await this.apiInstance.sendTransacEmail(email);
+    } catch (err: any) {
+      console.warn('⚠️ Brevo email failed to send:', err.message);
+    }
+  }
+
   async sendSuspensionEmail(to: string, reason: string, duration: string) {
     const email = this.buildEmail(
       to,

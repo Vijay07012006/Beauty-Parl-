@@ -118,4 +118,25 @@ export class ReferralsService {
       }
     }
   }
+
+  async generateReferralCode(userId: number): Promise<Referral> {
+    const code = `REF-${userId}-${Date.now().toString(36).toUpperCase()}`;
+    const referral = this.referralRepo.create({ referrerId: userId, code });
+    await this.referralRepo.save(referral);
+    return referral;
+  }
+
+  async applyReferral(code: string, newUserId: number): Promise<void> {
+    const referral = await this.referralRepo.findOne({
+      where: { code: code.trim().toUpperCase() }
+    });
+    if (!referral) throw new BadRequestException('Invalid referral code');
+
+    await this.loyaltyService.addPoints(referral.referrerId, 50, 'referral');
+    await this.loyaltyService.addPoints(newUserId, 50, 'referred');
+
+    referral.rewardClaimed = true;
+    referral.rewardAmount = 50.00;
+    await this.referralRepo.save(referral);
+  }
 }

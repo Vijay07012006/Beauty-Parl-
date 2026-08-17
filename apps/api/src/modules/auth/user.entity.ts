@@ -111,8 +111,11 @@ export class User {
   @Column({ type: 'integer', default: 0 })
   loyaltyPoints!: number;
 
-  @Column({ type: 'varchar', length: 20, default: 'silver' })
+  @Column({ type: 'varchar', length: 20, default: 'silver', name: 'loyalty_tier' })
   loyaltyTier!: string;
+
+  @Column({ type: 'jsonb', default: {}, name: 'tier_benefits' })
+  tierBenefits!: any;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalSpent!: number;

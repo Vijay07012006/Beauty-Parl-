@@ -107,28 +107,55 @@ export default function ReferralPage() {
               <div className="space-y-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">My Referral Link</span>
                 {stats.code ? (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <input
-                      type="text"
-                      readOnly
-                      value={getReferralLink()}
-                      className="flex-1 bg-secondary/30 border border-border/30 rounded-2xl px-4 py-2.5 text-xs text-foreground font-medium focus:outline-none select-all"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleCopyLink}
-                        className="py-2.5 px-4 bg-primary text-white rounded-xl font-bold text-xs hover:bg-primary/95 transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-primary/10"
-                      >
-                        <Copy className="w-4 h-4" /> Copy Link
-                      </button>
-                      <button
-                        onClick={handleCopyCode}
-                        className="py-2.5 px-4 bg-neutral-900 text-white rounded-xl font-bold text-xs hover:bg-neutral-850 transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        Copy Code
-                      </button>
+                  <>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input
+                        type="text"
+                        readOnly
+                        value={getReferralLink()}
+                        className="flex-1 bg-secondary/30 border border-border/30 rounded-2xl px-4 py-2.5 text-xs text-foreground font-medium focus:outline-none select-all"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleCopyLink}
+                          className="py-2.5 px-4 bg-primary text-white rounded-xl font-bold text-xs hover:bg-primary/95 transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-primary/10"
+                        >
+                          <Copy className="w-4 h-4" /> Copy Link
+                        </button>
+                        <button
+                          onClick={handleCopyCode}
+                          className="py-2.5 px-4 bg-neutral-900 text-white rounded-xl font-bold text-xs hover:bg-neutral-850 transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          Copy Code
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                    <div className="flex gap-2 items-center flex-wrap pt-2">
+                      <span className="text-[10px] text-muted-foreground font-semibold">Share:</span>
+                      <a
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent('Join Beauty Parlé! Use my link to register and both of you will earn 50 points bonus: ' + getReferralLink())}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold transition"
+                      >
+                        WhatsApp
+                      </a>
+                      <a
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getReferralLink())}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition"
+                      >
+                        Facebook
+                      </a>
+                      <a
+                        href={`mailto:?subject=${encodeURIComponent('Beauty Parlé Invite')}&body=${encodeURIComponent('Join Beauty Parlé! Use my link to register and both of you will earn 50 points bonus: ' + getReferralLink())}`}
+                        className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] font-bold transition"
+                      >
+                        Email
+                      </a>
+                    </div>
+                  </>
                 ) : (
                   <div className="py-4 text-center">
                     <button

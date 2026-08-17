@@ -70,6 +70,7 @@ export class LoyaltyService {
     return {
       points: user.loyaltyPoints,
       tier: user.loyaltyTier,
+      tierBenefits: user.tierBenefits || {},
       totalSpent: Number(user.totalSpent),
     };
   }
@@ -85,8 +86,28 @@ export class LoyaltyService {
     return this.rewardRepo.find({ where: { isActive: true } });
   }
 
+  private updateTierAndBenefitsForUser(user: User) {
+    const points = user.loyaltyPoints;
+    if (points >= 1000) {
+      user.loyaltyTier = 'platinum';
+      user.tierBenefits = { free_shipping: true, priority_support: true, '10_percent_off': true };
+    } else if (points >= 500) {
+      user.loyaltyTier = 'gold';
+      user.tierBenefits = { free_shipping: true, priority_support: true };
+    } else {
+      user.loyaltyTier = 'silver';
+      user.tierBenefits = {};
+    }
+  }
+
+  async updateUserTier(userId: number): Promise<void> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) return;
+    this.updateTierAndBenefitsForUser(user);
+    await this.userRepo.save(user);
+  }
+
   async addPoints(userId: number, points: number, reason: string): Promise<void> {
-    // Pessimistic lock prevents concurrent read-modify-write races on the balance
     await this.userRepo.manager.transaction(async (em) => {
       const user = await em.findOne(User, {
         where: { id: userId },
@@ -95,14 +116,7 @@ export class LoyaltyService {
       if (!user) throw new Error('User not found');
       user.loyaltyPoints += points;
 
-      // Evaluate Tiers
-      if (user.loyaltyPoints >= 500) {
-        user.loyaltyTier = 'platinum';
-      } else if (user.loyaltyPoints >= 100) {
-        user.loyaltyTier = 'gold';
-      } else {
-        user.loyaltyTier = 'silver';
-      }
+      this.updateTierAndBenefitsForUser(user);
 
       await em.save(user);
 
@@ -123,13 +137,7 @@ export class LoyaltyService {
       const points = Math.round(Number(total) * 0.1);
       user.loyaltyPoints += points;
 
-      if (user.loyaltyPoints >= 500) {
-        user.loyaltyTier = 'platinum';
-      } else if (user.loyaltyPoints >= 100) {
-        user.loyaltyTier = 'gold';
-      } else {
-        user.loyaltyTier = 'silver';
-      }
+      this.updateTierAndBenefitsForUser(user);
 
       await em.save(user);
 

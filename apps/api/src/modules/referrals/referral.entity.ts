@@ -16,6 +16,12 @@ export class Referral {
   @Column({ type: 'varchar', length: 50, unique: true })
   code!: string;
 
+  @Column({ type: 'boolean', default: false, name: 'reward_claimed' })
+  rewardClaimed!: boolean;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'reward_amount' })
+  rewardAmount!: number;
+
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
 }

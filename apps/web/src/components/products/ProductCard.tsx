@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useLocale } from '@/hooks/useLocale';
 import { QuickViewModal } from './QuickViewModal';
+import { ProductBadge } from './ProductBadge';
 
 interface Product {
   id: number;
@@ -190,11 +191,18 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Product Info */}
         <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
           <div className="space-y-1">
-            {product.brand && (
-              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                {product.brand}
-              </span>
-            )}
+            <div className="flex items-center gap-2 flex-wrap min-h-[16px]">
+              {product.brand && (
+                <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  {product.brand}
+                </span>
+              )}
+              <ProductBadge
+                createdAt={(product as any).createdAt}
+                salesCount={(product as any).salesCount}
+                viewCount={(product as any).viewCount}
+              />
+            </div>
             <h3 className="font-playfair font-bold text-base leading-tight group-hover:text-primary transition-colors line-clamp-1">
               {product.name}
             </h3>

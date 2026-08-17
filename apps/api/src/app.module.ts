@@ -110,6 +110,14 @@ import { AuditModule } from './modules/audit/audit.module';
 import { DeletionRequest } from './modules/gdpr/deletion-request.entity';
 import { FraudAlert } from './modules/fraud/fraud-alert.entity';
 
+// Phase 8F Modules & Entities
+import { FlashSalesModule } from './modules/flash-sales/flash-sales.module';
+import { FlashSale } from './modules/flash-sales/flash-sale.entity';
+import { BlogModule } from './modules/blog/blog.module';
+import { BlogPost } from './modules/blog/blog-post.entity';
+import { BlogComment } from './modules/blog/blog-comment.entity';
+import { MarketingModule } from './modules/marketing/marketing.module';
+
 import configuration from './config/configuration';
 
 @Module({
@@ -136,7 +144,7 @@ import configuration from './config/configuration';
           ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
           AuditLog, AiConversation, AiGeneration, Role, ActiveSession, FailedLogin,
           SupportTicket, TicketReply, Notification, AiMemory, Return, Waitlist,
-          DeletionRequest, FraudAlert
+          DeletionRequest, FraudAlert, FlashSale, BlogPost, BlogComment
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -207,6 +215,9 @@ import configuration from './config/configuration';
     GdprModule,
     FraudModule,
     AuditModule,
+    FlashSalesModule,
+    BlogModule,
+    MarketingModule,
   ],
   controllers: [AppController],
   providers: [

@@ -83,14 +83,14 @@ export default function LoyaltyPage() {
   const getTierProgress = () => {
     const pts = pointsInfo.points;
     if (pointsInfo.tier === 'platinum') return 100;
-    if (pointsInfo.tier === 'gold') return ((pts - 100) / 400) * 100;
-    return (pts / 100) * 100;
+    if (pointsInfo.tier === 'gold') return Math.min(100, Math.max(0, ((pts - 500) / 500) * 100));
+    return Math.min(100, Math.max(0, (pts / 500) * 100));
   };
 
   const getTierNextLimit = () => {
     if (pointsInfo.tier === 'platinum') return 'Platinum Master';
-    if (pointsInfo.tier === 'gold') return '500 points for Platinum';
-    return '100 points for Gold';
+    if (pointsInfo.tier === 'gold') return '1000 points for Platinum';
+    return '500 points for Gold';
   };
 
   if (loading) {
@@ -141,6 +141,23 @@ export default function LoyaltyPage() {
                 </div>
                 <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                   <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${getTierProgress()}%` }} />
+                </div>
+              </div>
+              
+              <div className="pt-3 border-t border-border/20 space-y-1.5">
+                <span className="text-[9px] font-bold text-muted-foreground uppercase">My Unlocked Benefits:</span>
+                <div className="flex flex-wrap gap-2">
+                  {pointsInfo.tier === 'silver' ? (
+                    <span className="text-[10px] bg-secondary px-2.5 py-1 rounded-lg text-muted-foreground font-semibold">Standard Member Access</span>
+                  ) : (
+                    <>
+                      <span className="text-[10px] bg-green-500/10 border border-green-500/25 px-2.5 py-1 rounded-lg text-green-700 font-semibold flex items-center gap-1">✓ Free Shipping</span>
+                      <span className="text-[10px] bg-green-500/10 border border-green-500/25 px-2.5 py-1 rounded-lg text-green-700 font-semibold flex items-center gap-1">✓ Priority Support</span>
+                      {pointsInfo.tier === 'platinum' && (
+                        <span className="text-[10px] bg-green-500/10 border border-green-500/25 px-2.5 py-1 rounded-lg text-green-700 font-semibold flex items-center gap-1">✓ Extra 10% Off</span>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

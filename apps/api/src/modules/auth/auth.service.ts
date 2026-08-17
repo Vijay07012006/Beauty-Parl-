@@ -13,6 +13,7 @@ import { EmailService } from '../email/email.service';
 import { OtpService } from './otp.service';
 import { ReferralsService } from '../referrals/referrals.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { DripCampaignService } from '../marketing/drip-campaign.service';
 
 @Injectable()
 export class AuthService {
@@ -48,6 +49,7 @@ export class AuthService {
     private config: ConfigService,
     private referralsService: ReferralsService,
     private auditLogsService: AuditLogsService,
+    private dripCampaignService: DripCampaignService,
   ) {}
 
   private hashToken(token: string): string {
@@ -174,6 +176,11 @@ export class AuthService {
       role: UserRole.USER,
     });
     await this.userRepository.save(user);
+
+    // Trigger marketing welcome drip campaign series (non-blocking)
+    setImmediate(() => {
+      this.dripCampaignService.triggerWelcomeSeries(user.email, user.name).catch(() => {});
+    });
 
     // Apply and process referral if exists
     if (referralCode) {

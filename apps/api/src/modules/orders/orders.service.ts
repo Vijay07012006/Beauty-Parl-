@@ -14,6 +14,7 @@ import { InventoryAlertService } from '../inventory/inventory-alert.service';
 import { SupportGateway } from '../support/support.gateway';
 import { WhatsappService } from '../notifications/whatsapp.service';
 import { FraudDetectionService } from '../fraud/fraud-detection.service';
+import { DripCampaignService } from '../marketing/drip-campaign.service';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -38,6 +39,7 @@ export class OrdersService {
     private supportGateway: SupportGateway,
     private whatsappService: WhatsappService,
     private fraudDetectionService: FraudDetectionService,
+    private dripCampaignService: DripCampaignService,
   ) {}
 
   /**
@@ -302,6 +304,15 @@ export class OrdersService {
         if (prod && prod.id !== undefined && prod.id !== null) {
           await this.inventoryAlertService.checkAndAlert(prod.id, prod.stock);
         }
+      }
+    }
+
+    if (saved && !isFraudConfirmed) {
+      const email = saved.guestEmail || (saved.userId ? await this.getUserEmail(saved.userId) : null);
+      if (email) {
+        setImmediate(() => {
+          this.dripCampaignService.triggerPostPurchaseSeries(email, 'Valued Customer', saved.id).catch(() => {});
+        });
       }
     }
 

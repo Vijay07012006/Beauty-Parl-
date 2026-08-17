@@ -16,6 +16,7 @@ import { SupportModule } from '../support/support.module';
 import { EmailModule } from '../email/email.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { FraudModule } from '../fraud/fraud.module';
+import { MarketingModule } from '../marketing/marketing.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { FraudModule } from '../fraud/fraud.module';
     EmailModule,
     NotificationsModule,
     FraudModule,
+    MarketingModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, TrackingService],
