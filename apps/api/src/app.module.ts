@@ -102,6 +102,14 @@ import { ReturnsModule } from './modules/returns/returns.module';
 import { WaitlistModule } from './modules/waitlist/waitlist.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
+// Phase 8E Modules & Entities
+import { SessionsModule } from './modules/sessions/sessions.module';
+import { GdprModule } from './modules/gdpr/gdpr.module';
+import { FraudModule } from './modules/fraud/fraud.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { DeletionRequest } from './modules/gdpr/deletion-request.entity';
+import { FraudAlert } from './modules/fraud/fraud-alert.entity';
+
 import configuration from './config/configuration';
 
 @Module({
@@ -127,7 +135,8 @@ import configuration from './config/configuration';
           LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
           ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
           AuditLog, AiConversation, AiGeneration, Role, ActiveSession, FailedLogin,
-          SupportTicket, TicketReply, Notification, AiMemory, Return, Waitlist
+          SupportTicket, TicketReply, Notification, AiMemory, Return, Waitlist,
+          DeletionRequest, FraudAlert
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -194,6 +203,10 @@ import configuration from './config/configuration';
     ReturnsModule,
     WaitlistModule,
     NotificationsModule,
+    SessionsModule,
+    GdprModule,
+    FraudModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [

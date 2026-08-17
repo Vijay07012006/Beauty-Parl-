@@ -45,6 +45,8 @@ export default function AuditLogsPage() {
   const [filterEntityType, setFilterEntityType] = useState('');
   const [filterIp, setFilterIp] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
   const [page, setPage] = useState(1);
   const limit = 20;
@@ -60,7 +62,8 @@ export default function AuditLogsPage() {
         limit: String(limit),
       });
       if (searchAction.trim()) params.set('action', searchAction.trim());
-      // Other filters will be handled locally or passed if supported
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
       const res = await api.get(`/admin/audit-logs?${params}`);
       setLogs(res.data.logs || []);
       setTotal(res.data.total || 0);
@@ -69,7 +72,7 @@ export default function AuditLogsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchAction]);
+  }, [page, searchAction, startDate, endDate]);
 
   useEffect(() => {
     fetchLogs();
@@ -96,72 +99,53 @@ export default function AuditLogsPage() {
   });
 
   // Export CSV
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     try {
-      const headers = ['ID', 'Action', 'User', 'IP Address', 'Location', 'Entity Type', 'Entity ID', 'Status', 'Date'];
-      const rows = filteredLogs.map(l => [
-        l.id,
-        l.action,
-        l.userEmail || 'N/A',
-        l.ipAddress || 'N/A',
-        l.location || 'N/A',
-        l.entityType || 'N/A',
-        l.entityId || 'N/A',
-        l.status || 'success',
-        new Date(l.createdAt).toLocaleString(),
-      ]);
-
-      const csvContent = 'data:text/csv;charset=utf-8,' 
-        + [headers.join(','), ...rows.map(e => e.map(val => `"${val}"`).join(','))].join('\n');
-      
-      const encodedUri = encodeURI(csvContent);
+      const params = new URLSearchParams();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      if (searchAction.trim()) params.set('action', searchAction.trim());
+      const res = await api.get(`/audit/export/csv?${params}`, {
+        responseType: 'blob',
+        withCredentials: true,
+      });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
+      link.href = url;
       link.setAttribute('download', `beauty_parle_audit_logs_${Date.now()}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       toast.success('Audit logs exported to CSV!');
-    } catch {
+    } catch (error) {
+      console.error(error);
       toast.error('Failed to export CSV');
     }
   };
 
   // Export PDF compliance report
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     try {
-      const doc = new jsPDF();
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(20);
-      doc.text('Beauty Parlé — Compliance Audit Report', 15, 20);
-      
-      doc.setFontSize(10);
-      doc.setFont('Helvetica', 'normal');
-      doc.text(`Generated: ${new Date().toLocaleString()}`, 15, 28);
-      doc.text(`Total Records: ${filteredLogs.length}`, 15, 33);
-      
-      let y = 45;
-      doc.line(15, y - 5, 195, y - 5);
-      
-      filteredLogs.forEach((l, idx) => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-        
-        doc.setFont('Helvetica', 'bold');
-        doc.text(`${idx + 1}. [${l.action}]`, 15, y);
-        doc.setFont('Helvetica', 'normal');
-        doc.text(`Actor: ${l.userEmail || 'N/A'} | IP: ${l.ipAddress || 'N/A'} | Location: ${l.location || 'N/A'}`, 15, y + 5);
-        doc.text(`Status: ${l.status || 'success'} | Entity: ${l.entityType || 'N/A'} (ID: ${l.entityId || 'N/A'})`, 15, y + 10);
-        doc.text(`Date: ${new Date(l.createdAt).toLocaleString()}`, 15, y + 15);
-        
-        y += 25;
+      const params = new URLSearchParams();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      if (searchAction.trim()) params.set('action', searchAction.trim());
+      const res = await api.get(`/audit/export/pdf?${params}`, {
+        responseType: 'blob',
+        withCredentials: true,
       });
-
-      doc.save(`beauty_parle_audit_report_${Date.now()}.pdf`);
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `beauty_parle_audit_report_${Date.now()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       toast.success('Compliance report exported to PDF!');
-    } catch {
+    } catch (error) {
+      console.error(error);
       toast.error('Failed to export PDF');
     }
   };
@@ -201,7 +185,7 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Advanced Filters */}
-        <div className="bg-card border border-border/40 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="bg-card border border-border/40 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
             <input
@@ -223,7 +207,7 @@ export default function AuditLogsPage() {
 
           <input
             type="text"
-            placeholder="Entity Type (e.g. Product)..."
+            placeholder="Entity Type..."
             value={filterEntityType}
             onChange={e => setFilterEntityType(e.target.value)}
             className="w-full px-3 py-2 text-xs border border-border/60 rounded-xl bg-background focus:outline-none"
@@ -246,6 +230,24 @@ export default function AuditLogsPage() {
             <option value="success">Success</option>
             <option value="failed">Failed</option>
           </select>
+
+          <input
+            type="date"
+            placeholder="Start Date"
+            value={startDate}
+            onChange={e => { setStartDate(e.target.value); setPage(1); }}
+            className="w-full px-3 py-2 text-xs border border-border/60 rounded-xl bg-background focus:outline-none cursor-pointer text-muted-foreground"
+            title="Start Date"
+          />
+
+          <input
+            type="date"
+            placeholder="End Date"
+            value={endDate}
+            onChange={e => { setEndDate(e.target.value); setPage(1); }}
+            className="w-full px-3 py-2 text-xs border border-border/60 rounded-xl bg-background focus:outline-none cursor-pointer text-muted-foreground"
+            title="End Date"
+          />
         </div>
 
         {/* Stats Summary */}

@@ -176,11 +176,10 @@ export class AuthController {
   @Delete('sessions/:id')
   @UseGuards(JwtAuthGuard)
   async revokeSession(@Request() req: any, @Param('id') id: string) {
-    const sessionId = parseInt(id, 10);
-    if (isNaN(sessionId)) {
+    if (!id) {
       throw new BadRequestException('Invalid session id');
     }
-    await this.authService.revokeSession(req.user.id, sessionId);
+    await this.authService.revokeSession(req.user.id, id);
     return { success: true, message: 'Session revoked' };
   }
 

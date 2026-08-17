@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/Footer';
 import { OtpModal } from '@/components/auth/OtpModal';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { useLocale } from '@/hooks/useLocale';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -119,6 +120,7 @@ export default function RegisterPage() {
                   required
                   minLength={6}
                 />
+                <PasswordStrengthMeter password={form.password} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Confirm Password</label>

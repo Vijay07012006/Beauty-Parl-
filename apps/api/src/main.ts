@@ -25,7 +25,18 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://checkout.razorpay.com", "https://js.stripe.com"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https://images.unsplash.com", "https://res.cloudinary.com"],
+        connectSrc: ["'self'", "https://beauty-parl-api.onrender.com", "http://localhost:3001"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      },
+    },
+  }));
 
   app.use((req: any, res: any, next: any) => {
     res.setHeader('Permissions-Policy', 'microphone=*');

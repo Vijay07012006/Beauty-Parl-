@@ -15,6 +15,7 @@ import { InventoryModule } from '../inventory/inventory.module';
 import { SupportModule } from '../support/support.module';
 import { EmailModule } from '../email/email.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { FraudModule } from '../fraud/fraud.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     SupportModule,
     EmailModule,
     NotificationsModule,
+    FraudModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, TrackingService],

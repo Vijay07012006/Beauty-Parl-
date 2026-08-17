@@ -52,20 +52,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(req: any, payload: any) {
-    const rawToken = extractFromCookie(req) || (
-      req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.substring(7) : null
-    );
-    if (!rawToken) {
-      throw new UnauthorizedException('Invalid token');
+    const sessionId = payload.sessionId || payload.sid;
+    if (!sessionId) {
+      throw new UnauthorizedException('Invalid token session');
     }
-    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex').substring(0, 64);
 
     const session = await this.userSessionRepository.findOne({
-      where: { userId: payload.sub, tokenHash },
+      where: { sessionId, isActive: true },
     });
 
     if (!session) {
-      throw new UnauthorizedException('Session has been revoked');
+      throw new UnauthorizedException('Session has been revoked or is inactive');
     }
 
     // Reject deactivated accounts even with a valid, un-revoked token (H2)
@@ -79,9 +76,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     await this.userSessionRepository.update(
       session.id,
-      { lastActivityAt: new Date() },
+      { lastActivity: new Date() },
     );
 
-    return { id: payload.sub, email: payload.email, role: payload.role, sessionId: session.id };
+    return { id: payload.sub, email: payload.email, role: payload.role, sessionId: session.sessionId };
   }
 }

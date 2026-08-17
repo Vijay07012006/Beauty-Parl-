@@ -54,39 +54,56 @@ export class AuthService {
     return crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
   }
 
+  private getDeviceType(userAgent?: string): string {
+    if (!userAgent) return 'Unknown';
+    const ua = userAgent.toLowerCase();
+    if (ua.includes('mobi') || ua.includes('android') || ua.includes('iphone') || ua.includes('ipad')) {
+      return 'Mobile';
+    }
+    if (ua.includes('tablet')) {
+      return 'Tablet';
+    }
+    return 'Desktop';
+  }
+
   private async createUserSession(
     userId: number,
-    token: string,
+    sessionId: string,
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    const tokenHash = this.hashToken(token);
+    const deviceType = this.getDeviceType(userAgent);
     const session = this.userSessionRepository.create({
       userId,
-      tokenHash,
+      sessionId,
       ipAddress,
       userAgent,
+      deviceType,
+      isActive: true,
     });
     await this.userSessionRepository.save(session);
   }
 
   async getUserSessions(userId: number) {
     return this.userSessionRepository.find({
-      where: { userId },
+      where: { userId, isActive: true },
       select: {
         id: true,
+        sessionId: true,
         ipAddress: true,
         userAgent: true,
-        lastActivityAt: true,
-        createdAt: true,
+        deviceType: true,
+        loginTime: true,
+        lastActivity: true,
+        isActive: true,
       },
-      order: { lastActivityAt: 'DESC' },
+      order: { lastActivity: 'DESC' },
     });
   }
 
-  async revokeSession(userId: number, sessionId: number): Promise<void> {
+  async revokeSession(userId: number, sessionId: string): Promise<void> {
     const session = await this.userSessionRepository.findOne({
-      where: { id: sessionId },
+      where: { sessionId },
     });
     if (!session) {
       throw new NotFoundException('Session not found');
@@ -94,24 +111,26 @@ export class AuthService {
     if (session.userId !== userId) {
       throw new ForbiddenException('Not authorized to revoke this session');
     }
-    await this.userSessionRepository.delete(sessionId);
+    session.isActive = false;
+    await this.userSessionRepository.save(session);
   }
 
   async revokeAllSessions(userId: number): Promise<void> {
-    await this.userSessionRepository.delete({ userId });
+    await this.userSessionRepository.update({ userId }, { isActive: false });
   }
 
   async revokeToken(token: string): Promise<void> {
     if (!token) return;
     try {
       const decoded: any = this.jwtService.decode(token);
-      if (decoded && decoded.sid) {
-        await this.auditLogsService.terminateSession(decoded.sid);
+      const sessionId = decoded?.sessionId || decoded?.sid;
+      if (sessionId) {
+        await this.userSessionRepository.update({ sessionId }, { isActive: false });
+        await this.auditLogsService.terminateSession(sessionId);
       }
     } catch (e) {
       console.error('Failed to revoke session from token:', e);
     }
-    await this.userSessionRepository.delete({ tokenHash: this.hashToken(token) });
   }
 
   async register(registerDto: any) {
@@ -236,12 +255,12 @@ export class AuthService {
     }
     
     const sessionId = crypto.randomBytes(16).toString('hex');
-    const payload = { sub: user.id, email: user.email, role: user.role, sid: sessionId };
+    const payload = { sub: user.id, email: user.email, role: user.role, sessionId, sid: sessionId };
     const token = this.jwtService.sign(payload, { expiresIn: '15m' });
 
     await this.createUserSession(
       user.id,
-      token,
+      sessionId,
       metadata?.ipAddress,
       metadata?.userAgent,
     );
@@ -477,12 +496,13 @@ export class AuthService {
     }
 
     // Generate JWT
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const sessionId = crypto.randomBytes(16).toString('hex');
+    const payload = { sub: user.id, email: user.email, role: user.role, sessionId, sid: sessionId };
     const token = this.jwtService.sign(payload, { expiresIn: '15m' });
 
     await this.createUserSession(
       user.id,
-      token,
+      sessionId,
       metadata?.ipAddress,
       metadata?.userAgent,
     );
@@ -637,12 +657,13 @@ export class AuthService {
       throw new BadRequestException('Invalid 2FA token or backup code');
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const sessionId = crypto.randomBytes(16).toString('hex');
+    const payload = { sub: user.id, email: user.email, role: user.role, sessionId, sid: sessionId };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
 
     await this.createUserSession(
       user.id,
-      accessToken,
+      sessionId,
       metadata?.ipAddress,
       metadata?.userAgent,
     );

@@ -19,7 +19,9 @@ export class OrdersController {
   async create(@Request() req: any, @Body() orderData: any): Promise<Order> {
     // userId is derived from the verified JWT — never from the request body (O1)
     const userId = req.user?.id ? Number(req.user.id) : undefined;
-    return this.ordersService.create(orderData, userId);
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    return this.ordersService.create(orderData, userId, { ipAddress, userAgent });
   }
 
   @Get()

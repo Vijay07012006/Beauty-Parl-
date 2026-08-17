@@ -1,25 +1,36 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from './user.entity';
 
 @Entity('user_sessions')
 export class UserSession {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ name: 'user_id' })
   userId!: number;
 
-  @Column({ name: 'token_hash' })
-  tokenHash!: string;
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user!: User;
 
-  @Column({ name: 'ip_address', nullable: true })
+  @Column({ name: 'session_id', unique: true })
+  sessionId!: string;
+
+  @Column({ name: 'ip_address', length: 45, nullable: true })
   ipAddress?: string;
 
-  @Column({ name: 'user_agent', nullable: true })
+  @Column({ name: 'user_agent', type: 'text', nullable: true })
   userAgent?: string;
 
-  @UpdateDateColumn({ name: 'last_activity_at' })
-  lastActivityAt!: Date;
+  @Column({ name: 'device_type', length: 50, nullable: true })
+  deviceType?: string;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
+  @CreateDateColumn({ name: 'login_time', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  loginTime!: Date;
+
+  @UpdateDateColumn({ name: 'last_activity', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  lastActivity!: Date;
+
+  @Column({ name: 'is_active', default: true })
+  isActive!: boolean;
 }

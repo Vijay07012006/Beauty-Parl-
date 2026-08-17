@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { api } from '@/lib/api';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 
 export default function ResetPasswordPage() {
   const params = useParams();
@@ -85,6 +86,7 @@ export default function ResetPasswordPage() {
                   className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50"
                   placeholder="••••••••"
                 />
+                <PasswordStrengthMeter password={password} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Confirm Password</label>

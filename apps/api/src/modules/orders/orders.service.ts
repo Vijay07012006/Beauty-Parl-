@@ -13,6 +13,7 @@ import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { InventoryAlertService } from '../inventory/inventory-alert.service';
 import { SupportGateway } from '../support/support.gateway';
 import { WhatsappService } from '../notifications/whatsapp.service';
+import { FraudDetectionService } from '../fraud/fraud-detection.service';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -36,6 +37,7 @@ export class OrdersService {
     private inventoryAlertService: InventoryAlertService,
     private supportGateway: SupportGateway,
     private whatsappService: WhatsappService,
+    private fraudDetectionService: FraudDetectionService,
   ) {}
 
   /**
@@ -45,7 +47,7 @@ export class OrdersService {
    * - prices/totals are recomputed server-side from DB product prices
    * - stock & coupon usage are reserved atomically inside a transaction (O2/O3/O4/O5)
    */
-  async create(orderData: any, userId?: number): Promise<Order> {
+  async create(orderData: any, userId?: number, metadata?: { ipAddress?: string; userAgent?: string }): Promise<Order> {
     // ========== STRICT INPUT WHITELIST (no mass assignment) ==========
     const rawItems = Array.isArray(orderData?.items) ? orderData.items : [];
     const couponCode = typeof orderData?.couponCode === 'string' ? orderData.couponCode.trim().toUpperCase() : undefined;
@@ -112,6 +114,8 @@ export class OrdersService {
     subtotal = round2(subtotal);
     const tax = round2(subtotal * 0.1);
     const shipping = subtotal > 50 ? 0 : 5;
+
+    let isFraudConfirmed = false;
 
     const saved = await this.dataSource.transaction(async (em) => {
       // ========== COUPON SERVER-SIDE VALIDATION ==========
@@ -207,6 +211,41 @@ export class OrdersService {
       });
       const saved = await em.save(order);
 
+      // Run AI-powered Fraud Detection
+      try {
+        const fraudResult = await this.fraudDetectionService.checkOrder(
+          saved,
+          metadata?.ipAddress,
+          metadata?.userAgent,
+        );
+
+        if (fraudResult.status === 'confirmed') {
+          isFraudConfirmed = true;
+          saved.status = 'cancelled';
+          await em.save(saved);
+
+          // Revert stock decrement
+          for (const item of validatedItems) {
+            await em.createQueryBuilder()
+              .update(Product)
+              .set({ stock: () => 'stock + :qty' })
+              .where('id = :id', { id: item.productId, qty: item.quantity })
+              .execute();
+          }
+
+          // Revert coupon usage
+          if (couponCode) {
+            await em.createQueryBuilder()
+              .update(Coupon)
+              .set({ usedCount: () => 'usedCount - 1' })
+              .where('code = :couponCode', { couponCode })
+              .execute();
+          }
+        }
+      } catch (err: any) {
+        console.error('Fraud detection failed during order creation:', err.message);
+      }
+
       // Broadcast real-time WebSocket order alert to admin dashboards
       if (this.supportGateway && this.supportGateway.server) {
         this.supportGateway.server.emit('new_order', {
@@ -227,8 +266,8 @@ export class OrdersService {
 
       await this.auditLogsService.log('ORDER_CREATED', email || undefined, saved.userId || undefined, { orderId: saved.id, total: saved.total });
 
-      // Send order confirmation (best-effort, non-blocking)
-      if (email) {
+      // Send order confirmation (best-effort, non-blocking) if not auto-rejected
+      if (email && !isFraudConfirmed) {
         try {
           await this.emailService.sendOrderConfirmation(email, saved);
           if (saved.shippingAddress?.phone) {
@@ -240,9 +279,8 @@ export class OrdersService {
       }
 
       // Award loyalty points ONLY after the order is created for the authenticated user,
-      // and ONLY once (inside the transaction). Note: recordPurchase uses its own pessimistic
-      // lock on the same row we already updated — that is fine because they are sequential here.
-      if (saved.userId) {
+      // and ONLY once (inside the transaction) and when NOT auto-rejected
+      if (saved.userId && !isFraudConfirmed) {
         try {
           await this.loyaltyService.recordPurchase(saved.userId, saved.total);
           await this.gamificationService.triggerAchievement(saved.userId, 'purchase');
@@ -253,6 +291,10 @@ export class OrdersService {
 
       return saved;
     });
+
+    if (isFraudConfirmed) {
+      throw new BadRequestException('Order was auto-rejected due to high fraud risk');
+    }
 
     if (saved && Array.isArray(saved.items)) {
       for (const item of saved.items) {
