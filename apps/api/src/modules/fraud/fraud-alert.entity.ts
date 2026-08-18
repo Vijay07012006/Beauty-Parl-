@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../auth/user.entity';
 import { Order } from '../orders/order.entity';
 
@@ -30,10 +37,14 @@ export class FraudAlert {
   @Column({
     type: 'varchar',
     length: 20,
-    default: 'pending'
+    default: 'pending',
   })
   status!: 'pending' | 'reviewed' | 'false_positive' | 'confirmed';
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt!: Date;
 }

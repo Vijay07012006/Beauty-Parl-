@@ -8,9 +8,7 @@ import { FraudDetectionService } from './fraud-detection.service';
 import { FraudController } from './fraud.controller';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([FraudAlert, Order, UserSession, User]),
-  ],
+  imports: [TypeOrmModule.forFeature([FraudAlert, Order, UserSession, User])],
   providers: [FraudDetectionService],
   controllers: [FraudController],
   exports: [FraudDetectionService],

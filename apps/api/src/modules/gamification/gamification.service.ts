@@ -25,11 +25,43 @@ export class GamificationService {
       const count = await this.achievementRepo.count();
       if (count === 0) {
         const defaults: Array<Partial<Achievement>> = [
-          { name: 'Routine Enthusiast', description: 'Run a neural face scan or custom routine quiz diagnostic.', icon: '🧪', pointsReward: 20, triggerType: 'daily_visit' },
-          { name: 'Beauty Critic', description: 'Write an honest product look review or upload lookbook photo.', icon: '✍️', pointsReward: 30, triggerType: 'review' },
-          { name: 'Social Advocate', description: 'Share a cosmetic link to Facebook, X, or WhatsApp.', icon: '📢', pointsReward: 15, triggerType: 'social_share' },
-          { name: 'Brand Influencer', description: 'Generate a referral code and invite a friend.', icon: '🤝', pointsReward: 50, triggerType: 'referral' },
-          { name: 'Regimen Invested', description: 'Complete your first cosmetic product checkout.', icon: '🛍️', pointsReward: 40, triggerType: 'purchase' },
+          {
+            name: 'Routine Enthusiast',
+            description:
+              'Run a neural face scan or custom routine quiz diagnostic.',
+            icon: '🧪',
+            pointsReward: 20,
+            triggerType: 'daily_visit',
+          },
+          {
+            name: 'Beauty Critic',
+            description:
+              'Write an honest product look review or upload lookbook photo.',
+            icon: '✍️',
+            pointsReward: 30,
+            triggerType: 'review',
+          },
+          {
+            name: 'Social Advocate',
+            description: 'Share a cosmetic link to Facebook, X, or WhatsApp.',
+            icon: '📢',
+            pointsReward: 15,
+            triggerType: 'social_share',
+          },
+          {
+            name: 'Brand Influencer',
+            description: 'Generate a referral code and invite a friend.',
+            icon: '🤝',
+            pointsReward: 50,
+            triggerType: 'referral',
+          },
+          {
+            name: 'Regimen Invested',
+            description: 'Complete your first cosmetic product checkout.',
+            icon: '🛍️',
+            pointsReward: 40,
+            triggerType: 'purchase',
+          },
         ];
         await this.achievementRepo.save(this.achievementRepo.create(defaults));
         console.log('🌱 Seeded default Gamification Achievements catalog');
@@ -50,12 +82,23 @@ export class GamificationService {
     }));
   }
 
-  async triggerAchievement(userId: number, triggerType: 'review' | 'social_share' | 'profile_complete' | 'daily_visit' | 'purchase' | 'referral'): Promise<Achievement | null> {
+  async triggerAchievement(
+    userId: number,
+    triggerType:
+      | 'review'
+      | 'social_share'
+      | 'profile_complete'
+      | 'daily_visit'
+      | 'purchase'
+      | 'referral',
+  ): Promise<Achievement | null> {
     const ach = await this.achievementRepo.findOne({ where: { triggerType } });
     if (!ach) return null;
 
     // Check if already unlocked
-    const exists = await this.uaRepo.findOne({ where: { userId, achievementId: ach.id } });
+    const exists = await this.uaRepo.findOne({
+      where: { userId, achievementId: ach.id },
+    });
     if (exists) return null;
 
     // Unlock
@@ -63,7 +106,11 @@ export class GamificationService {
     await this.uaRepo.save(ua);
 
     // Reward points
-    await this.loyaltyService.addPoints(userId, ach.pointsReward, `Unlocked Achievement: ${ach.name} 🏆`);
+    await this.loyaltyService.addPoints(
+      userId,
+      ach.pointsReward,
+      `Unlocked Achievement: ${ach.name} 🏆`,
+    );
 
     return ach;
   }

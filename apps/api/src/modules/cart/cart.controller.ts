@@ -5,9 +5,7 @@ import { OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('cart')
 export class CartController {
-  constructor(
-    private readonly cartService: CartService,
-  ) {}
+  constructor(private readonly cartService: CartService) {}
 
   @Post()
   @UseGuards(OptionalJwtAuthGuard)
@@ -15,7 +13,7 @@ export class CartController {
     @Body() body: { items: any[]; email?: string },
     @Req() req: Request,
   ) {
-    const user = req.user as { id?: number; email?: string } | undefined;
+    const user = req.user;
     const userId = user?.id;
 
     // A client-supplied email may only be used to key a guest cart if it matches the authenticated user.
@@ -27,6 +25,10 @@ export class CartController {
       email = undefined; // Anonymous guests do not get an email-keyed cart
     }
 
-    return this.cartService.syncCart(userId, email, Array.isArray(body.items) ? body.items : []);
+    return this.cartService.syncCart(
+      userId,
+      email,
+      Array.isArray(body.items) ? body.items : [],
+    );
   }
 }

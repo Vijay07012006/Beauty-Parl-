@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../auth/user.entity';
 import { BlogComment } from './blog-comment.entity';
 
@@ -41,12 +50,20 @@ export class BlogPost {
   @Column({ type: 'integer', default: 0, name: 'view_count' })
   viewCount!: number;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt!: Date;
 
-  @OneToMany(() => BlogComment, comment => comment.post)
+  @OneToMany(() => BlogComment, (comment) => comment.post)
   comments!: BlogComment[];
 }

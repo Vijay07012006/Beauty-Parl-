@@ -1,4 +1,17 @@
-import { Controller, Post, Body, Get, Param, Put, NotFoundException, UseGuards, Request, ForbiddenException, BadRequestException, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Put,
+  NotFoundException,
+  UseGuards,
+  Request,
+  ForbiddenException,
+  BadRequestException,
+  Query,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { TrackingService } from './tracking.service';
 import { Order } from './order.entity';
@@ -19,9 +32,13 @@ export class OrdersController {
   async create(@Request() req: any, @Body() orderData: any): Promise<Order> {
     // userId is derived from the verified JWT — never from the request body (O1)
     const userId = req.user?.id ? Number(req.user.id) : undefined;
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress;
+    const ipAddress =
+      req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress;
     const userAgent = req.headers['user-agent'];
-    return this.ordersService.create(orderData, userId, { ipAddress, userAgent });
+    return this.ordersService.create(orderData, userId, {
+      ipAddress,
+      userAgent,
+    });
   }
 
   @Get()
@@ -51,30 +68,49 @@ export class OrdersController {
     if (!order) {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
-    
+
     if (req.user) {
-      const isUserAdmin = req.user.role === UserRole.ADMIN || req.user.role === UserRole.SUPER_ADMIN;
+      const isUserAdmin =
+        req.user.role === UserRole.ADMIN ||
+        req.user.role === UserRole.SUPER_ADMIN;
       const isUserOwner = order.userId === req.user.id;
-      
+
       if (isUserAdmin || isUserOwner) {
         return order;
       }
     }
-    
-    if (order.guestEmail && email && order.guestEmail.toLowerCase() === email.toLowerCase()) {
+
+    if (
+      order.guestEmail &&
+      email &&
+      order.guestEmail.toLowerCase() === email.toLowerCase()
+    ) {
       return order;
     }
-    
-    throw new ForbiddenException('You do not have permission to view this order');
+
+    throw new ForbiddenException(
+      'You do not have permission to view this order',
+    );
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async update(@Param('id') id: number, @Body() data: Partial<Order>): Promise<Order> {
-    const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+  async update(
+    @Param('id') id: number,
+    @Body() data: Partial<Order>,
+  ): Promise<Order> {
+    const allowedStatuses = [
+      'pending',
+      'processing',
+      'shipped',
+      'delivered',
+      'cancelled',
+    ];
     if (data.status && !allowedStatuses.includes(data.status)) {
-      throw new BadRequestException(`Invalid status: ${data.status}. Must be one of ${allowedStatuses.join(', ')}`);
+      throw new BadRequestException(
+        `Invalid status: ${data.status}. Must be one of ${allowedStatuses.join(', ')}`,
+      );
     }
 
     const order = await this.ordersService.update(id, data);
@@ -91,7 +127,12 @@ export class OrdersController {
     @Param('id') id: string,
     @Body() body: { latitude: number; longitude: number; status?: string },
   ) {
-    return this.trackingService.updateTracking(Number(id), body.latitude, body.longitude, body.status);
+    return this.trackingService.updateTracking(
+      Number(id),
+      body.latitude,
+      body.longitude,
+      body.status,
+    );
   }
 
   @Get(':id/tracking')

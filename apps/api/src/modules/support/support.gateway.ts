@@ -1,4 +1,9 @@
-import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
@@ -6,7 +11,9 @@ import { Server, Socket } from 'socket.io';
     origin: '*',
   },
 })
-export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class SupportGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -18,7 +25,11 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
     console.log(`🔌 Support Client Disconnected: ${client.id}`);
   }
 
-  async notifyNewTicket(data: { ticketId: number; userName: string; subject: string }) {
+  async notifyNewTicket(data: {
+    ticketId: number;
+    userName: string;
+    subject: string;
+  }) {
     if (this.server) {
       this.server.emit('new_ticket', {
         ticketId: data.ticketId,

@@ -1,4 +1,11 @@
-import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -18,7 +25,10 @@ import { DripCampaignService } from '../marketing/drip-campaign.service';
 @Injectable()
 export class AuthService {
   // One-time OAuth exchange codes — the JWT is never placed in a URL query string (H3)
-  private oauthCodes = new Map<string, { token: string; user: any; expiresAt: number }>();
+  private oauthCodes = new Map<
+    string,
+    { token: string; user: any; expiresAt: number }
+  >();
 
   issueOauthCode(token: string, user: any): string {
     const code = crypto.randomBytes(24).toString('hex');
@@ -26,7 +36,9 @@ export class AuthService {
     return code;
   }
 
-  async exchangeOauthCode(code: string): Promise<{ access_token: string; user: any }> {
+  async exchangeOauthCode(
+    code: string,
+  ): Promise<{ access_token: string; user: any }> {
     if (!code) {
       throw new BadRequestException('Invalid exchange code');
     }
@@ -53,13 +65,22 @@ export class AuthService {
   ) {}
 
   private hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
+    return crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex')
+      .substring(0, 64);
   }
 
   private getDeviceType(userAgent?: string): string {
     if (!userAgent) return 'Unknown';
     const ua = userAgent.toLowerCase();
-    if (ua.includes('mobi') || ua.includes('android') || ua.includes('iphone') || ua.includes('ipad')) {
+    if (
+      ua.includes('mobi') ||
+      ua.includes('android') ||
+      ua.includes('iphone') ||
+      ua.includes('ipad')
+    ) {
       return 'Mobile';
     }
     if (ua.includes('tablet')) {
@@ -127,7 +148,10 @@ export class AuthService {
       const decoded: any = this.jwtService.decode(token);
       const sessionId = decoded?.sessionId || decoded?.sid;
       if (sessionId) {
-        await this.userSessionRepository.update({ sessionId }, { isActive: false });
+        await this.userSessionRepository.update(
+          { sessionId },
+          { isActive: false },
+        );
         await this.auditLogsService.terminateSession(sessionId);
       }
     } catch (e) {
@@ -136,8 +160,12 @@ export class AuthService {
   }
 
   async register(registerDto: any) {
-    const email = typeof registerDto?.email === 'string' ? registerDto.email.trim().toLowerCase() : '';
-    const password = typeof registerDto?.password === 'string' ? registerDto.password : '';
+    const email =
+      typeof registerDto?.email === 'string'
+        ? registerDto.email.trim().toLowerCase()
+        : '';
+    const password =
+      typeof registerDto?.password === 'string' ? registerDto.password : '';
     const name = registerDto?.name;
     const phone = registerDto?.phone;
     const referralCode = registerDto?.referralCode;
@@ -154,7 +182,9 @@ export class AuthService {
       throw new BadRequestException('Password must be at least 8 characters');
     }
     if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-      throw new BadRequestException('Password must contain both letters and numbers');
+      throw new BadRequestException(
+        'Password must contain both letters and numbers',
+      );
     }
 
     // âœ… Check if user exists (indexed query) — generic error to prevent account enumeration (M6)
@@ -179,7 +209,9 @@ export class AuthService {
 
     // Trigger marketing welcome drip campaign series (non-blocking)
     setImmediate(() => {
-      this.dripCampaignService.triggerWelcomeSeries(user.email, user.name).catch(() => {});
+      this.dripCampaignService
+        .triggerWelcomeSeries(user.email, user.name)
+        .catch(() => {});
     });
 
     // Apply and process referral if exists
@@ -188,7 +220,10 @@ export class AuthService {
         await this.referralsService.applyReferralCode(referralCode, email);
         await this.referralsService.processReferralJoin(email, user.id);
       } catch (err: any) {
-        console.error('Failed to apply referral code during register:', err.message);
+        console.error(
+          'Failed to apply referral code during register:',
+          err.message,
+        );
       }
     }
 
@@ -219,7 +254,9 @@ export class AuthService {
     if (!email || !password) {
       return null;
     }
-    const user = await this.userRepository.findOne({ where: { email: email.trim().toLowerCase() } });
+    const user = await this.userRepository.findOne({
+      where: { email: email.trim().toLowerCase() },
+    });
     if (!user) {
       return null;
     }
@@ -233,7 +270,10 @@ export class AuthService {
     return user;
   }
 
-  async login(user: any, metadata?: { ipAddress?: string; userAgent?: string }) {
+  async login(
+    user: any,
+    metadata?: { ipAddress?: string; userAgent?: string },
+  ) {
     if (user.isActive === false) {
       throw new UnauthorizedException('Account has been deactivated');
     }
@@ -245,7 +285,7 @@ export class AuthService {
           email: user.email,
           name: user.name,
           role: user.role,
-        }
+        },
       };
     }
 
@@ -257,12 +297,18 @@ export class AuthService {
           email: user.email,
           name: user.name,
           role: user.role,
-        }
+        },
       };
     }
-    
+
     const sessionId = crypto.randomBytes(16).toString('hex');
-    const payload = { sub: user.id, email: user.email, role: user.role, sessionId, sid: sessionId };
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      sessionId,
+      sid: sessionId,
+    };
     const token = this.jwtService.sign(payload, { expiresIn: '15m' });
 
     await this.createUserSession(
@@ -289,7 +335,7 @@ export class AuthService {
       userAgent: metadata?.userAgent,
       sessionId,
     });
-    
+
     return {
       access_token: token,
       user: {
@@ -297,7 +343,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-      }
+      },
     };
   }
 
@@ -308,17 +354,30 @@ export class AuthService {
       if (!user) {
         // âœ… Security: Don't reveal if user exists
         console.log(`ðŸ” Forgot password attempt for: ${email} (not found)`);
-        await this.auditLogsService.log('FORGOT_PASSWORD_ATTEMPT_INVALID', email);
-        return { success: true, message: 'If this email exists, a reset link has been sent' };
+        await this.auditLogsService.log(
+          'FORGOT_PASSWORD_ATTEMPT_INVALID',
+          email,
+        );
+        return {
+          success: true,
+          message: 'If this email exists, a reset link has been sent',
+        };
       }
 
-      await this.auditLogsService.log('FORGOT_PASSWORD_REQUESTED', email, user.id);
+      await this.auditLogsService.log(
+        'FORGOT_PASSWORD_REQUESTED',
+        email,
+        user.id,
+      );
 
       // âœ… Generate reset token — only the SHA-256 hash is stored at rest (M1)
       const resetToken = crypto.randomBytes(32).toString('hex');
       const expiry = new Date(Date.now() + 3600000); // 1 hour
 
-      await this.userRepository.update(user.id, { resetToken: this.hashToken(resetToken), resetTokenExpiry: expiry });
+      await this.userRepository.update(user.id, {
+        resetToken: this.hashToken(resetToken),
+        resetTokenExpiry: expiry,
+      });
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const resetLink = `${frontendUrl}/en/auth/reset-password/${resetToken}`;
@@ -328,36 +387,51 @@ export class AuthService {
         await this.emailService.sendPasswordResetEmail(email, resetToken);
         console.log(`âœ… Password reset email sent to ${email}`);
       } catch (emailError: any) {
-        console.log(`âš ï¸ Password reset email failed for ${email}: ${emailError.message}`);
+        console.log(
+          `âš ï¸ Password reset email failed for ${email}: ${emailError.message}`,
+        );
       }
 
-      return { success: true, message: 'If this email exists, a reset link has been sent' };
+      return {
+        success: true,
+        message: 'If this email exists, a reset link has been sent',
+      };
     } catch (error: any) {
       console.error('âŒ Forgot password error:', error.message);
       // âœ… Always return success (security)
-      return { success: true, message: 'If this email exists, a reset link has been sent' };
+      return {
+        success: true,
+        message: 'If this email exists, a reset link has been sent',
+      };
     }
   }
 
   async resetPassword(token: string, newPassword: string) {
-    const user = await this.userRepository.findOne({ 
+    const user = await this.userRepository.findOne({
       where: { resetToken: this.hashToken(token) },
     });
-    
+
     if (!user) {
       throw new BadRequestException('Invalid or expired reset token');
     }
-    
+
     if (user.resetTokenExpiry && user.resetTokenExpiry < new Date()) {
       throw new BadRequestException('Reset token has expired');
     }
-    
-    if (typeof newPassword !== 'string' || newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
-      throw new BadRequestException('Password must be at least 8 characters and contain both letters and numbers');
+
+    if (
+      typeof newPassword !== 'string' ||
+      newPassword.length < 8 ||
+      !/[A-Za-z]/.test(newPassword) ||
+      !/\d/.test(newPassword)
+    ) {
+      throw new BadRequestException(
+        'Password must be at least 8 characters and contain both letters and numbers',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await this.userRepository.update(user.id, { 
+    await this.userRepository.update(user.id, {
       password: hashedPassword,
       resetToken: undefined,
       resetTokenExpiry: undefined,
@@ -367,11 +441,16 @@ export class AuthService {
     await this.userSessionRepository.delete({ userId: user.id });
 
     await this.auditLogsService.log('PASSWORD_RESET', user.email, user.id);
-    
+
     return { success: true, message: 'Password reset successfully' };
   }
 
-  async updateProfile(userId: number, name?: string, phone?: string, birthday?: Date) {
+  async updateProfile(
+    userId: number,
+    name?: string,
+    phone?: string,
+    birthday?: Date,
+  ) {
     const updateData: any = { name, phone };
     if (birthday !== undefined) {
       updateData.birthday = birthday;
@@ -382,7 +461,12 @@ export class AuthService {
     return sanitizeUser(user);
   }
 
-  async changePassword(userId: number, currentPassword: string, newPassword: string, currentSessionId?: number) {
+  async changePassword(
+    userId: number,
+    currentPassword: string,
+    newPassword: string,
+    currentSessionId?: number,
+  ) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error('User not found');
@@ -393,15 +477,23 @@ export class AuthService {
       throw new BadRequestException('Current password is incorrect.');
     }
 
-    if (typeof newPassword !== 'string' || newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
-      throw new BadRequestException('Password must be at least 8 characters and contain both letters and numbers');
+    if (
+      typeof newPassword !== 'string' ||
+      newPassword.length < 8 ||
+      !/[A-Za-z]/.test(newPassword) ||
+      !/\d/.test(newPassword)
+    ) {
+      throw new BadRequestException(
+        'Password must be at least 8 characters and contain both letters and numbers',
+      );
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
     await this.userRepository.save(user);
 
     // Revoke all sessions except the current one so other devices log out
-    const qb = this.userSessionRepository.createQueryBuilder()
+    const qb = this.userSessionRepository
+      .createQueryBuilder()
       .delete()
       .where('"userId" = :userId', { userId });
     if (currentSessionId) {
@@ -418,7 +510,7 @@ export class AuthService {
     if (!isValid) {
       throw new BadRequestException('Invalid or expired OTP');
     }
-    
+
     await this.userRepository.update({ email }, { isVerified: true });
     return { success: true, message: 'Account verified successfully' };
   }
@@ -426,12 +518,14 @@ export class AuthService {
   async getPreferences(userId: number) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
-    return user.emailPreferences || {
-      marketing: true,
-      order_updates: true,
-      newsletter: false,
-      promotional: false,
-    };
+    return (
+      user.emailPreferences || {
+        marketing: true,
+        order_updates: true,
+        newsletter: false,
+        promotional: false,
+      }
+    );
   }
 
   async updatePreferences(userId: number, preferences: any) {
@@ -454,11 +548,23 @@ export class AuthService {
     provider: 'google' | 'facebook',
     metadata?: { ipAddress?: string; userAgent?: string },
   ) {
-    if (provider === 'google' && !process.env.GOOGLE_CLIENT_ID && !this.config.get('GOOGLE_CLIENT_ID')) {
-      throw new InternalServerErrorException('GOOGLE_CLIENT_ID environment variable is missing on the server.');
+    if (
+      provider === 'google' &&
+      !process.env.GOOGLE_CLIENT_ID &&
+      !this.config.get('GOOGLE_CLIENT_ID')
+    ) {
+      throw new InternalServerErrorException(
+        'GOOGLE_CLIENT_ID environment variable is missing on the server.',
+      );
     }
-    if (provider === 'facebook' && !process.env.FACEBOOK_APP_ID && !this.config.get('FACEBOOK_APP_ID')) {
-      throw new InternalServerErrorException('FACEBOOK_APP_ID environment variable is missing on the server.');
+    if (
+      provider === 'facebook' &&
+      !process.env.FACEBOOK_APP_ID &&
+      !this.config.get('FACEBOOK_APP_ID')
+    ) {
+      throw new InternalServerErrorException(
+        'FACEBOOK_APP_ID environment variable is missing on the server.',
+      );
     }
 
     const { email, name, avatar, googleId, facebookId } = profile;
@@ -504,7 +610,13 @@ export class AuthService {
 
     // Generate JWT
     const sessionId = crypto.randomBytes(16).toString('hex');
-    const payload = { sub: user.id, email: user.email, role: user.role, sessionId, sid: sessionId };
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      sessionId,
+      sid: sessionId,
+    };
     const token = this.jwtService.sign(payload, { expiresIn: '15m' });
 
     await this.createUserSession(
@@ -516,7 +628,13 @@ export class AuthService {
 
     return {
       access_token: token,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatar: user.avatar,
+      },
     };
   }
 
@@ -553,7 +671,12 @@ export class AuthService {
 
     const secret = generateSecret();
     const appName = process.env.APP_NAME || 'Beauty Parle';
-    const otpAuthUrl = generateURI({ strategy: 'totp', issuer: appName, label: user.email, secret });
+    const otpAuthUrl = generateURI({
+      strategy: 'totp',
+      issuer: appName,
+      label: user.email,
+      secret,
+    });
     const qrCode = await QRCode.toDataURL(otpAuthUrl);
     const backupCodes = this.generateBackupCodes();
 
@@ -563,7 +686,11 @@ export class AuthService {
     user.twoFactorBackupCodes = backupCodes;
     await this.userRepository.save(user);
 
-    await this.auditLogsService.log('TWO_FACTOR_GENERATED', user.email, user.id);
+    await this.auditLogsService.log(
+      'TWO_FACTOR_GENERATED',
+      user.email,
+      user.id,
+    );
 
     return {
       secret,
@@ -572,10 +699,7 @@ export class AuthService {
     };
   }
 
-  async verifyAndEnableTwoFactor(
-    userId: number,
-    token: string,
-  ) {
+  async verifyAndEnableTwoFactor(userId: number, token: string) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new BadRequestException('User not found');
@@ -584,7 +708,9 @@ export class AuthService {
       throw new BadRequestException('2FA is already enabled');
     }
     if (!user.twoFactorSecret) {
-      throw new BadRequestException('No pending 2FA secret found. Generate one first.');
+      throw new BadRequestException(
+        'No pending 2FA secret found. Generate one first.',
+      );
     }
 
     const isValid = verifySync({ token, secret: user.twoFactorSecret }).valid;
@@ -646,7 +772,11 @@ export class AuthService {
       }
     }
 
-    if (!verified && user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0) {
+    if (
+      !verified &&
+      user.twoFactorBackupCodes &&
+      user.twoFactorBackupCodes.length > 0
+    ) {
       const tokenUpper = token.toUpperCase();
       const backupIndex = user.twoFactorBackupCodes.findIndex(
         (code) => code.toUpperCase() === tokenUpper,
@@ -660,12 +790,22 @@ export class AuthService {
     }
 
     if (!verified) {
-      await this.auditLogsService.log('TWO_FACTOR_LOGIN_FAILED', email, user.id);
+      await this.auditLogsService.log(
+        'TWO_FACTOR_LOGIN_FAILED',
+        email,
+        user.id,
+      );
       throw new BadRequestException('Invalid 2FA token or backup code');
     }
 
     const sessionId = crypto.randomBytes(16).toString('hex');
-    const payload = { sub: user.id, email: user.email, role: user.role, sessionId, sid: sessionId };
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      sessionId,
+      sid: sessionId,
+    };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
 
     await this.createUserSession(

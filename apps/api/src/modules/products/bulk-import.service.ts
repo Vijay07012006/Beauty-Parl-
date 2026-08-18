@@ -10,19 +10,25 @@ export class BulkImportService {
     private productRepo: Repository<Product>,
   ) {}
 
-  async importFromCsv(csvContent: string): Promise<{ success: number; failed: number; errors: string[] }> {
+  async importFromCsv(
+    csvContent: string,
+  ): Promise<{ success: number; failed: number; errors: string[] }> {
     if (!csvContent || !csvContent.trim()) {
       throw new BadRequestException('CSV content is empty');
     }
 
-    const lines = csvContent.split(/\r?\n/).filter(line => line.trim().length > 0);
+    const lines = csvContent
+      .split(/\r?\n/)
+      .filter((line) => line.trim().length > 0);
     if (lines.length <= 1) {
-      throw new BadRequestException('CSV does not contain any product rows (only headers or empty)');
+      throw new BadRequestException(
+        'CSV does not contain any product rows (only headers or empty)',
+      );
     }
 
     // Parse headers
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-    
+    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+
     // Find index maps
     const nameIdx = headers.indexOf('name');
     const priceIdx = headers.indexOf('price');
@@ -34,8 +40,15 @@ export class BulkImportService {
     const discountIdx = headers.indexOf('discountpercent');
     const imageIdx = headers.indexOf('image');
 
-    if (nameIdx === -1 || priceIdx === -1 || categoryIdx === -1 || stockIdx === -1) {
-      throw new BadRequestException('CSV headers must include name, price, category, and stock');
+    if (
+      nameIdx === -1 ||
+      priceIdx === -1 ||
+      categoryIdx === -1 ||
+      stockIdx === -1
+    ) {
+      throw new BadRequestException(
+        'CSV headers must include name, price, category, and stock',
+      );
     }
 
     let successCount = 0;
@@ -45,11 +58,14 @@ export class BulkImportService {
     // Parse each row
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // Handle simple comma separation (ignoring commas inside quotes for advanced support if needed, but standard splits are fine)
       const values = this.parseCsvLine(line);
 
-      if (values.length < Math.max(nameIdx, priceIdx, categoryIdx, stockIdx) + 1) {
+      if (
+        values.length <
+        Math.max(nameIdx, priceIdx, categoryIdx, stockIdx) + 1
+      ) {
         failedCount++;
         errors.push(`Row ${i + 1}: Insufficient column values.`);
         continue;
@@ -59,10 +75,12 @@ export class BulkImportService {
       const priceVal = values[priceIdx]?.trim();
       const category = values[categoryIdx]?.trim() || 'General';
       const stockVal = values[stockIdx]?.trim();
-      const description = descIdx !== -1 ? values[descIdx]?.trim() : 'No description available';
+      const description =
+        descIdx !== -1 ? values[descIdx]?.trim() : 'No description available';
       const mrpVal = mrpIdx !== -1 ? values[mrpIdx]?.trim() : null;
       const brand = brandIdx !== -1 ? values[brandIdx]?.trim() : 'Beauty Parlé';
-      const discountVal = discountIdx !== -1 ? values[discountIdx]?.trim() : '0';
+      const discountVal =
+        discountIdx !== -1 ? values[discountIdx]?.trim() : '0';
       const image = imageIdx !== -1 ? values[imageIdx]?.trim() : '';
 
       if (!name) {

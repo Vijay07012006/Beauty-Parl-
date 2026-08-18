@@ -14,7 +14,14 @@ import { LoyaltyModule } from '../loyalty/loyalty.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Achievement, UserAchievement, User, Order, Referral, ReferralTracking]),
+    TypeOrmModule.forFeature([
+      Achievement,
+      UserAchievement,
+      User,
+      Order,
+      Referral,
+      ReferralTracking,
+    ]),
     LoyaltyModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

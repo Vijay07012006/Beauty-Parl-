@@ -10,7 +10,9 @@ export class BulkUserActionsService {
     private userRepo: Repository<User>,
   ) {}
 
-  async bulkSuspend(userIds: number[]): Promise<{ success: boolean; count: number }> {
+  async bulkSuspend(
+    userIds: number[],
+  ): Promise<{ success: boolean; count: number }> {
     if (!userIds || userIds.length === 0) {
       throw new BadRequestException('User IDs array is empty');
     }
@@ -21,18 +23,22 @@ export class BulkUserActionsService {
     });
 
     if (adminUsers.length > 0) {
-      throw new BadRequestException('Cannot bulk suspend administrative or super-admin users');
+      throw new BadRequestException(
+        'Cannot bulk suspend administrative or super-admin users',
+      );
     }
 
     const result = await this.userRepo.update(
       { id: In(userIds) },
-      { isActive: false }
+      { isActive: false },
     );
 
     return { success: true, count: result.affected || 0 };
   }
 
-  async bulkDelete(userIds: number[]): Promise<{ success: boolean; count: number }> {
+  async bulkDelete(
+    userIds: number[],
+  ): Promise<{ success: boolean; count: number }> {
     if (!userIds || userIds.length === 0) {
       throw new BadRequestException('User IDs array is empty');
     }
@@ -43,11 +49,13 @@ export class BulkUserActionsService {
     });
 
     if (adminUsers.length > 0) {
-      throw new BadRequestException('Cannot bulk delete administrative or super-admin users');
+      throw new BadRequestException(
+        'Cannot bulk delete administrative or super-admin users',
+      );
     }
 
     const result = await this.userRepo.delete({
-      id: In(userIds)
+      id: In(userIds),
     });
 
     return { success: true, count: result.affected || 0 };

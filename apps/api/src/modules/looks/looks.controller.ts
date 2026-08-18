@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { LooksService } from './looks.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -43,7 +53,10 @@ export class LooksController {
   @Post(':id/products')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  addProducts(@Param('id', ParseIntPipe) id: number, @Body() body: { productIds: number[] }) {
+  addProducts(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { productIds: number[] },
+  ) {
     return this.looksService.addProductsToLook(id, body.productIds);
   }
 }

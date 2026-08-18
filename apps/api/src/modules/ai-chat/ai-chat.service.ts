@@ -62,7 +62,10 @@ export class AiChatService {
           modelUsed = this.MODEL_NAME;
         }
       } catch (err) {
-        console.warn('HuggingFace chatCompletion failed, falling back to rule-based:', (err as any)?.message || err);
+        console.warn(
+          'HuggingFace chatCompletion failed, falling back to rule-based:',
+          (err as any)?.message || err,
+        );
       }
     }
 
@@ -94,7 +97,16 @@ export class AiChatService {
   private ruleBasedFallback(message: string): string {
     const q = message.toLowerCase().trim();
 
-    const greetings = ['hi', 'hello', 'hey', 'hola', 'greetings', 'good morning', 'good evening', 'good afternoon'];
+    const greetings = [
+      'hi',
+      'hello',
+      'hey',
+      'hola',
+      'greetings',
+      'good morning',
+      'good evening',
+      'good afternoon',
+    ];
     if (greetings.some((g) => q.includes(g))) {
       return '🌸 Hi there! Welcome to Beauty Parlé! I can help you with product recommendations, skincare tips, lipstick shades, moisturizer/sunscreen picks, order status, loyalty points, and referrals. What would you like to know?';
     }
@@ -117,7 +129,12 @@ export class AiChatService {
       return '🎁 Refer a friend and you both get $10 off! Share your unique referral link from the "Refer & Earn" page. When they make their first $30+ purchase, both credits apply instantly. Start sharing to earn rewards!';
     }
 
-    if (q.includes('order') || q.includes('track') || q.includes('status') || q.includes('delivery')) {
+    if (
+      q.includes('order') ||
+      q.includes('track') ||
+      q.includes('status') ||
+      q.includes('delivery')
+    ) {
       if (/\d{4,}/.test(q) || q.includes('id') || q.includes('number')) {
         return '📦 Thanks for sharing your order details! You can track real-time status by logging in → My Account → Orders. There you will find the tracking link, estimated delivery date, and invoice PDF. Need help with a specific item? Tell me more!';
       }
@@ -128,7 +145,12 @@ export class AiChatService {
       return '🛒 Your cart items and subtotal are available in the top-right cart icon. Promo codes can be applied at checkout. If something was removed, it may be out of stock. Need help adding a specific product? Just let me know the name!';
     }
 
-    if (q.includes('account') || q.includes('profile') || q.includes('login') || q.includes('password')) {
+    if (
+      q.includes('account') ||
+      q.includes('profile') ||
+      q.includes('login') ||
+      q.includes('password')
+    ) {
       if (/\d+|@/.test(q)) {
         return '🔐 For account help with your registered email/ID, please log in → My Account where you can update passwords, saved addresses, and payment methods. If you are locked out, use the "Forgot Password" link for a reset email.';
       }
@@ -147,46 +169,97 @@ export class AiChatService {
       return '☀️ Sunscreen essentials we love:\n• Daily wear: SPF 50+ Lightweight Fluid (no white cast, under-makeup friendly)\n• Sensitive skin: Mineral SPF 50 with zinc oxide (100% physical, reef-safe)\n• Body: SPF 30 Quick-Dry Spray (water-resistant 80 min)\nPro tip: Reapply every 2 hours outdoors, 15 min before sun exposure. Remember lips too – use SPF 15+ balm! 💋';
     }
 
-    if (q.includes('skincare') || q.includes('skin') || q.includes('acne') || q.includes('pimple') || q.includes('aging') || q.includes('wrinkle') || q.includes('dark spot') || q.includes('pigment')) {
-      let tip = '✨ Simple 5-step routine: Cleanse → Tone → Serum → Moisturize → SPF (morning).';
+    if (
+      q.includes('skincare') ||
+      q.includes('skin') ||
+      q.includes('acne') ||
+      q.includes('pimple') ||
+      q.includes('aging') ||
+      q.includes('wrinkle') ||
+      q.includes('dark spot') ||
+      q.includes('pigment')
+    ) {
+      let tip =
+        '✨ Simple 5-step routine: Cleanse → Tone → Serum → Moisturize → SPF (morning).';
       if (q.includes('acne') || q.includes('pimple')) {
-        tip += ' For acne: Use salicylic acid cleanser + niacinamide serum, spot-treat with benzoyl peroxide gel. Avoid heavy creams!';
+        tip +=
+          ' For acne: Use salicylic acid cleanser + niacinamide serum, spot-treat with benzoyl peroxide gel. Avoid heavy creams!';
       } else if (q.includes('aging') || q.includes('wrinkle')) {
-        tip += ' For anti-aging: Add retinol serum at night (start 2x/week) + vitamin C serum in the morning. Pair with peptides cream!';
+        tip +=
+          ' For anti-aging: Add retinol serum at night (start 2x/week) + vitamin C serum in the morning. Pair with peptides cream!';
       } else if (q.includes('dark spot') || q.includes('pigment')) {
-        tip += ' For dark spots/pigmentation: Use vitamin C + tranexamic acid serum daily, AHA/BHA peel 1x/week. Always SPF 50+!';
+        tip +=
+          ' For dark spots/pigmentation: Use vitamin C + tranexamic acid serum daily, AHA/BHA peel 1x/week. Always SPF 50+!';
       } else {
-        tip += ' Match serums to your concern: vitamin C (brightening), hyaluronic acid (hydration), retinol (texture), niacinamide (pores).';
+        tip +=
+          ' Match serums to your concern: vitamin C (brightening), hyaluronic acid (hydration), retinol (texture), niacinamide (pores).';
       }
-      tip += ' Consistency is key – stick to your routine 4–6 weeks for visible results! 🌟';
+      tip +=
+        ' Consistency is key – stick to your routine 4–6 weeks for visible results! 🌟';
       return tip;
     }
 
-    if (q.includes('hair') || q.includes('shampoo') || q.includes('conditioner') || q.includes('haircare')) {
+    if (
+      q.includes('hair') ||
+      q.includes('shampoo') ||
+      q.includes('conditioner') ||
+      q.includes('haircare')
+    ) {
       return '💇‍♀️ Haircare picks:\n• Damage repair: Bond repair shampoo + keratin mask (transforms heat/color-damaged hair in 3 uses)\n• Frizzy/curly: Sulfate-free curl cream + argan oil serum (enhances pattern, tames frizz)\n• Oily scalp: Clarifying shampoo 2x/week + lightweight conditioner (apply only on ends)\n• Thin/fine: Volumizing biotin shampoo + root-lifting spray (body without weighing down)\nTry our hair quiz in the "Hair Care" tab for personalized picks!';
     }
 
-    if (q.includes('recommend') || q.includes('suggest') || q.includes('product') || q.includes('best')) {
+    if (
+      q.includes('recommend') ||
+      q.includes('suggest') ||
+      q.includes('product') ||
+      q.includes('best')
+    ) {
       return '🌟 Tell me your skin type (dry/oily/combo/sensitive), hair concern, or what you are shopping for (e.g., "night serum for acne" or "vegan lipstick") and I will tailor recommendations! Popular sets: Glow Essentials ($49 – cleanser + vitamin C + SPF) and Hydration Heroes ($55 – serum + cream + eye treatment).';
     }
 
-    if (q.includes('price') || q.includes('offer') || q.includes('discount') || q.includes('deal') || q.includes('sale') || q.includes('coupon')) {
+    if (
+      q.includes('price') ||
+      q.includes('offer') ||
+      q.includes('discount') ||
+      q.includes('deal') ||
+      q.includes('sale') ||
+      q.includes('coupon')
+    ) {
       return '💰 Current offers:\n• Welcome 15% off first order: code BEAUTY15\n• Spend $75+ → free 4pc gift set (auto-added to cart)\n• Loyalty members: exclusive 10% off flash sale Wednesdays\n• Bundle & save up to 30% on skincare kits\nNew drops get early access for Gold/Platinum tiers!';
     }
 
-    if (q.includes('return') || q.includes('refund') || q.includes('exchange')) {
+    if (
+      q.includes('return') ||
+      q.includes('refund') ||
+      q.includes('exchange')
+    ) {
       return '↩️ Easy 15-day return policy for unopened, unused products in original packaging. Contact support@beautyparle.com with your order ID for a prepaid return label. Refunds process within 5–7 business days after receipt. Opened skincare? Still reach out – we want you happy! 💝';
     }
 
-    if (q.includes('shipping') || q.includes('delivery time') || q.includes('deliver')) {
+    if (
+      q.includes('shipping') ||
+      q.includes('delivery time') ||
+      q.includes('deliver')
+    ) {
       return '🚚 Shipping info:\n• Standard (5–7 days): Free on orders $50+, otherwise $5.99\n• Express (2–3 days): $12.99, free for Platinum members\n• Same-day (select cities): $19.99, order by 2pm\nOrder processing: 1 business day. You will get tracking via email/SMS once it ships! 📬';
     }
 
-    if (q.includes('ingredient') || q.includes('vegan') || q.includes('cruelty') || q.includes('organic') || q.includes('natural')) {
+    if (
+      q.includes('ingredient') ||
+      q.includes('vegan') ||
+      q.includes('cruelty') ||
+      q.includes('organic') ||
+      q.includes('natural')
+    ) {
       return '🌿 All Beauty Parlé products are cruelty-free (never tested on animals 🐰) and most are vegan (look for the 🌱 badge). Key clean ingredients we love: hyaluronic acid, niacinamide, centella asiatica, ceramides, vitamin C/E, retinol (plant-derived squalane base). Paraben-free, sulfate-free, phthalate-free. Full ingredient lists on each product page!';
     }
 
-    if (q.includes('human') || q.includes('agent') || q.includes('support') || q.includes('person')) {
+    if (
+      q.includes('human') ||
+      q.includes('agent') ||
+      q.includes('support') ||
+      q.includes('person')
+    ) {
       return '👩‍💼 I can connect you to a human agent! A representative has been notified and will reply within a few minutes. In the meantime, feel free to share more details about your question or concern so they can help faster. ✨';
     }
 

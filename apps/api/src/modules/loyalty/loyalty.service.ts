@@ -34,7 +34,10 @@ export class LoyaltyService {
         await this.lockRepo.save(existing);
         return true;
       }
-      const lock = this.lockRepo.create({ name, expiresAt: new Date(now.getTime() + ttlMs) });
+      const lock = this.lockRepo.create({
+        name,
+        expiresAt: new Date(now.getTime() + ttlMs),
+      });
       await this.lockRepo.save(lock);
       return true;
     } catch {
@@ -53,9 +56,26 @@ export class LoyaltyService {
       const count = await this.rewardRepo.count();
       if (count === 0) {
         const defaults = [
-          { name: 'Rs. 100 Discount Coupon', description: 'Redeem 100 points to get Rs. 100 discount off your next purchase.', pointsRequired: 100, discountAmount: 100 },
-          { name: 'Free Shipping Voucher', description: 'Redeem 50 points to unlock free shipping on your next order.', pointsRequired: 50, freeShipping: true },
-          { name: 'Rs. 500 Premium Voucher', description: 'Redeem 400 points to get Rs. 500 voucher discount.', pointsRequired: 400, discountAmount: 500 },
+          {
+            name: 'Rs. 100 Discount Coupon',
+            description:
+              'Redeem 100 points to get Rs. 100 discount off your next purchase.',
+            pointsRequired: 100,
+            discountAmount: 100,
+          },
+          {
+            name: 'Free Shipping Voucher',
+            description:
+              'Redeem 50 points to unlock free shipping on your next order.',
+            pointsRequired: 50,
+            freeShipping: true,
+          },
+          {
+            name: 'Rs. 500 Premium Voucher',
+            description: 'Redeem 400 points to get Rs. 500 voucher discount.',
+            pointsRequired: 400,
+            discountAmount: 500,
+          },
         ];
         await this.rewardRepo.save(this.rewardRepo.create(defaults));
         console.log('🌱 Seeded default Loyalty Rewards catalog');
@@ -90,7 +110,11 @@ export class LoyaltyService {
     const points = user.loyaltyPoints;
     if (points >= 1000) {
       user.loyaltyTier = 'platinum';
-      user.tierBenefits = { free_shipping: true, priority_support: true, '10_percent_off': true };
+      user.tierBenefits = {
+        free_shipping: true,
+        priority_support: true,
+        '10_percent_off': true,
+      };
     } else if (points >= 500) {
       user.loyaltyTier = 'gold';
       user.tierBenefits = { free_shipping: true, priority_support: true };
@@ -107,7 +131,11 @@ export class LoyaltyService {
     await this.userRepo.save(user);
   }
 
-  async addPoints(userId: number, points: number, reason: string): Promise<void> {
+  async addPoints(
+    userId: number,
+    points: number,
+    reason: string,
+  ): Promise<void> {
     await this.userRepo.manager.transaction(async (em) => {
       const user = await em.findOne(User, {
         where: { id: userId },
@@ -190,7 +218,8 @@ export class LoyaltyService {
       });
       await em.save(tx);
 
-      rewardCode = 'LOYAL_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      rewardCode =
+        'LOYAL_' + Math.random().toString(36).substring(2, 8).toUpperCase();
       reward = rw;
     });
 
@@ -233,9 +262,14 @@ export class LoyaltyService {
           if (alreadyAwarded) continue;
 
           await this.addPoints(u.id, 50, todayKey);
-          console.log(`🎂 Birthday reward credited to user #${u.id} (${u.email})`);
+          console.log(
+            `🎂 Birthday reward credited to user #${u.id} (${u.email})`,
+          );
         } catch (err: any) {
-          console.error(`Failed to credit birthday reward for user #${u.id}:`, err.message);
+          console.error(
+            `Failed to credit birthday reward for user #${u.id}:`,
+            err.message,
+          );
         }
       }
     } finally {

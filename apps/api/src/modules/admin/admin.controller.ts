@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query, Request, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Query,
+  Request,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -47,8 +60,10 @@ export class AdminController {
     const totalUsers = await this.userRepo.count();
     const totalProducts = await this.productRepo.count();
     const totalOrders = await this.orderRepo.count();
-    const pendingOrders = await this.orderRepo.count({ where: { status: 'pending' } });
-    
+    const pendingOrders = await this.orderRepo.count({
+      where: { status: 'pending' },
+    });
+
     const revenueResult = await this.orderRepo
       .createQueryBuilder('order')
       .select('SUM(order.total)', 'total')
@@ -68,17 +83,29 @@ export class AdminController {
   @Get('users')
   async getUsers(@Query('page') page?: string, @Query('limit') limit?: string) {
     const pageNum = Math.max(1, parseInt(page || '', 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit || '', 10) || 10));
+    const limitNum = Math.min(
+      100,
+      Math.max(1, parseInt(limit || '', 10) || 10),
+    );
     const [users, total] = await this.userRepo.findAndCount({
       skip: (pageNum - 1) * limitNum,
       take: limitNum,
       order: { createdAt: 'DESC' },
     });
-    return { users: users.map((u) => sanitizeUser(u)), total, page: pageNum, limit: limitNum };
+    return {
+      users: users.map((u) => sanitizeUser(u)),
+      total,
+      page: pageNum,
+      limit: limitNum,
+    };
   }
 
   @Put('users/:id/role')
-  async updateUserRole(@Param('id') id: number, @Body() body: { role: UserRole }, @Request() req: any) {
+  async updateUserRole(
+    @Param('id') id: number,
+    @Body() body: { role: UserRole },
+    @Request() req: any,
+  ) {
     // Validate role is a real enum value (prevents arbitrary string injection)
     const validRoles = Object.values(UserRole);
     if (!validRoles.includes(body?.role)) {
@@ -98,14 +125,23 @@ export class AdminController {
     const actorRole: UserRole = req.user?.role;
 
     // Only SUPER_ADMIN may grant ADMIN or SUPER_ADMIN
-    if ((body.role === UserRole.ADMIN || body.role === UserRole.SUPER_ADMIN) && actorRole !== UserRole.SUPER_ADMIN) {
+    if (
+      (body.role === UserRole.ADMIN || body.role === UserRole.SUPER_ADMIN) &&
+      actorRole !== UserRole.SUPER_ADMIN
+    ) {
       throw new BadRequestException('Only super admins can grant admin roles');
     }
 
     // ADMIN cannot demote another admin/super admin; SUPER_ADMIN can manage anyone
     const target = await this.userRepo.findOne({ where: { id: targetId } });
-    if (target && actorRole === UserRole.ADMIN && (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN)) {
-      throw new BadRequestException('Admins cannot modify other admin accounts');
+    if (
+      target &&
+      actorRole === UserRole.ADMIN &&
+      (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN)
+    ) {
+      throw new BadRequestException(
+        'Admins cannot modify other admin accounts',
+      );
     }
 
     const beforeValue = target ? { role: target.role } : null;
@@ -125,17 +161,29 @@ export class AdminController {
   }
 
   @Put('users/:id/status')
-  async updateUserStatus(@Param('id') id: number, @Body() body: { isActive: boolean }, @Request() req: any) {
+  async updateUserStatus(
+    @Param('id') id: number,
+    @Body() body: { isActive: boolean },
+    @Request() req: any,
+  ) {
     const targetId = Number(id);
     if (!Number.isInteger(targetId)) {
       throw new BadRequestException('Invalid user id');
     }
     if (req.user && req.user.id === targetId) {
-      throw new BadRequestException('You cannot change your own account status.');
+      throw new BadRequestException(
+        'You cannot change your own account status.',
+      );
     }
     const target = await this.userRepo.findOne({ where: { id: targetId } });
-    if (req.user?.role === UserRole.ADMIN && target && (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN)) {
-      throw new BadRequestException('Admins cannot modify other admin accounts');
+    if (
+      req.user?.role === UserRole.ADMIN &&
+      target &&
+      (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN)
+    ) {
+      throw new BadRequestException(
+        'Admins cannot modify other admin accounts',
+      );
     }
 
     const beforeValue = target ? { isActive: target.isActive } : null;
@@ -164,11 +212,22 @@ export class AdminController {
       throw new BadRequestException('You cannot delete your own account.');
     }
     const target = await this.userRepo.findOne({ where: { id: targetId } });
-    if (req.user?.role === UserRole.ADMIN && target && (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN)) {
-      throw new BadRequestException('Admins cannot delete other admin accounts');
+    if (
+      req.user?.role === UserRole.ADMIN &&
+      target &&
+      (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN)
+    ) {
+      throw new BadRequestException(
+        'Admins cannot delete other admin accounts',
+      );
     }
     await this.userRepo.delete(targetId);
-    await this.auditLogsService.log('ADMIN_DELETE_USER', req.user?.email, req.user?.id, { targetUserId: id });
+    await this.auditLogsService.log(
+      'ADMIN_DELETE_USER',
+      req.user?.email,
+      req.user?.id,
+      { targetUserId: id },
+    );
     return { success: true };
   }
 
@@ -177,12 +236,21 @@ export class AdminController {
   async createProduct(@Body() data: Partial<Product>, @Request() req: any) {
     const product = this.productRepo.create(data);
     const saved = await this.productRepo.save(product);
-    await this.auditLogsService.log('ADMIN_CREATE_PRODUCT', req.user?.email, req.user?.id, { productId: saved.id, name: saved.name });
+    await this.auditLogsService.log(
+      'ADMIN_CREATE_PRODUCT',
+      req.user?.email,
+      req.user?.id,
+      { productId: saved.id, name: saved.name },
+    );
     return saved;
   }
 
   @Put('products/:id')
-  async updateProduct(@Param('id') id: number, @Body() data: Partial<Product>, @Request() req: any) {
+  async updateProduct(
+    @Param('id') id: number,
+    @Body() data: Partial<Product>,
+    @Request() req: any,
+  ) {
     const beforeProduct = await this.productRepo.findOne({ where: { id } });
     await this.productRepo.update(id, data);
     const afterProduct = await this.productRepo.findOne({ where: { id } });
@@ -202,15 +270,26 @@ export class AdminController {
   @Delete('products/:id')
   async deleteProduct(@Param('id') id: number, @Request() req: any) {
     await this.productRepo.delete(id);
-    await this.auditLogsService.log('ADMIN_DELETE_PRODUCT', req.user?.email, req.user?.id, { productId: id });
+    await this.auditLogsService.log(
+      'ADMIN_DELETE_PRODUCT',
+      req.user?.email,
+      req.user?.id,
+      { productId: id },
+    );
     return { success: true };
   }
 
   // Orders Management
   @Get('orders')
-  async getOrders(@Query('page') page?: string, @Query('limit') limit?: string) {
+  async getOrders(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     const pageNum = Math.max(1, parseInt(page || '', 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit || '', 10) || 10));
+    const limitNum = Math.min(
+      100,
+      Math.max(1, parseInt(limit || '', 10) || 10),
+    );
     const [orders, total] = await this.orderRepo.findAndCount({
       skip: (pageNum - 1) * limitNum,
       take: limitNum,
@@ -220,8 +299,18 @@ export class AdminController {
   }
 
   @Put('orders/:id/status')
-  async updateOrderStatus(@Param('id') id: number, @Body() body: { status: any }, @Request() req: any) {
-    const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+  async updateOrderStatus(
+    @Param('id') id: number,
+    @Body() body: { status: any },
+    @Request() req: any,
+  ) {
+    const allowedStatuses = [
+      'pending',
+      'processing',
+      'shipped',
+      'delivered',
+      'cancelled',
+    ];
     if (!allowedStatuses.includes(body?.status)) {
       throw new BadRequestException(`Invalid status: ${body?.status}`);
     }
@@ -257,10 +346,17 @@ export class AdminController {
       throw new BadRequestException('Invalid user id');
     }
     if (req.user && req.user.id === targetId) {
-      throw new BadRequestException('You cannot permanently delete your own account.');
+      throw new BadRequestException(
+        'You cannot permanently delete your own account.',
+      );
     }
     await this.userRepo.delete(targetId);
-    await this.auditLogsService.log('SUPERADMIN_PERMANENT_DELETE_USER', req.user?.email, req.user?.id, { targetUserId: id });
+    await this.auditLogsService.log(
+      'SUPERADMIN_PERMANENT_DELETE_USER',
+      req.user?.email,
+      req.user?.id,
+      { targetUserId: id },
+    );
     return { success: true };
   }
 
@@ -268,8 +364,9 @@ export class AdminController {
   @Roles(UserRole.SUPER_ADMIN)
   async suspendUser(
     @Param('id') id: number,
-    @Body() body: { reason: string; duration: '1d' | '7d' | '30d' | 'permanent' },
-    @Request() req: any
+    @Body()
+    body: { reason: string; duration: '1d' | '7d' | '30d' | 'permanent' },
+    @Request() req: any,
   ) {
     const targetId = Number(id);
     if (!Number.isInteger(targetId)) {
@@ -294,7 +391,9 @@ export class AdminController {
       suspendedUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     } else {
       // Permanent suspension: set to far future date
-      suspendedUntil = new Date(now.getTime() + 100 * 365 * 24 * 60 * 60 * 1000);
+      suspendedUntil = new Date(
+        now.getTime() + 100 * 365 * 24 * 60 * 60 * 1000,
+      );
     }
 
     await this.userRepo.update(targetId, {
@@ -304,16 +403,25 @@ export class AdminController {
     });
 
     try {
-      await this.emailService.sendSuspensionEmail(target.email, body.reason, body.duration);
+      await this.emailService.sendSuspensionEmail(
+        target.email,
+        body.reason,
+        body.duration,
+      );
     } catch (err) {
       console.error('Failed to send suspension email:', err);
     }
 
-    await this.auditLogsService.log('SUPERADMIN_SUSPEND_USER', req.user?.email, req.user?.id, {
-      targetUserId: id,
-      reason: body.reason,
-      duration: body.duration,
-    });
+    await this.auditLogsService.log(
+      'SUPERADMIN_SUSPEND_USER',
+      req.user?.email,
+      req.user?.id,
+      {
+        targetUserId: id,
+        reason: body.reason,
+        duration: body.duration,
+      },
+    );
 
     return { success: true };
   }
@@ -345,15 +453,21 @@ export class AdminController {
       throw new BadRequestException('Cannot terminate the only Super Admin.');
     }
 
-    const beforeValue = { isActive: user.isActive, suspendedUntil: user.suspendedUntil };
-    
+    const beforeValue = {
+      isActive: user.isActive,
+      suspendedUntil: user.suspendedUntil,
+    };
+
     await this.userRepo.update(targetId, {
       isActive: false,
       suspendedUntil: new Date('2099-12-31'),
       suspensionReason: body.reason,
     });
 
-    const afterValue = { isActive: false, suspendedUntil: new Date('2099-12-31') };
+    const afterValue = {
+      isActive: false,
+      suspendedUntil: new Date('2099-12-31'),
+    };
 
     await this.auditLogsService.log({
       action: 'user.terminated',
@@ -379,7 +493,10 @@ export class AdminController {
       console.error('Failed to send termination email:', emailError.message);
     }
 
-    return { success: true, message: `User ${user.email} terminated successfully.` };
+    return {
+      success: true,
+      message: `User ${user.email} terminated successfully.`,
+    };
   }
 
   @Put('users/:id/reactivate')
@@ -394,7 +511,12 @@ export class AdminController {
       suspendedUntil: undefined,
       suspensionReason: undefined,
     });
-    await this.auditLogsService.log('SUPERADMIN_REACTIVATE_USER', req.user?.email, req.user?.id, { targetUserId: id });
+    await this.auditLogsService.log(
+      'SUPERADMIN_REACTIVATE_USER',
+      req.user?.email,
+      req.user?.id,
+      { targetUserId: id },
+    );
     return { success: true };
   }
 
@@ -405,12 +527,20 @@ export class AdminController {
     @Query('action') action?: string,
   ) {
     const pageNum = Math.max(1, parseInt(page || '', 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit || '', 10) || 20));
-    const qb = this.auditLogRepo.createQueryBuilder('log').orderBy('log.createdAt', 'DESC');
+    const limitNum = Math.min(
+      100,
+      Math.max(1, parseInt(limit || '', 10) || 20),
+    );
+    const qb = this.auditLogRepo
+      .createQueryBuilder('log')
+      .orderBy('log.createdAt', 'DESC');
     if (action) {
       qb.where('log.action ILIKE :action', { action: `%${action}%` });
     }
-    const [logs, total] = await qb.skip((pageNum - 1) * limitNum).take(limitNum).getManyAndCount();
+    const [logs, total] = await qb
+      .skip((pageNum - 1) * limitNum)
+      .take(limitNum)
+      .getManyAndCount();
     return { logs, total, page: pageNum, limit: limitNum };
   }
 
@@ -445,7 +575,7 @@ export class AdminController {
           ...sess,
           user: u || { name: 'Unknown', email: 'Unknown', role: 'user' },
         };
-      })
+      }),
     );
 
     return enriched;
@@ -464,7 +594,7 @@ export class AdminController {
 
     const recentCount = await this.auditLogRepo.count({
       where: {
-        createdAt: Between(twentyFourHoursAgo, now) as any,
+        createdAt: Between(twentyFourHoursAgo, now),
       },
     });
 
@@ -536,29 +666,34 @@ export class AdminController {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const recentOrders = await this.orderRepo.find({
       where: {
-        createdAt: Between(thirtyDaysAgo, now) as any,
-        status: 'delivered'
+        createdAt: Between(thirtyDaysAgo, now),
+        status: 'delivered',
       },
-      order: { createdAt: 'ASC' }
+      order: { createdAt: 'ASC' },
     });
 
     const revenueMap: { [key: string]: number } = {};
     const ordersMap: { [key: string]: number } = {};
     for (let i = 0; i < 30; i++) {
-      const dateStr = new Date(now.getTime() - (29 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+      const dateStr = new Date(
+        now.getTime() - (29 - i) * 24 * 60 * 60 * 1000,
+      ).toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
       revenueMap[dateStr] = 0;
       ordersMap[dateStr] = 0;
     }
 
-    recentOrders.forEach(o => {
-      const dateStr = new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+    recentOrders.forEach((o) => {
+      const dateStr = new Date(o.createdAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+      });
       if (revenueMap[dateStr] !== undefined) {
         revenueMap[dateStr] += Number(o.total) || 0;
         ordersMap[dateStr] += 1;
       }
     });
 
-    const revenueTrends = Object.keys(revenueMap).map(date => ({
+    const revenueTrends = Object.keys(revenueMap).map((date) => ({
       date,
       revenue: parseFloat(revenueMap[date].toFixed(2)),
       orders: ordersMap[date],
@@ -573,7 +708,9 @@ export class AdminController {
     ];
 
     // Conversion Funnel calculations
-    const totalDelivered = await this.orderRepo.count({ where: { status: 'delivered' } });
+    const totalDelivered = await this.orderRepo.count({
+      where: { status: 'delivered' },
+    });
     const completedPurchases = Math.max(12, totalDelivered);
     const checkoutInitiations = Math.round(completedPurchases * 1.3);
     const cartAdditions = Math.round(checkoutInitiations * 1.8);
@@ -582,10 +719,26 @@ export class AdminController {
 
     const conversionFunnels = [
       { stage: '1. Sessions', count: totalSessions, pct: 100 },
-      { stage: '2. Product Views', count: productViews, pct: Math.round((productViews / totalSessions) * 100) },
-      { stage: '3. Add to Cart', count: cartAdditions, pct: Math.round((cartAdditions / totalSessions) * 100) },
-      { stage: '4. Initiate Checkout', count: checkoutInitiations, pct: Math.round((checkoutInitiations / totalSessions) * 100) },
-      { stage: '5. Purchase Complete', count: completedPurchases, pct: Math.round((completedPurchases / totalSessions) * 100) },
+      {
+        stage: '2. Product Views',
+        count: productViews,
+        pct: Math.round((productViews / totalSessions) * 100),
+      },
+      {
+        stage: '3. Add to Cart',
+        count: cartAdditions,
+        pct: Math.round((cartAdditions / totalSessions) * 100),
+      },
+      {
+        stage: '4. Initiate Checkout',
+        count: checkoutInitiations,
+        pct: Math.round((checkoutInitiations / totalSessions) * 100),
+      },
+      {
+        stage: '5. Purchase Complete',
+        count: completedPurchases,
+        pct: Math.round((completedPurchases / totalSessions) * 100),
+      },
     ];
 
     // Top Products by Revenue
@@ -593,12 +746,16 @@ export class AdminController {
       order: { ratingCount: 'DESC' },
       take: 5,
     });
-    const topProducts = topProductsRaw.map((p, idx) => ({
-      id: p.id,
-      name: p.name,
-      revenue: parseFloat(((p.price * (p.ratingCount || 1)) / (idx + 1)).toFixed(2)),
-      sales: Math.round((p.ratingCount || 1) * 1.5),
-    })).sort((a, b) => b.revenue - a.revenue);
+    const topProducts = topProductsRaw
+      .map((p, idx) => ({
+        id: p.id,
+        name: p.name,
+        revenue: parseFloat(
+          ((p.price * (p.ratingCount || 1)) / (idx + 1)).toFixed(2),
+        ),
+        sales: Math.round((p.ratingCount || 1) * 1.5),
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
 
     return {
       revenueTrends,

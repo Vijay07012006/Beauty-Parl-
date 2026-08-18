@@ -8,7 +8,8 @@ const QUIZZES = [
   {
     id: 'skin-type',
     title: 'Skin Care Diagnostic Quiz',
-    description: 'Find the perfect skincare routine tailored to your skin type and concerns.',
+    description:
+      'Find the perfect skincare routine tailored to your skin type and concerns.',
     questions: [
       {
         id: 'skin_feel',
@@ -16,7 +17,10 @@ const QUIZZES = [
         options: [
           { value: 'oily', text: 'Shiny and greasy all over' },
           { value: 'dry', text: 'Tight, flaky, or rough' },
-          { value: 'combination', text: 'Oily in the T-zone, dry on the cheeks' },
+          {
+            value: 'combination',
+            text: 'Oily in the T-zone, dry on the cheeks',
+          },
           { value: 'normal', text: 'Comfortable, balanced and smooth' },
         ],
       },
@@ -49,10 +53,16 @@ const QUIZZES = [
         id: 'look_preference',
         text: 'What is your ideal daily makeup aesthetic?',
         options: [
-          { value: 'natural', text: 'Clean girl look, subtle glow, "no makeup" feel' },
+          {
+            value: 'natural',
+            text: 'Clean girl look, subtle glow, "no makeup" feel',
+          },
           { value: 'glam', text: 'Bold lips, smoky eyes, contoured cheeks' },
           { value: 'vintage', text: 'Classic winged eyeliner, matte red lip' },
-          { value: 'bold', text: 'Vibrant colors, dramatic shadows, expressive shimmers' },
+          {
+            value: 'bold',
+            text: 'Vibrant colors, dramatic shadows, expressive shimmers',
+          },
         ],
       },
       {
@@ -60,7 +70,10 @@ const QUIZZES = [
         text: 'Which lipstick texture do you prefer?',
         options: [
           { value: 'glossy', text: 'Dewy, wet-shine glosses or lip oils' },
-          { value: 'matte', text: 'Velvety, long-wear matte liquids or bullets' },
+          {
+            value: 'matte',
+            text: 'Velvety, long-wear matte liquids or bullets',
+          },
           { value: 'satin', text: 'Creamy, moisturizing satin sticks' },
         ],
       },
@@ -78,7 +91,11 @@ export class QuizzesService {
   ) {}
 
   getQuizzes() {
-    return QUIZZES.map(({ id, title, description }) => ({ id, title, description }));
+    return QUIZZES.map(({ id, title, description }) => ({
+      id,
+      title,
+      description,
+    }));
   }
 
   getQuizQuestions(quizId: string) {
@@ -98,7 +115,10 @@ export class QuizzesService {
       userId,
       sessionId,
       answers,
-      recommendedProducts: recommendations.map((p) => ({ id: p.id, name: p.name })),
+      recommendedProducts: recommendations.map((p) => ({
+        id: p.id,
+        name: p.name,
+      })),
     });
 
     const saved = await this.qrRepo.save(savedResponse);
@@ -107,13 +127,20 @@ export class QuizzesService {
     // anonymous-session spam) — retain only the 5 most recent submissions.
     try {
       const where = userId ? { userId } : { sessionId: sessionId || '' };
-      const recent = await this.qrRepo.find({ where, order: { createdAt: 'DESC' }, take: 10 });
+      const recent = await this.qrRepo.find({
+        where,
+        order: { createdAt: 'DESC' },
+        take: 10,
+      });
       const stale = recent.slice(5).map((r) => r.id);
       if (stale.length > 0) {
         await this.qrRepo.delete(stale);
       }
     } catch (err) {
-      console.warn('⚠️ [Quizzes] Failed to prune old quiz responses:', (err as Error).message);
+      console.warn(
+        '⚠️ [Quizzes] Failed to prune old quiz responses:',
+        (err as Error).message,
+      );
     }
 
     return {
@@ -122,11 +149,15 @@ export class QuizzesService {
     };
   }
 
-  private async getRecommendations(quizId: string, answers: Record<string, string>): Promise<Product[]> {
+  private async getRecommendations(
+    quizId: string,
+    answers: Record<string, string>,
+  ): Promise<Product[]> {
     const products = await this.productRepo.find();
     const scored = products.map((product) => {
       let score = 0;
-      const textToSearch = `${product.name} ${product.description} ${product.category}`.toLowerCase();
+      const textToSearch =
+        `${product.name} ${product.description} ${product.category}`.toLowerCase();
 
       if (quizId === 'skin-type') {
         const concern = answers['concern'];
@@ -219,7 +250,11 @@ export class QuizzesService {
           }
         }
         if (look === 'vintage') {
-          if (textToSearch.includes('classic') || textToSearch.includes('red') || textToSearch.includes('retro')) {
+          if (
+            textToSearch.includes('classic') ||
+            textToSearch.includes('red') ||
+            textToSearch.includes('retro')
+          ) {
             score += 5;
           }
         }
@@ -229,10 +264,14 @@ export class QuizzesService {
     });
 
     // If no matching scores, return the most popular products as fallbacks
-    const matched = scored.filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
+    const matched = scored
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score);
 
     if (matched.length === 0) {
-      return products.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0)).slice(0, 4);
+      return products
+        .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
+        .slice(0, 4);
     }
 
     return matched.map((item) => item.product).slice(0, 4);

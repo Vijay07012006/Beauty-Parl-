@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export type CouponType = 'percentage' | 'fixed';
 
@@ -16,10 +22,22 @@ export class Coupon {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   value!: number;
 
-  @Column({ name: 'min_order', type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({
+    name: 'min_order',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
   minOrder!: number;
 
-  @Column({ name: 'max_discount', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    name: 'max_discount',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   maxDiscount!: number;
 
   @Column({ name: 'expires_at', type: 'timestamp', nullable: true })

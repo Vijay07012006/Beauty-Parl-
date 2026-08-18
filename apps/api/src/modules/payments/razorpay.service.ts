@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -22,7 +26,9 @@ export class RazorpayService {
     const keySecret = this.configService.get<string>('razorpay.keySecret');
 
     if (!keyId || !keySecret) {
-      console.warn('⚠️ [Payments] Razorpay credentials are not defined. Payments using Razorpay will fail.');
+      console.warn(
+        '⚠️ [Payments] Razorpay credentials are not defined. Payments using Razorpay will fail.',
+      );
     } else {
       this.razorpay = new Razorpay({
         key_id: keyId,
@@ -31,12 +37,22 @@ export class RazorpayService {
     }
   }
 
-  async createOrder(amount: number, orderId?: number, currency = 'INR', userId?: number, guestEmail?: string): Promise<any> {
+  async createOrder(
+    amount: number,
+    orderId?: number,
+    currency = 'INR',
+    userId?: number,
+    guestEmail?: string,
+  ): Promise<any> {
     if (!this.razorpay) {
-      throw new InternalServerErrorException('Razorpay service is not configured. Payments are disabled.');
+      throw new InternalServerErrorException(
+        'Razorpay service is not configured. Payments are disabled.',
+      );
     }
     if (!orderId) {
-      throw new BadRequestException('Order ID is required to create a payment order');
+      throw new BadRequestException(
+        'Order ID is required to create a payment order',
+      );
     }
     // Server-side: verify the order exists and the amount matches the order total (prevents price tampering)
     const dbOrder = await this.orderRepo.findOne({ where: { id: orderId } });
@@ -44,10 +60,16 @@ export class RazorpayService {
       throw new BadRequestException(`Order with ID ${orderId} not found`);
     }
     // H-7: ownership — the caller must own the order (their userId OR the guest email on the order)
-    const orderBelongsToUser = dbOrder.userId && userId && dbOrder.userId === userId;
-    const orderBelongsToGuest = !dbOrder.userId && guestEmail && dbOrder.guestEmail?.toLowerCase() === guestEmail;
+    const orderBelongsToUser =
+      dbOrder.userId && userId && dbOrder.userId === userId;
+    const orderBelongsToGuest =
+      !dbOrder.userId &&
+      guestEmail &&
+      dbOrder.guestEmail?.toLowerCase() === guestEmail;
     if (!orderBelongsToUser && !orderBelongsToGuest) {
-      throw new BadRequestException('You are not authorized to pay for this order');
+      throw new BadRequestException(
+        'You are not authorized to pay for this order',
+      );
     }
     if (Math.abs(Number(dbOrder.total) - Number(amount)) > 0.01) {
       throw new BadRequestException('Amount does not match the order total');
@@ -70,16 +92,23 @@ export class RazorpayService {
         keyId: this.configService.get<string>('razorpay.keyId'),
       };
     } catch (error: any) {
-      throw new InternalServerErrorException(error.message || 'Razorpay order generation failed.');
+      throw new InternalServerErrorException(
+        error.message || 'Razorpay order generation failed.',
+      );
     }
   }
 
   // Verify webhook signature against the RAW request body
-  async verifyWebhook(body: Buffer | string, signature: string): Promise<boolean> {
+  async verifyWebhook(
+    body: Buffer | string,
+    signature: string,
+  ): Promise<boolean> {
     // Webhook secret must be its own dedicated secret — never silently fall back to the API keySecret (O10)
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
     if (!webhookSecret) {
-      console.error('[Webhook] RAZORPAY_WEBHOOK_SECRET is not configured. Webhooks will be rejected.');
+      console.error(
+        '[Webhook] RAZORPAY_WEBHOOK_SECRET is not configured. Webhooks will be rejected.',
+      );
       return false;
     }
     const expectedSignature = crypto
@@ -108,7 +137,9 @@ export class RazorpayService {
 
     const order = await this.orderRepo.findOne({ where: { razorpayOrderId } });
     if (!order) {
-      console.warn(`⚠️ [Webhook] No order found with razorpayOrderId: ${razorpayOrderId}`);
+      console.warn(
+        `⚠️ [Webhook] No order found with razorpayOrderId: ${razorpayOrderId}`,
+      );
       return;
     }
 
@@ -142,7 +173,9 @@ export class RazorpayService {
       .execute();
 
     if (!updated.affected || updated.affected === 0) {
-      console.log(`✅ [Webhook] Order #${order.id} already marked paid. Skipping.`);
+      console.log(
+        `✅ [Webhook] Order #${order.id} already marked paid. Skipping.`,
+      );
       return;
     }
     order.status = 'paid';
@@ -150,13 +183,20 @@ export class RazorpayService {
     console.log(`✅ [Webhook] Order #${order.id} updated to 'paid'.`);
 
     // Send confirmation email
-    const email = order.guestEmail || (order.userId ? await this.getUserEmail(order.userId) : null);
+    const email =
+      order.guestEmail ||
+      (order.userId ? await this.getUserEmail(order.userId) : null);
     if (email) {
       try {
         await this.emailService.sendOrderConfirmation(email, order);
-        console.log(`📧 [Webhook] Confirmation email sent to ${email} for Order #${order.id}`);
+        console.log(
+          `📧 [Webhook] Confirmation email sent to ${email} for Order #${order.id}`,
+        );
       } catch (err) {
-        console.error(`❌ [Webhook] Failed to send confirmation email for Order #${order.id}:`, err);
+        console.error(
+          `❌ [Webhook] Failed to send confirmation email for Order #${order.id}:`,
+          err,
+        );
       }
     }
   }

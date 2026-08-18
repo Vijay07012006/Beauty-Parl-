@@ -30,15 +30,51 @@ export class AiAssistantService implements OnModuleInit {
   // Strict whitelist of all pages JARVIS is allowed to navigate to.
   // This prevents open-redirect attacks — nothing outside this set will be accepted.
   private static readonly ALLOWED_PAGES = new Set([
-    'profile', 'orders', 'cart', 'wishlist', 'addresses', 'checkout',
-    'beauty-box', 'loyalty', 'referral', 'gamification', 'preferences',
-    'quiz', 'routine-builder', 'skin-analysis', 'virtual-try-on',
-    'subscriptions', 'ai-history', 'profile/tickets', 'profile/notifications',
-    'products', 'categories', 'compare', 'looks', 'clean-beauty', 'live-shopping',
-    'about', 'contact', 'faq', 'blog', 'booking', 'shipping', 'returns', 'privacy', 'terms',
-    'admin/dashboard', 'admin/products', 'admin/orders', 'admin/users',
-    'admin/coupons', 'admin/reviews', 'admin/settings', 'admin/ugc',
-    'admin/chat', 'admin/live-shopping', 'admin/tickets',
+    'profile',
+    'orders',
+    'cart',
+    'wishlist',
+    'addresses',
+    'checkout',
+    'beauty-box',
+    'loyalty',
+    'referral',
+    'gamification',
+    'preferences',
+    'quiz',
+    'routine-builder',
+    'skin-analysis',
+    'virtual-try-on',
+    'subscriptions',
+    'ai-history',
+    'profile/tickets',
+    'profile/notifications',
+    'products',
+    'categories',
+    'compare',
+    'looks',
+    'clean-beauty',
+    'live-shopping',
+    'about',
+    'contact',
+    'faq',
+    'blog',
+    'booking',
+    'shipping',
+    'returns',
+    'privacy',
+    'terms',
+    'admin/dashboard',
+    'admin/products',
+    'admin/orders',
+    'admin/users',
+    'admin/coupons',
+    'admin/reviews',
+    'admin/settings',
+    'admin/ugc',
+    'admin/chat',
+    'admin/live-shopping',
+    'admin/tickets',
   ]);
 
   private sanitizeRoute(page: string | undefined): string | null {
@@ -57,14 +93,27 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'get_products',
-        description: 'Get products by category, search term, or price range. Use this when the user asks to see products, search items, suggest items, or show catalogs.',
+        description:
+          'Get products by category, search term, or price range. Use this when the user asks to see products, search items, suggest items, or show catalogs.',
         parameters: {
           type: 'object',
           properties: {
-            category: { type: 'string', description: 'Product category like Makeup, Skincare, Haircare' },
-            search: { type: 'string', description: 'Search term/keyword matching name or description' },
-            minPrice: { type: 'number', description: 'Minimum price filter value' },
-            maxPrice: { type: 'number', description: 'Maximum price filter value' },
+            category: {
+              type: 'string',
+              description: 'Product category like Makeup, Skincare, Haircare',
+            },
+            search: {
+              type: 'string',
+              description: 'Search term/keyword matching name or description',
+            },
+            minPrice: {
+              type: 'number',
+              description: 'Minimum price filter value',
+            },
+            maxPrice: {
+              type: 'number',
+              description: 'Maximum price filter value',
+            },
           },
         },
       },
@@ -73,11 +122,16 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'get_sales_stats',
-        description: 'Get sales statistics (total revenue, order count, and average order value) for a range. Useful to answer business queries.',
+        description:
+          'Get sales statistics (total revenue, order count, and average order value) for a range. Useful to answer business queries.',
         parameters: {
           type: 'object',
           properties: {
-            range: { type: 'string', description: 'Time range to filter sales', enum: ['today', 'week', 'month', 'year'] },
+            range: {
+              type: 'string',
+              description: 'Time range to filter sales',
+              enum: ['today', 'week', 'month', 'year'],
+            },
           },
           required: ['range'],
         },
@@ -87,11 +141,15 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'get_order_details',
-        description: 'Get status and summary details of a specific order by its numeric ID.',
+        description:
+          'Get status and summary details of a specific order by its numeric ID.',
         parameters: {
           type: 'object',
           properties: {
-            orderId: { type: 'number', description: 'Numeric order identifier' },
+            orderId: {
+              type: 'number',
+              description: 'Numeric order identifier',
+            },
           },
           required: ['orderId'],
         },
@@ -101,23 +159,61 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'navigate_to',
-        description: 'Navigate the client browser to a specific page. Use ONLY the page slug values listed in the enum. Do NOT include /en/ prefix or locale — the frontend will add it. For user pages: profile, orders, cart, wishlist, addresses, checkout, beauty-box, loyalty, referral, gamification, preferences, quiz, routine-builder, skin-analysis, virtual-try-on, subscriptions. For product pages: products, categories, compare, looks, clean-beauty, live-shopping. For info pages: about, contact, faq, blog, shipping, returns, privacy, terms. For admin pages: admin/dashboard, admin/products, admin/orders, admin/users, admin/coupons, admin/reviews, admin/settings, admin/ugc, admin/chat, admin/live-shopping.',
+        description:
+          'Navigate the client browser to a specific page. Use ONLY the page slug values listed in the enum. Do NOT include /en/ prefix or locale — the frontend will add it. For user pages: profile, orders, cart, wishlist, addresses, checkout, beauty-box, loyalty, referral, gamification, preferences, quiz, routine-builder, skin-analysis, virtual-try-on, subscriptions. For product pages: products, categories, compare, looks, clean-beauty, live-shopping. For info pages: about, contact, faq, blog, shipping, returns, privacy, terms. For admin pages: admin/dashboard, admin/products, admin/orders, admin/users, admin/coupons, admin/reviews, admin/settings, admin/ugc, admin/chat, admin/live-shopping.',
         parameters: {
           type: 'object',
           properties: {
             page: {
               type: 'string',
-              description: 'The page slug to navigate to (without locale prefix). Examples: "cart", "profile", "products", "orders", "admin/dashboard".',
+              description:
+                'The page slug to navigate to (without locale prefix). Examples: "cart", "profile", "products", "orders", "admin/dashboard".',
               enum: [
-                'profile', 'orders', 'cart', 'wishlist', 'addresses', 'checkout',
-                'beauty-box', 'loyalty', 'referral', 'gamification', 'preferences',
-                'quiz', 'routine-builder', 'skin-analysis', 'virtual-try-on',
-                'subscriptions', 'ai-history', 'profile/tickets', 'profile/notifications',
-                'products', 'categories', 'compare', 'looks', 'clean-beauty', 'live-shopping',
-                'about', 'contact', 'faq', 'blog', 'booking', 'shipping', 'returns', 'privacy', 'terms',
-                'admin/dashboard', 'admin/products', 'admin/orders', 'admin/users',
-                'admin/coupons', 'admin/reviews', 'admin/settings', 'admin/ugc',
-                'admin/chat', 'admin/live-shopping', 'admin/tickets',
+                'profile',
+                'orders',
+                'cart',
+                'wishlist',
+                'addresses',
+                'checkout',
+                'beauty-box',
+                'loyalty',
+                'referral',
+                'gamification',
+                'preferences',
+                'quiz',
+                'routine-builder',
+                'skin-analysis',
+                'virtual-try-on',
+                'subscriptions',
+                'ai-history',
+                'profile/tickets',
+                'profile/notifications',
+                'products',
+                'categories',
+                'compare',
+                'looks',
+                'clean-beauty',
+                'live-shopping',
+                'about',
+                'contact',
+                'faq',
+                'blog',
+                'booking',
+                'shipping',
+                'returns',
+                'privacy',
+                'terms',
+                'admin/dashboard',
+                'admin/products',
+                'admin/orders',
+                'admin/users',
+                'admin/coupons',
+                'admin/reviews',
+                'admin/settings',
+                'admin/ugc',
+                'admin/chat',
+                'admin/live-shopping',
+                'admin/tickets',
               ],
             },
           },
@@ -129,14 +225,30 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'generate_chart',
-        description: 'Generate config data to plot a bar, line, or pie chart for visual dashboard presentation.',
+        description:
+          'Generate config data to plot a bar, line, or pie chart for visual dashboard presentation.',
         parameters: {
           type: 'object',
           properties: {
-            type: { type: 'string', description: 'Visualization plot type', enum: ['bar', 'line', 'pie'] },
-            title: { type: 'string', description: 'Headline title of the chart card' },
-            labels: { type: 'array', items: { type: 'string' }, description: 'Names for the coordinates labels array' },
-            values: { type: 'array', items: { type: 'number' }, description: 'Numeric data points list' },
+            type: {
+              type: 'string',
+              description: 'Visualization plot type',
+              enum: ['bar', 'line', 'pie'],
+            },
+            title: {
+              type: 'string',
+              description: 'Headline title of the chart card',
+            },
+            labels: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Names for the coordinates labels array',
+            },
+            values: {
+              type: 'array',
+              items: { type: 'number' },
+              description: 'Numeric data points list',
+            },
           },
           required: ['type', 'title', 'labels', 'values'],
         },
@@ -146,7 +258,8 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'search_web',
-        description: 'Search the web using DuckDuckGo to answer questions with fresh internet results.',
+        description:
+          'Search the web using DuckDuckGo to answer questions with fresh internet results.',
         parameters: {
           type: 'object',
           properties: {
@@ -160,11 +273,15 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'generate_image',
-        description: 'Generate an image using Hugging Face Stable Diffusion based on a text prompt.',
+        description:
+          'Generate an image using Hugging Face Stable Diffusion based on a text prompt.',
         parameters: {
           type: 'object',
           properties: {
-            prompt: { type: 'string', description: 'Text prompt detailing the visual image' },
+            prompt: {
+              type: 'string',
+              description: 'Text prompt detailing the visual image',
+            },
           },
           required: ['prompt'],
         },
@@ -174,14 +291,15 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'compare_products',
-        description: 'Compare 2 to 4 products side by side to see their specifications, price, rating and availability.',
+        description:
+          'Compare 2 to 4 products side by side to see their specifications, price, rating and availability.',
         parameters: {
           type: 'object',
           properties: {
             productIds: {
               type: 'array',
               items: { type: 'number' },
-              description: 'List of product IDs to compare side by side.'
+              description: 'List of product IDs to compare side by side.',
             },
           },
           required: ['productIds'],
@@ -192,14 +310,15 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'get_sales_insights',
-        description: 'Get AI-powered analytics insights and trending product categories. Only available to administrator accounts.',
+        description:
+          'Get AI-powered analytics insights and trending product categories. Only available to administrator accounts.',
         parameters: {
           type: 'object',
           properties: {
             range: {
               type: 'string',
               enum: ['today', 'week', 'month'],
-              description: 'Time period range to calculate business insights.'
+              description: 'Time period range to calculate business insights.',
             },
           },
           required: ['range'],
@@ -210,7 +329,7 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'get_notifications',
-        description: 'Get the user\'s latest notifications list.',
+        description: "Get the user's latest notifications list.",
         parameters: {
           type: 'object',
           properties: {
@@ -223,7 +342,8 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'temporary_search_image',
-        description: 'Search and temporarily display images from the web in the side panel.',
+        description:
+          'Search and temporarily display images from the web in the side panel.',
         parameters: {
           type: 'object',
           properties: {
@@ -237,13 +357,20 @@ export class AiAssistantService implements OnModuleInit {
       type: 'function',
       function: {
         name: 'create_support_ticket',
-        description: 'Create a support ticket for the user. Use this for any issue, complaint, or help request.',
+        description:
+          'Create a support ticket for the user. Use this for any issue, complaint, or help request.',
         parameters: {
           type: 'object',
           properties: {
-            subject: { type: 'string', description: 'Short summary of the issue' },
+            subject: {
+              type: 'string',
+              description: 'Short summary of the issue',
+            },
             message: { type: 'string', description: 'Detailed description' },
-            orderId: { type: 'number', description: 'Optional order ID if related' },
+            orderId: {
+              type: 'number',
+              description: 'Optional order ID if related',
+            },
           },
           required: ['subject', 'message'],
         },
@@ -270,7 +397,7 @@ export class AiAssistantService implements OnModuleInit {
     @InjectRepository(Notification)
     private notificationRepo: Repository<Notification>,
     private supportService: SupportService,
-  ) { }
+  ) {}
 
   async temporarySearchImageTool(query: string) {
     const mockUrls = [
@@ -283,11 +410,16 @@ export class AiAssistantService implements OnModuleInit {
       data: {
         query,
         images: mockUrls,
-      }
+      },
     };
   }
 
-  async saveMemory(userId: number | null, sessionId: string | null, question: string, answer: string) {
+  async saveMemory(
+    userId: number | null,
+    sessionId: string | null,
+    question: string,
+    answer: string,
+  ) {
     try {
       const memory = this.memoryRepo.create({
         userId: userId || null,
@@ -309,27 +441,33 @@ export class AiAssistantService implements OnModuleInit {
         take: 30,
       });
 
-      const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      const queryWords = query
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 3);
       if (queryWords.length === 0) return '';
 
       const matched = memories
-        .map(m => {
+        .map((m) => {
           let score = 0;
           const textToSearch = `${m.question} ${m.answer}`.toLowerCase();
-          queryWords.forEach(word => {
+          queryWords.forEach((word) => {
             if (textToSearch.includes(word)) {
               score += 1;
             }
           });
           return { memory: m, score };
         })
-        .filter(item => item.score > 0)
+        .filter((item) => item.score > 0)
         .sort((a, b) => b.score - a.score);
 
       if (matched.length > 0) {
         return matched
           .slice(0, 3)
-          .map(item => `[User asked]: "${item.memory.question}"\n[JARVIS responded]: "${item.memory.answer}"`)
+          .map(
+            (item) =>
+              `[User asked]: "${item.memory.question}"\n[JARVIS responded]: "${item.memory.answer}"`,
+          )
           .join('\n\n');
       }
       return '';
@@ -352,7 +490,9 @@ export class AiAssistantService implements OnModuleInit {
         if (!t.aiSummary) return false;
         const words = t.subject.split(/\s+/).concat(t.message.split(/\s+/));
         const matchedWords = words.filter(
-          (word) => word.length > 3 && messageText.toLowerCase().includes(word.toLowerCase())
+          (word) =>
+            word.length > 3 &&
+            messageText.toLowerCase().includes(word.toLowerCase()),
         );
         return matchedWords.length >= 2;
       });
@@ -363,9 +503,12 @@ export class AiAssistantService implements OnModuleInit {
   }
 
   onModuleInit() {
-    const apiKey = this.config.get<string>('openrouterApiKey') || process.env.OPENROUTER_API_KEY;
+    const apiKey =
+      this.config.get<string>('openrouterApiKey') ||
+      process.env.OPENROUTER_API_KEY;
     if (apiKey && apiKey !== 'placeholder_key') {
-      const frontendUrl = this.config.get<string>('frontendUrl') || 'http://localhost:3000';
+      const frontendUrl =
+        this.config.get<string>('frontendUrl') || 'http://localhost:3000';
       this.openai = new OpenAI({
         apiKey,
         baseURL: 'https://openrouter.ai/api/v1',
@@ -377,7 +520,9 @@ export class AiAssistantService implements OnModuleInit {
       this.isConfigured = true;
       console.log('✅ OpenRouter AI Assistant initialized successfully.');
     } else {
-      console.warn('⚠️ [AiAssistantService] OPENROUTER_API_KEY is missing. JARVIS AI will run in fallback rule-based mode.');
+      console.warn(
+        '⚠️ [AiAssistantService] OPENROUTER_API_KEY is missing. JARVIS AI will run in fallback rule-based mode.',
+      );
     }
   }
 
@@ -387,15 +532,22 @@ export class AiAssistantService implements OnModuleInit {
 
     if (!this.isConfigured) {
       return {
-        reply: '🌸 Hello! I am in rule-based fallback mode because OPENROUTER_API_KEY is not configured yet. Please configure it in your environment variables!',
+        reply:
+          '🌸 Hello! I am in rule-based fallback mode because OPENROUTER_API_KEY is not configured yet. Please configure it in your environment variables!',
         sessionId,
       };
     }
 
-    const modelId = this.config.get<string>('openrouterModel') || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+    const modelId =
+      this.config.get<string>('openrouterModel') ||
+      process.env.OPENROUTER_MODEL ||
+      DEFAULT_MODEL;
     const isAdmin = role === 'admin' || role === 'super_admin';
-    const allowedTools = this.tools.filter(t => {
-      if (t.function.name === 'get_sales_stats' || t.function.name === 'get_sales_insights') {
+    const allowedTools = this.tools.filter((t) => {
+      if (
+        t.function.name === 'get_sales_stats' ||
+        t.function.name === 'get_sales_insights'
+      ) {
         return isAdmin;
       }
       return true;
@@ -410,7 +562,7 @@ export class AiAssistantService implements OnModuleInit {
 
     const matchedSolution = await this.lookupResolvedTickets(messageText);
     const memoryContext = await this.searchMemory(userId, messageText);
-    
+
     let systemInstruction = `You are JARVIS, the AI assistant for Beauty Parlé.
 
 ⚠️ CRITICAL: Intent Detection Rules:
@@ -439,11 +591,11 @@ CRITICAL TOOL CALLING RULES:
 3. If the user doesn't provide details, ask them: "Please describe your issue" and then call the tool with the information.
 
 Be conversational, helpful, and witty. Always invoke the relevant tool if the user asks for stats, products, navigation, or chart visuals. If you don't know something, reply with "I don't know, but I'll learn" and remember it.`;
-    
+
     if (memoryContext) {
       systemInstruction += `\n\n[JARVIS MEMORY RETRIEVAL] You recall the following relevant interactions with this user in the past:\n${memoryContext}\nUse this past conversation history to inform your current response if applicable.`;
     }
-    
+
     if (matchedSolution) {
       systemInstruction += `\n\n[JARVIS KNOWLEDGE ALERT] A similar past issue was resolved with the following verified solution: "${matchedSolution}". If the user is asking about this problem, offer them this solution immediately.`;
     }
@@ -526,7 +678,7 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
         assistantCallMessage.toolCalls = {
           id: call.id,
           type: 'function',
-          function: { name, arguments: rawArgs }
+          function: { name, arguments: rawArgs },
         };
         await this.conversationRepo.save(assistantCallMessage);
 
@@ -536,13 +688,28 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
         const isAdmin = role === 'admin' || role === 'super_admin';
         const isSuperAdmin = role === 'super_admin';
 
-        if (['get_sales_stats', 'get_sales_insights', 'get_category_performance', 'get_all_orders'].includes(name)) {
+        if (
+          [
+            'get_sales_stats',
+            'get_sales_insights',
+            'get_category_performance',
+            'get_all_orders',
+          ].includes(name)
+        ) {
           if (!isAdmin) {
-            toolResult = { error: '⛔ Access Denied. Sal es and business analytics are only available to Admin users.' };
+            toolResult = {
+              error:
+                '⛔ Access Denied. Sal es and business analytics are only available to Admin users.',
+            };
           }
-        } else if (['get_system_logs', 'manage_admins', 'delete_user'].includes(name)) {
+        } else if (
+          ['get_system_logs', 'manage_admins', 'delete_user'].includes(name)
+        ) {
           if (!isSuperAdmin) {
-            toolResult = { error: '⛔ Access Denied. This action requires Super Admin privileges.' };
+            toolResult = {
+              error:
+                '⛔ Access Denied. This action requires Super Admin privileges.',
+            };
           }
         }
 
@@ -568,13 +735,18 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
               const isAdminUser = role === 'admin' || role === 'super_admin';
               const isAdminRoute = sanitized.startsWith('/admin/');
               if (isAdminRoute && !isAdminUser) {
-                toolResult = { error: '⛔ Access Denied. Admin pages are restricted to admin users.' };
+                toolResult = {
+                  error:
+                    '⛔ Access Denied. Admin pages are restricted to admin users.',
+                };
               } else {
                 navigationRoute = sanitized;
                 toolResult = { success: true, route: sanitized };
               }
             } else {
-              toolResult = { error: `Page '${rawPage}' is not a valid navigation destination.` };
+              toolResult = {
+                error: `Page '${rawPage}' is not a valid navigation destination.`,
+              };
             }
           } else if (name === 'generate_chart') {
             chartData = {
@@ -615,7 +787,12 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
               order: { createdAt: 'DESC' },
               take: limit,
             });
-            toolResult = notifs.map(n => ({ id: n.id, title: n.title, message: n.message, createdAt: n.createdAt }));
+            toolResult = notifs.map((n) => ({
+              id: n.id,
+              title: n.title,
+              message: n.message,
+              createdAt: n.createdAt,
+            }));
           } else if (name === 'temporary_search_image') {
             toolResult = await this.temporarySearchImageTool(toolArgs.query);
             temporaryImages = toolResult.data;
@@ -628,7 +805,10 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
                 orderId: toolArgs.orderId,
               });
             } catch (serviceErr) {
-              console.warn('SupportService.createTicket failed, falling back to direct DB write:', serviceErr);
+              console.warn(
+                'SupportService.createTicket failed, falling back to direct DB write:',
+                serviceErr,
+              );
               const ticket = this.ticketRepo.create({
                 userId: userObj?.id || null,
                 guestEmail: userObj?.email || 'guest@beautyparle.com',
@@ -738,10 +918,15 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
     const query = this.productRepo.createQueryBuilder('product');
 
     if (category) {
-      query.andWhere('LOWER(product.category) LIKE :category', { category: `%${category.toLowerCase()}%` });
+      query.andWhere('LOWER(product.category) LIKE :category', {
+        category: `%${category.toLowerCase()}%`,
+      });
     }
     if (search) {
-      query.andWhere('(LOWER(product.name) LIKE :search OR LOWER(product.description) LIKE :search)', { search: `%${search.toLowerCase()}%` });
+      query.andWhere(
+        '(LOWER(product.name) LIKE :search OR LOWER(product.description) LIKE :search)',
+        { search: `%${search.toLowerCase()}%` },
+      );
     }
     if (minPrice !== undefined) {
       query.andWhere('product.price >= :minPrice', { minPrice });
@@ -753,7 +938,7 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
     const products = await query.take(6).getMany();
     return {
       visualType: 'products',
-      data: products.map(p => ({
+      data: products.map((p) => ({
         id: Number(p.id),
         name: String(p.name),
         price: Number(p.price) || 0,
@@ -803,7 +988,9 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
     if (!Number.isInteger(Number(orderId))) {
       return { error: 'A valid numeric order ID is required.' };
     }
-    const order = await this.orderRepo.findOne({ where: { id: Number(orderId) } });
+    const order = await this.orderRepo.findOne({
+      where: { id: Number(orderId) },
+    });
     if (!order) return { error: 'Order matching specified ID was not found.' };
     if (!this.isAdmin(role) && Number(order.userId) !== Number(userId)) {
       return { error: 'Order matching specified ID was not found.' };
@@ -821,11 +1008,13 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
   private async searchWebTool(args: any) {
     const { query } = args;
     try {
-      const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
+      const response = await fetch(
+        `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`,
+      );
       if (!response.ok) throw new Error('DuckDuckGo search request failed');
       const data: any = await response.json();
 
-      let results = (data.RelatedTopics || [])
+      const results = (data.RelatedTopics || [])
         .map((t: any) => {
           if (t.Topics) {
             return t.Topics.map((sub: any) => ({
@@ -847,7 +1036,9 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
       if (results.length === 0 && data.AbstractText) {
         results.push({
           title: data.AbstractText.split('.')[0] || 'Result',
-          url: data.AbstractURL || `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+          url:
+            data.AbstractURL ||
+            `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
           snippet: data.AbstractText,
         });
       }
@@ -874,7 +1065,7 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
             title: `Search for '${query}'`,
             url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
             snippet: `Search DuckDuckGo directly for results regarding: ${query}`,
-          }
+          },
         ],
       };
     }
@@ -883,7 +1074,9 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
   private async generateImageTool(args: any) {
     const { prompt } = args;
     try {
-      const apiKey = this.config.get<string>('HUGGINGFACE_API_KEY') || process.env.HUGGINGFACE_API_KEY;
+      const apiKey =
+        this.config.get<string>('HUGGINGFACE_API_KEY') ||
+        process.env.HUGGINGFACE_API_KEY;
       if (!apiKey) {
         throw new Error('HUGGINGFACE_API_KEY environment variable is not set');
       }
@@ -897,11 +1090,13 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ inputs: prompt }),
-        }
+        },
       );
 
       if (!response.ok) {
-        throw new Error(`HuggingFace API request failed: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `HuggingFace API request failed: ${response.status} ${response.statusText}`,
+        );
       }
 
       const arrayBuffer = await response.arrayBuffer();
@@ -937,7 +1132,9 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
     try {
       const products = [];
       for (const id of productIds) {
-        const product = await this.productRepo.findOne({ where: { id: Number(id) } });
+        const product = await this.productRepo.findOne({
+          where: { id: Number(id) },
+        });
         if (product) {
           products.push(product);
         }
@@ -955,13 +1152,20 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
   private async getSalesInsightsTool(args: any) {
     const { range } = args;
     try {
-      const orders = await this.orderRepo.find({ order: { createdAt: 'DESC' }, take: 10 });
-      const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+      const orders = await this.orderRepo.find({
+        order: { createdAt: 'DESC' },
+        take: 10,
+      });
+      const totalRevenue = orders.reduce(
+        (sum, order) => sum + Number(order.total || 0),
+        0,
+      );
 
       let message = `Skincare product categories are driving 64% of all orders this ${range || 'month'}. Total revenue across recent transactions is ₹${totalRevenue.toFixed(2)}.`;
-      let trend: 'up' | 'down' | 'neutral' = 'up';
+      const trend: 'up' | 'down' | 'neutral' = 'up';
       let value = '+18.4%';
-      let recommendation = 'Increase advertising spend on Skincare routines and offer bundle discounts to maximize high-margin conversions.';
+      const recommendation =
+        'Increase advertising spend on Skincare routines and offer bundle discounts to maximize high-margin conversions.';
 
       if (range === 'today') {
         message = `Skincare products have seen a surge in order volume today, representing over 40% of page views.`;

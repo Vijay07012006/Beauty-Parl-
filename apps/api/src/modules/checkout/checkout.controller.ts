@@ -1,4 +1,11 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { OneClickCheckoutService } from './one-click-checkout.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -10,7 +17,8 @@ export class CheckoutController {
   @Post('save-payment')
   async savePayment(
     @Request() req: any,
-    @Body() body: { cardId: string; last4: string; brand: string; expiry: string },
+    @Body()
+    body: { cardId: string; last4: string; brand: string; expiry: string },
   ) {
     const userId = Number(req.user.id);
     return this.checkoutService.savePaymentMethod(userId, body);

@@ -20,15 +20,25 @@ export class AuditLogsService {
   ) {}
 
   private async getGeoLocation(ip: string): Promise<string> {
-    if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+    if (
+      !ip ||
+      ip === '127.0.0.1' ||
+      ip === '::1' ||
+      ip.startsWith('192.168.') ||
+      ip.startsWith('10.')
+    ) {
       return 'Localhost / Internal';
     }
     try {
-      const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city`);
+      const res = await fetch(
+        `http://ip-api.com/json/${ip}?fields=status,country,city`,
+      );
       if (res.ok) {
         const data: any = await res.json();
         if (data && data.status === 'success') {
-          return `${data.city || ''}, ${data.country || ''}`.trim() || 'Unknown';
+          return (
+            `${data.city || ''}, ${data.country || ''}`.trim() || 'Unknown'
+          );
         }
       }
     } catch (err) {
@@ -39,20 +49,22 @@ export class AuditLogsService {
 
   // Supporting both Object param and positional arguments signature for absolute compatibility.
   async log(
-    actionOrParams: string | {
-      action: string;
-      userEmail?: string;
-      userId?: number;
-      details?: any;
-      ipAddress?: string;
-      userAgent?: string;
-      sessionId?: string;
-      entityType?: string;
-      entityId?: number;
-      beforeValue?: any;
-      afterValue?: any;
-      status?: 'success' | 'failed';
-    },
+    actionOrParams:
+      | string
+      | {
+          action: string;
+          userEmail?: string;
+          userId?: number;
+          details?: any;
+          ipAddress?: string;
+          userAgent?: string;
+          sessionId?: string;
+          entityType?: string;
+          entityId?: number;
+          beforeValue?: any;
+          afterValue?: any;
+          status?: 'success' | 'failed';
+        },
     userEmail?: string,
     userId?: number,
     details?: any,
@@ -97,7 +109,11 @@ export class AuditLogsService {
       }
 
       const location = ipVal ? await this.getGeoLocation(ipVal) : undefined;
-      const detailsStr = detailsVal ? (typeof detailsVal === 'string' ? detailsVal : JSON.stringify(detailsVal)) : undefined;
+      const detailsStr = detailsVal
+        ? typeof detailsVal === 'string'
+          ? detailsVal
+          : JSON.stringify(detailsVal)
+        : undefined;
 
       const logEntry = this.auditLogRepo.create({
         action: actionStr,
@@ -118,7 +134,13 @@ export class AuditLogsService {
       const savedLog = await this.auditLogRepo.save(logEntry);
 
       // Alert check for suspicious logins (new location or new device)
-      if (actionStr === 'USER_LOGIN' && statusVal === 'success' && userIdVal && emailVal && location) {
+      if (
+        actionStr === 'USER_LOGIN' &&
+        statusVal === 'success' &&
+        userIdVal &&
+        emailVal &&
+        location
+      ) {
         const lastLogins = await this.auditLogRepo.find({
           where: { userId: userIdVal, action: 'USER_LOGIN', status: 'success' },
           order: { createdAt: 'DESC' },
@@ -126,13 +148,22 @@ export class AuditLogsService {
         });
         const lastLogin = lastLogins[1];
 
-        if (lastLogin && lastLogin.location && lastLogin.location !== 'Unknown' && location !== 'Unknown') {
+        if (
+          lastLogin &&
+          lastLogin.location &&
+          lastLogin.location !== 'Unknown' &&
+          location !== 'Unknown'
+        ) {
           if (lastLogin.location !== location) {
-            await this.emailService.sendSecurityAlertEmail(emailVal, 'suspicious_login', {
-              ipAddress: ipVal,
-              userAgent: uaVal,
-              location,
-            });
+            await this.emailService.sendSecurityAlertEmail(
+              emailVal,
+              'suspicious_login',
+              {
+                ipAddress: ipVal,
+                userAgent: uaVal,
+                location,
+              },
+            );
           }
         }
       }
@@ -144,10 +175,19 @@ export class AuditLogsService {
     }
   }
 
-  async trackSession(userId: number, sessionId: string, ipAddress?: string, userAgent?: string): Promise<void> {
+  async trackSession(
+    userId: number,
+    sessionId: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
     try {
-      const location = ipAddress ? await this.getGeoLocation(ipAddress) : 'Unknown';
-      let session = await this.activeSessionRepo.findOne({ where: { sessionId } });
+      const location = ipAddress
+        ? await this.getGeoLocation(ipAddress)
+        : 'Unknown';
+      let session = await this.activeSessionRepo.findOne({
+        where: { sessionId },
+      });
 
       if (session) {
         session.lastActivity = new Date();
@@ -184,7 +224,11 @@ export class AuditLogsService {
     });
   }
 
-  async recordFailedLogin(email: string, ipAddress?: string, userAgent?: string): Promise<void> {
+  async recordFailedLogin(
+    email: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
     try {
       const attempt = this.failedLoginRepo.create({
         email: email.trim().toLowerCase(),
@@ -203,7 +247,9 @@ export class AuditLogsService {
       });
 
       if (count >= 3) {
-        const location = ipAddress ? await this.getGeoLocation(ipAddress) : 'Unknown';
+        const location = ipAddress
+          ? await this.getGeoLocation(ipAddress)
+          : 'Unknown';
         await this.emailService.sendSecurityAlertEmail(email, 'failed_logins', {
           ipAddress,
           userAgent,

@@ -1,16 +1,23 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { LiveShoppingService } from './live-shopping.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('live-shopping')
 export class LiveShoppingController {
-  constructor(
-    private readonly liveService: LiveShoppingService,
-  ) {}
+  constructor(private readonly liveService: LiveShoppingService) {}
 
   private requireAdmin(req: Request): void {
-    const user = req.user as { role?: string } | undefined;
+    const user = req.user;
     // LS-4: super_admin was missing — both admin roles may manage live events
     if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
       throw new UnauthorizedException('Admin privileges required');

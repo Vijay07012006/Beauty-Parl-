@@ -79,12 +79,14 @@ export class OneClickCheckoutService {
 
     // 2. Mock processing of payment using saved payment token/ID
     // In a real application, you would invoke Stripe's PaymentIntent with the saved customer source token.
-    console.log(`💳 Processing One-Click Checkout for User #${userId} using payment method ${method.id}`);
-    
+    console.log(
+      `💳 Processing One-Click Checkout for User #${userId} using payment method ${method.id}`,
+    );
+
     // Simulate payment authorization
     order.status = 'paid';
     order.paymentId = `mock_one_click_${Math.random().toString(36).substr(2, 12)}`;
-    
+
     // Save order status update
     await this.ordersService.update(order.id, {
       status: 'paid',

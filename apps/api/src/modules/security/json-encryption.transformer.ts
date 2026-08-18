@@ -43,7 +43,11 @@ export class JsonEncryptionTransformer implements ValueTransformer {
         return [];
       }
       try {
-        const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(parts[0], 'hex'));
+        const decipher = crypto.createDecipheriv(
+          'aes-256-cbc',
+          key,
+          Buffer.from(parts[0], 'hex'),
+        );
         let decrypted = decipher.update(parts[1], 'hex', 'utf8');
         decrypted += decipher.final('utf8');
         const parsed = JSON.parse(decrypted);

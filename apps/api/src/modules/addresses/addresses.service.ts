@@ -12,7 +12,15 @@ export class AddressesService {
 
   // Whitelist user-controlled address fields — blocks mass-assignment of id/userId/etc.
   private sanitizeInput(data: Record<string, any>): Partial<Address> {
-    const allowed = ['name', 'phone', 'address', 'city', 'state', 'pincode', 'isDefault'];
+    const allowed = [
+      'name',
+      'phone',
+      'address',
+      'city',
+      'state',
+      'pincode',
+      'isDefault',
+    ];
     const clean: Record<string, any> = {};
     for (const key of allowed) {
       if (data?.[key] !== undefined) {
@@ -30,7 +38,10 @@ export class AddressesService {
     }
 
     if (clean.isDefault) {
-      await this.addressRepo.update({ userId, isDefault: true }, { isDefault: false });
+      await this.addressRepo.update(
+        { userId, isDefault: true },
+        { isDefault: false },
+      );
     }
 
     const address = this.addressRepo.create({ ...clean, userId });
@@ -46,19 +57,28 @@ export class AddressesService {
   }
 
   async getAddress(userId: number, addressId: number) {
-    const address = await this.addressRepo.findOne({ where: { id: addressId, userId } });
+    const address = await this.addressRepo.findOne({
+      where: { id: addressId, userId },
+    });
     if (!address) {
       throw new NotFoundException('Address not found');
     }
     return address;
   }
 
-  async updateAddress(userId: number, addressId: number, data: Partial<Address>) {
+  async updateAddress(
+    userId: number,
+    addressId: number,
+    data: Partial<Address>,
+  ) {
     const address = await this.getAddress(userId, addressId);
     const clean = this.sanitizeInput(data);
 
     if (clean.isDefault) {
-      await this.addressRepo.update({ userId, isDefault: true }, { isDefault: false });
+      await this.addressRepo.update(
+        { userId, isDefault: true },
+        { isDefault: false },
+      );
     }
 
     Object.assign(address, clean);
@@ -69,7 +89,7 @@ export class AddressesService {
   async deleteAddress(userId: number, addressId: number) {
     const address = await this.getAddress(userId, addressId);
     await this.addressRepo.delete(addressId);
-    
+
     if (address.isDefault) {
       const nextAddress = await this.addressRepo.findOne({
         where: { userId },
@@ -79,7 +99,7 @@ export class AddressesService {
         await this.addressRepo.update(nextAddress.id, { isDefault: true });
       }
     }
-    
+
     return { success: true };
   }
 

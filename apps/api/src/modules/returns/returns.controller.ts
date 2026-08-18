@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards, Request, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ReturnsService } from './returns.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -38,7 +49,9 @@ export class ReturnsController {
     @Body() body: { status: 'approved' | 'rejected' | 'completed' },
   ) {
     if (!['approved', 'rejected', 'completed'].includes(body.status)) {
-      throw new BadRequestException('Invalid status. Must be one of approved, rejected, or completed');
+      throw new BadRequestException(
+        'Invalid status. Must be one of approved, rejected, or completed',
+      );
     }
     return this.returnsService.updateReturnStatus(Number(id), body.status);
   }

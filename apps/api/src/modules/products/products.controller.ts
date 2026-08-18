@@ -1,4 +1,18 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, HttpStatus, UseInterceptors, UseGuards, Query, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  HttpCode,
+  HttpStatus,
+  UseInterceptors,
+  UseGuards,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ProductsService } from './products.service';
 import { Product } from './product.entity';
@@ -68,7 +82,10 @@ export class ProductsController {
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async update(@Param('id') id: number, @Body() productData: CreateProductDto): Promise<Product | null> {
+  async update(
+    @Param('id') id: number,
+    @Body() productData: CreateProductDto,
+  ): Promise<Product | null> {
     return this.productsService.update(id, productData);
   }
 
@@ -99,7 +116,7 @@ export class ProductsController {
   async postReview(
     @Request() req: any,
     @Param('id') id: number,
-    @Body() body: { reviewerName: string; rating: number; comment: string }
+    @Body() body: { reviewerName: string; rating: number; comment: string },
   ) {
     return this.productsService.createReview(id, body, req.user?.id);
   }

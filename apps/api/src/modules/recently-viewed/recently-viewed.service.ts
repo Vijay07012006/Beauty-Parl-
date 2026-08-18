@@ -25,12 +25,19 @@ export class RecentlyViewedService {
     return `session:${sessionId || this.anonFallbackKey}`;
   }
 
-  async trackView(productId: number, userId?: number, sessionId?: string): Promise<void> {
+  async trackView(
+    productId: number,
+    userId?: number,
+    sessionId?: string,
+  ): Promise<void> {
     const key = this.getCacheKey(userId, sessionId);
 
     // 1. Sync to Cache
     const current = await this.getCachedIds(key);
-    const updated = [productId, ...current.filter((id) => id !== productId)].slice(0, 10);
+    const updated = [
+      productId,
+      ...current.filter((id) => id !== productId),
+    ].slice(0, 10);
     await this.setCachedIds(key, updated);
 
     // 2. Sync to Database if logged in

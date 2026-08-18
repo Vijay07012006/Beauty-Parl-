@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('user_sessions')
@@ -25,10 +33,18 @@ export class UserSession {
   @Column({ name: 'device_type', length: 50, nullable: true })
   deviceType?: string;
 
-  @CreateDateColumn({ name: 'login_time', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({
+    name: 'login_time',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   loginTime!: Date;
 
-  @UpdateDateColumn({ name: 'last_activity', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn({
+    name: 'last_activity',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   lastActivity!: Date;
 
   @Column({ name: 'is_active', default: true })

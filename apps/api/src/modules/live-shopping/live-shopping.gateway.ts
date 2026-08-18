@@ -46,7 +46,9 @@ export class LiveShoppingGateway implements OnGatewayConnection {
       return;
     }
     client.data.user = user;
-    console.log(`🔌 LiveShopping client connected: ${client.id} (role: ${user.role})`);
+    console.log(
+      `🔌 LiveShopping client connected: ${client.id} (role: ${user.role})`,
+    );
   }
 
   handleDisconnect(client: Socket) {
@@ -54,7 +56,8 @@ export class LiveShoppingGateway implements OnGatewayConnection {
   }
 
   private authenticate(client: Socket): LiveUser | null {
-    let token: string | undefined = client.handshake.auth?.token as string | undefined;
+    let token: string | undefined = client.handshake.auth?.token as
+      string | undefined;
     if (!token) {
       const authHeader = client.handshake.headers?.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -77,9 +80,17 @@ export class LiveShoppingGateway implements OnGatewayConnection {
     // Token via query string is NOT accepted — avoids leakage in logs/referrers
     if (!token) return null;
     try {
-      const payload = this.jwtService.verify<{ sub: number; email: string; role: string }>(token);
+      const payload = this.jwtService.verify<{
+        sub: number;
+        email: string;
+        role: string;
+      }>(token);
       if (!payload?.sub) return null;
-      return { id: Number(payload.sub), email: payload.email, role: payload.role };
+      return {
+        id: Number(payload.sub),
+        email: payload.email,
+        role: payload.role,
+      };
     } catch {
       return null;
     }
@@ -98,7 +109,9 @@ export class LiveShoppingGateway implements OnGatewayConnection {
     if (typeof payload?.eventId !== 'string' || !payload.eventId) return;
     if (!/^[a-zA-Z0-9_-]{1,64}$/.test(payload.eventId)) return;
     client.join(`live:${payload.eventId}`);
-    console.log(`🔌 Client ${client.id} joined live room live:${payload.eventId}`);
+    console.log(
+      `🔌 Client ${client.id} joined live room live:${payload.eventId}`,
+    );
   }
 
   @SubscribeMessage('send_live_chat')
@@ -107,7 +120,12 @@ export class LiveShoppingGateway implements OnGatewayConnection {
     @MessageBody() payload: { eventId: string; text: string },
   ) {
     const user: LiveUser | null = client.data.user;
-    if (!user || typeof payload?.eventId !== 'string' || typeof payload?.text !== 'string') return;
+    if (
+      !user ||
+      typeof payload?.eventId !== 'string' ||
+      typeof payload?.text !== 'string'
+    )
+      return;
     const text = payload.text.trim();
     if (!payload.eventId || !text || text.length > 500) return;
     if (this.isRateLimited(client.id)) return;
@@ -126,7 +144,14 @@ export class LiveShoppingGateway implements OnGatewayConnection {
   @SubscribeMessage('feature_product')
   handleFeatureProduct(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { eventId: string; productId: number; name: string; price: number; image?: string },
+    @MessageBody()
+    payload: {
+      eventId: string;
+      productId: number;
+      name: string;
+      price: number;
+      image?: string;
+    },
   ) {
     const user: LiveUser | null = client.data.user;
     if (!this.isAdmin(user)) return; // Admin-only server-side

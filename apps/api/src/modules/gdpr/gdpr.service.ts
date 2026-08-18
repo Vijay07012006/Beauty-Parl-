@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -38,7 +42,10 @@ export class GdprService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return this.jwtService.sign({ sub: userId, email: user.email }, { expiresIn: '1h' });
+    return this.jwtService.sign(
+      { sub: userId, email: user.email },
+      { expiresIn: '1h' },
+    );
   }
 
   async getExportData(userId: number) {
@@ -51,7 +58,9 @@ export class GdprService {
     const addresses = await this.addressRepository.find({ where: { userId } });
     const wishlist = await this.wishlistRepository.find({ where: { userId } });
     const reviews = await this.reviewRepository.find({ where: { userId } });
-    const conversations = await this.aiConversationRepository.find({ where: { userId } });
+    const conversations = await this.aiConversationRepository.find({
+      where: { userId },
+    });
     const tickets = await this.ticketRepository.find({ where: { userId } });
 
     return {
@@ -81,7 +90,9 @@ export class GdprService {
       where: { userId, status: 'pending' },
     });
     if (existing) {
-      throw new BadRequestException('An account deletion request is already pending for this user');
+      throw new BadRequestException(
+        'An account deletion request is already pending for this user',
+      );
     }
 
     const request = this.deletionRequestRepository.create({
@@ -101,7 +112,10 @@ export class GdprService {
       throw new NotFoundException('No pending account deletion request found');
     }
     await this.deletionRequestRepository.remove(existing);
-    return { success: true, message: 'Deletion request cancelled successfully' };
+    return {
+      success: true,
+      message: 'Deletion request cancelled successfully',
+    };
   }
 
   async getGdprStatus(userId: number) {
@@ -116,12 +130,12 @@ export class GdprService {
 
   formatAsCsv(data: any): string {
     let csv = '';
-    
+
     // Profile
     csv += '=== USER PROFILE ===\n';
     csv += 'ID,Email,Name,Phone,Created At\n';
     csv += `"${data.profile.id}","${data.profile.email}","${data.profile.name}","${data.profile.phone || ''}","${data.profile.createdAt}"\n\n`;
-    
+
     // Addresses
     csv += '=== ADDRESSES ===\n';
     csv += 'ID,Name,Phone,Address,City,State,Pincode\n';
@@ -136,7 +150,8 @@ export class GdprService {
 
     // Orders
     csv += '=== ORDERS ===\n';
-    csv += 'Order ID,Subtotal,Tax,Shipping,Total,Discount,Payment Method,Status,Created At\n';
+    csv +=
+      'Order ID,Subtotal,Tax,Shipping,Total,Discount,Payment Method,Status,Created At\n';
     if (data.orders && data.orders.length > 0) {
       for (const order of data.orders) {
         csv += `"${order.id}","${order.subtotal}","${order.tax}","${order.shipping}","${order.total}","${order.discount}","${order.paymentMethod}","${order.status}","${order.createdAt}"\n`;
@@ -180,7 +195,7 @@ export class GdprService {
     } else {
       csv += 'No support tickets found\n';
     }
-    
+
     return csv;
   }
 }

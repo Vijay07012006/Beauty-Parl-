@@ -22,14 +22,18 @@ export class LiveShoppingService {
         const defaults = [
           {
             title: 'Flawless Summer Glow Masterclass 🌸',
-            description: 'Join our makeup directors live to learn blending techniques, contour guidelines, and matte hacks using our new catalog primers.',
-            streamUrl: 'https://assets.mixkit.co/videos/preview/mixkit-beautiful-woman-applying-makeup-40671-large.mp4', // beautiful high quality video placeholder
+            description:
+              'Join our makeup directors live to learn blending techniques, contour guidelines, and matte hacks using our new catalog primers.',
+            streamUrl:
+              'https://assets.mixkit.co/videos/preview/mixkit-beautiful-woman-applying-makeup-40671-large.mp4', // beautiful high quality video placeholder
             isLive: true,
           },
           {
             title: 'Clinical Hydration Routine Setup 💄',
-            description: 'Interactive routine builder walkthrough. How to diagnose dry spots and configure auto-replenishment subscriptions.',
-            streamUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-cleansing-her-face-with-water-44671-large.mp4',
+            description:
+              'Interactive routine builder walkthrough. How to diagnose dry spots and configure auto-replenishment subscriptions.',
+            streamUrl:
+              'https://assets.mixkit.co/videos/preview/mixkit-woman-cleansing-her-face-with-water-44671-large.mp4',
             isLive: false,
             scheduledAt: tomorrow,
           },
@@ -43,11 +47,16 @@ export class LiveShoppingService {
   }
 
   async list(): Promise<LiveEvent[]> {
-    return this.eventRepo.find({ order: { scheduledAt: 'ASC', createdAt: 'DESC' } });
+    return this.eventRepo.find({
+      order: { scheduledAt: 'ASC', createdAt: 'DESC' },
+    });
   }
 
   async get(id: number): Promise<LiveEvent> {
-    return this.eventRepo.findOneOrFail({ where: { id }, relations: ['featuredProduct'] });
+    return this.eventRepo.findOneOrFail({
+      where: { id },
+      relations: ['featuredProduct'],
+    });
   }
 
   async create(payload: Partial<LiveEvent>): Promise<LiveEvent> {

@@ -34,7 +34,9 @@ export class CartService {
 
     if (qtyMap.size === 0) return [];
 
-    const products = await this.productRepo.find({ where: { id: In([...qtyMap.keys()]) } });
+    const products = await this.productRepo.find({
+      where: { id: In([...qtyMap.keys()]) },
+    });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     const validated: any[] = [];
@@ -55,7 +57,11 @@ export class CartService {
     return validated;
   }
 
-  async syncCart(userId: number | undefined, email: string | undefined, items: any[]): Promise<Cart> {
+  async syncCart(
+    userId: number | undefined,
+    email: string | undefined,
+    items: any[],
+  ): Promise<Cart> {
     // Client-supplied prices/quantities/names are NEVER trusted — re-resolve from DB (P5)
     const validatedItems = await this.validateItems(items);
 
@@ -123,7 +129,9 @@ export class CartService {
     });
 
     for (const cart of cartsToRemind) {
-      const email = cart.email || (cart.userId ? await this.getUserEmail(cart.userId) : null);
+      const email =
+        cart.email ||
+        (cart.userId ? await this.getUserEmail(cart.userId) : null);
       if (email && cart.items && cart.items.length > 0) {
         try {
           await this.emailService.sendCartReminderEmail(email, cart.items);
@@ -131,7 +139,10 @@ export class CartService {
           await this.cartRepo.save(cart);
           console.log(`📧 Sent 2-hour cart reminder to: ${email}`);
         } catch (err: any) {
-          console.error(`Failed to send 2-hour cart reminder to ${email}:`, err.message);
+          console.error(
+            `Failed to send 2-hour cart reminder to ${email}:`,
+            err.message,
+          );
         }
       }
     }
@@ -148,15 +159,24 @@ export class CartService {
     });
 
     for (const cart of cartsToOfferDiscount) {
-      const email = cart.email || (cart.userId ? await this.getUserEmail(cart.userId) : null);
+      const email =
+        cart.email ||
+        (cart.userId ? await this.getUserEmail(cart.userId) : null);
       if (email && cart.items && cart.items.length > 0) {
         try {
-          await this.emailService.sendCartReminderEmail(email, cart.items, 'RECOVER10');
+          await this.emailService.sendCartReminderEmail(
+            email,
+            cart.items,
+            'RECOVER10',
+          );
           cart.followUpSent = true;
           await this.cartRepo.save(cart);
           console.log(`📧 Sent 24-hour cart discount to: ${email}`);
         } catch (err: any) {
-          console.error(`Failed to send 24-hour cart discount to ${email}:`, err.message);
+          console.error(
+            `Failed to send 24-hour cart discount to ${email}:`,
+            err.message,
+          );
         }
       }
     }

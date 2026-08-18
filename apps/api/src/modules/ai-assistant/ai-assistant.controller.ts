@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body, UseGuards, Request, Res } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  Request,
+  Res,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiAssistantService } from './ai-assistant.service';
@@ -16,11 +24,18 @@ export class AiAssistantController {
   ) {
     try {
       const sessionId = body.sessionId || `sess_${Date.now()}`;
-      const response = await this.aiService.processMessage(req.user, sessionId, body.message);
+      const response = await this.aiService.processMessage(
+        req.user,
+        sessionId,
+        body.message,
+      );
       return res.json(response);
     } catch (error: any) {
       console.error('JARVIS Error:', error);
-      return res.status(500).json({ error: 'JARVIS encountered an error while processing your request. Please try again.' });
+      return res.status(500).json({
+        error:
+          'JARVIS encountered an error while processing your request. Please try again.',
+      });
     }
   }
 
@@ -31,9 +46,7 @@ export class AiAssistantController {
   }
 
   @Post('train-ticket')
-  async trainTicket(
-    @Body() body: { ticketId: number; aiSummary: string },
-  ) {
+  async trainTicket(@Body() body: { ticketId: number; aiSummary: string }) {
     return this.aiService.trainFromTicket(body.ticketId, body.aiSummary);
   }
 }

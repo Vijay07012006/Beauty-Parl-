@@ -27,7 +27,10 @@ export class AuditController {
       action,
     });
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename=audit-logs-${Date.now()}.csv`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=audit-logs-${Date.now()}.csv`,
+    );
     return res.send(csvContent);
   }
 
@@ -46,7 +49,10 @@ export class AuditController {
       action,
     });
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=audit-logs-${Date.now()}.pdf`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=audit-logs-${Date.now()}.pdf`,
+    );
     return res.send(pdfBuffer);
   }
 }

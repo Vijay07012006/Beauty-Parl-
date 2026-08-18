@@ -7,10 +7,7 @@ import { Order } from '../orders/order.entity';
 import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Order]),
-    EmailModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Order]), EmailModule],
   controllers: [PaymentsController],
   providers: [RazorpayService, StripeService],
   exports: [RazorpayService, StripeService],

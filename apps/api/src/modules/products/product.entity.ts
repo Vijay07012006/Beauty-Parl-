@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('products')
 export class Product {
@@ -29,7 +35,7 @@ export class Product {
   @Column({ default: 0 })
   stock!: number;
 
-  @Column('decimal', { precision: 3, scale: 2, default: 4.50 })
+  @Column('decimal', { precision: 3, scale: 2, default: 4.5 })
   rating!: number;
 
   @Column({ default: 0 })

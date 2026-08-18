@@ -24,7 +24,15 @@ export class SupportService {
     private supportGateway: SupportGateway,
   ) {}
 
-  async createTicket(user: any, data: { subject: string; message: string; orderId?: number; guestEmail?: string }) {
+  async createTicket(
+    user: any,
+    data: {
+      subject: string;
+      message: string;
+      orderId?: number;
+      guestEmail?: string;
+    },
+  ) {
     const isRegistered = user && user.id;
 
     // Create ticket
@@ -37,9 +45,10 @@ export class SupportService {
       status: 'open',
       priority: 'medium',
     });
-    
+
     const savedTicket = await this.ticketRepo.save(ticket);
-    const targetEmail = user?.email || data.guestEmail || 'guest@beautyparle.com';
+    const targetEmail =
+      user?.email || data.guestEmail || 'guest@beautyparle.com';
     const userName = isRegistered ? user.name : 'Guest';
 
     // 1. Send confirmation email to user
@@ -121,7 +130,12 @@ export class SupportService {
     return { ticket, replies };
   }
 
-  async addReply(ticketId: number, user: any, message: string, isAdmin: boolean) {
+  async addReply(
+    ticketId: number,
+    user: any,
+    message: string,
+    isAdmin: boolean,
+  ) {
     const reply = this.replyRepo.create({
       ticketId,
       userId: user?.id || null,
@@ -144,7 +158,7 @@ export class SupportService {
       relations: ['user'],
     });
     if (!ticket) throw new Error('Ticket not found');
-    
+
     ticket.status = 'resolved';
     ticket.resolvedAt = new Date();
     ticket.assignedTo = adminId;
@@ -159,11 +173,14 @@ export class SupportService {
         await this.emailService.sendTicketResolvedEmail(
           userEmail,
           ticket.id,
-          ticket.subject
+          ticket.subject,
         );
         console.log(`✅ Resolution email sent to ${userEmail}`);
       } catch (emailError: any) {
-        console.error('❌ Failed to send resolution email:', emailError.message);
+        console.error(
+          '❌ Failed to send resolution email:',
+          emailError.message,
+        );
       }
     }
 

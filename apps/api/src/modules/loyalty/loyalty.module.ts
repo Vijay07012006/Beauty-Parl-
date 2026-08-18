@@ -11,7 +11,12 @@ import { User } from '../auth/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([LoyaltyTransaction, LoyaltyReward, User, CronLock]),
+    TypeOrmModule.forFeature([
+      LoyaltyTransaction,
+      LoyaltyReward,
+      User,
+      CronLock,
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

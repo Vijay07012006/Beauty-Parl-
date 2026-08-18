@@ -30,10 +30,17 @@ export class UgcService {
   // CRITICAL (C-1): the full User relation is NEVER returned to clients — only
   // safe, public fields (id, name, avatar). Loading the raw relation would expose
   // bcrypt hashes, reset tokens and 2FA secrets on public endpoints.
-  private async findWithUser(where: Partial<UgcPhoto>, relations: string[]): Promise<UgcPhoto[]> {
-    const photos = await this.ugcRepo.find({ where, relations, order: { createdAt: 'DESC' } });
+  private async findWithUser(
+    where: Partial<UgcPhoto>,
+    relations: string[],
+  ): Promise<UgcPhoto[]> {
+    const photos = await this.ugcRepo.find({
+      where,
+      relations,
+      order: { createdAt: 'DESC' },
+    });
     return photos.map((photo) => {
-      const user = photo.user as User | undefined;
+      const user = photo.user;
       if (user) {
         (photo as any).user = {
           id: user.id,
@@ -56,9 +63,13 @@ export class UgcService {
       order: { createdAt: 'DESC' },
     });
     return photos.map((photo) => {
-      const user = photo.user as User | undefined;
+      const user = photo.user;
       if (user) {
-        (photo as any).user = { id: user.id, name: user.name, avatar: user.avatar };
+        (photo as any).user = {
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar,
+        };
       }
       return photo;
     });
@@ -71,9 +82,13 @@ export class UgcService {
       order: { createdAt: 'ASC' },
     });
     return photos.map((photo) => {
-      const user = photo.user as User | undefined;
+      const user = photo.user;
       if (user) {
-        (photo as any).user = { id: user.id, name: user.name, avatar: user.avatar };
+        (photo as any).user = {
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar,
+        };
       }
       return photo;
     });

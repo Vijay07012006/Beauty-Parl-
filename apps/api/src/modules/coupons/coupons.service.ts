@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Coupon, CouponType } from './coupon.entity';
@@ -22,7 +26,9 @@ export class CouponsService {
     usageLimit?: number;
   }) {
     const codeUpper = data.code.toUpperCase();
-    const existing = await this.couponRepo.findOne({ where: { code: codeUpper } });
+    const existing = await this.couponRepo.findOne({
+      where: { code: codeUpper },
+    });
     if (existing) {
       throw new BadRequestException('Coupon code already exists');
     }
@@ -62,7 +68,7 @@ export class CouponsService {
 
   async updateCoupon(id: number, data: Partial<Coupon>) {
     const coupon = await this.getCoupon(id);
-    
+
     if (data.code) {
       data.code = data.code.toUpperCase();
     }
@@ -112,7 +118,9 @@ export class CouponsService {
     }
 
     if (orderTotal < Number(coupon.minOrder)) {
-      throw new BadRequestException(`Minimum order amount is $${Number(coupon.minOrder).toFixed(2)}`);
+      throw new BadRequestException(
+        `Minimum order amount is $${Number(coupon.minOrder).toFixed(2)}`,
+      );
     }
 
     let discount = 0;
@@ -151,12 +159,13 @@ export class CouponsService {
   async getCouponStats() {
     const total = await this.couponRepo.count();
     const active = await this.couponRepo.count({ where: { isActive: true } });
-    
+
     // Compute total used count across all coupons
-    const sumResult = await this.couponRepo.createQueryBuilder('coupon')
+    const sumResult = await this.couponRepo
+      .createQueryBuilder('coupon')
       .select('SUM(coupon.usedCount)', 'sum')
       .getRawOne();
-    
+
     const used = parseInt(sumResult?.sum, 10) || 0;
     return { total, active, used };
   }

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CouponsService } from './coupons.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -12,9 +23,7 @@ export class CouponsController {
   // ========== Public Routes ==========
 
   @Post('validate')
-  async validateCoupon(
-    @Body() body: { code: string; orderTotal: number },
-  ) {
+  async validateCoupon(@Body() body: { code: string; orderTotal: number }) {
     return this.couponsService.validateCoupon(body.code, body.orderTotal);
   }
 
@@ -56,10 +65,7 @@ export class CouponsController {
   @Put('admin/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async updateCoupon(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() data: any,
-  ) {
+  async updateCoupon(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
     return this.couponsService.updateCoupon(id, data);
   }
 

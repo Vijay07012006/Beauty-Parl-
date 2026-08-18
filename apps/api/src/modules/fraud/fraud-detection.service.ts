@@ -9,8 +9,14 @@ import { User } from '../auth/user.entity';
 @Injectable()
 export class FraudDetectionService {
   private readonly disposableDomains = [
-    'mailinator.com', 'yopmail.com', 'tempmail.com', 'dispostable.com',
-    'sharklasers.com', 'guerrillamail.com', '10minutemail.com', 'trashmail.com'
+    'mailinator.com',
+    'yopmail.com',
+    'tempmail.com',
+    'dispostable.com',
+    'sharklasers.com',
+    'guerrillamail.com',
+    '10minutemail.com',
+    'trashmail.com',
   ];
 
   constructor(
@@ -28,24 +34,34 @@ export class FraudDetectionService {
     order: Order,
     ipAddress?: string,
     userAgent?: string,
-  ): Promise<{ score: number; reason: string; status: 'pending' | 'confirmed' | 'false_positive' | 'reviewed' }> {
+  ): Promise<{
+    score: number;
+    reason: string;
+    status: 'pending' | 'confirmed' | 'false_positive' | 'reviewed';
+  }> {
     let score = 0;
     const flags: string[] = [];
     const userId = order.userId;
-    const email = order.guestEmail || (userId ? await this.getUserEmail(userId) : '');
+    const email =
+      order.guestEmail || (userId ? await this.getUserEmail(userId) : '');
 
     // 1. Unusual order amount (> 3x average user spending)
     if (userId) {
       const avgResult = await this.orderRepo
         .createQueryBuilder('order')
         .select('AVG(order.total)', 'avg')
-        .where('order.userId = :userId AND order.id != :orderId', { userId, orderId: order.id })
+        .where('order.userId = :userId AND order.id != :orderId', {
+          userId,
+          orderId: order.id,
+        })
         .getRawOne();
-      
+
       const averageSpending = parseFloat(avgResult?.avg || '0');
       if (averageSpending > 0 && order.total > averageSpending * 3) {
         score += 30;
-        flags.push(`Unusual order amount (${order.total} is > 3x avg of ${averageSpending.toFixed(2)})`);
+        flags.push(
+          `Unusual order amount (${order.total} is > 3x avg of ${averageSpending.toFixed(2)})`,
+        );
       }
     }
 
@@ -53,9 +69,17 @@ export class FraudDetectionService {
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
     const recentCount = await this.orderRepo.count({
       where: [
-        { userId: userId || -1, createdAt: Between(tenMinutesAgo, new Date()), id: Not(order.id) },
-        { guestEmail: email || 'none', createdAt: Between(tenMinutesAgo, new Date()), id: Not(order.id) }
-      ]
+        {
+          userId: userId || -1,
+          createdAt: Between(tenMinutesAgo, new Date()),
+          id: Not(order.id),
+        },
+        {
+          guestEmail: email || 'none',
+          createdAt: Between(tenMinutesAgo, new Date()),
+          id: Not(order.id),
+        },
+      ],
     });
     if (recentCount >= 5) {
       score += 40;
@@ -89,7 +113,7 @@ export class FraudDetectionService {
           userId,
           ipAddress: ipAddress || undefined,
           userAgent: userAgent || undefined,
-        }
+        },
       });
       if (knownSessions === 0) {
         score += 15;
@@ -107,7 +131,8 @@ export class FraudDetectionService {
     }
 
     const reason = flags.join('; ') || 'No suspicious activity detected';
-    let status: 'pending' | 'confirmed' | 'false_positive' | 'reviewed' = 'pending';
+    let status: 'pending' | 'confirmed' | 'false_positive' | 'reviewed' =
+      'pending';
 
     if (score > 90) {
       status = 'confirmed';
@@ -133,7 +158,10 @@ export class FraudDetectionService {
   }
 
   private async getUserEmail(userId: number): Promise<string> {
-    const user = await this.userRepo.findOne({ where: { id: userId }, select: { email: true } });
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: { email: true },
+    });
     return user?.email || '';
   }
 }

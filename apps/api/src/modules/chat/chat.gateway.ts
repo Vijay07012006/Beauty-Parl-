@@ -15,23 +15,37 @@ import { AiChatService } from '../ai-chat/ai-chat.service';
 const FAQ_BOT_ANSWERS = [
   {
     keywords: ['hi', 'hello', 'hey', 'start'],
-    answer: "🌸 Welcome to **Beauty Parlé** Support! How can I help you today?\n\n1️⃣ **Track my order** 📦\n2️⃣ **Book a salon slot** 📅\n3️⃣ **Return & Refund policy** 💄\n4️⃣ **Talk to a human agent** 👩‍💼\n\nReply with a number or type your question!",
+    answer:
+      '🌸 Welcome to **Beauty Parlé** Support! How can I help you today?\n\n1️⃣ **Track my order** 📦\n2️⃣ **Book a salon slot** 📅\n3️⃣ **Return & Refund policy** 💄\n4️⃣ **Talk to a human agent** 👩‍💼\n\nReply with a number or type your question!',
   },
   {
     keywords: ['track', 'order', 'status', 'delivery', '1'],
-    answer: "📦 You can track your order live inside your **Orders** history page. Log in, click on your profile, and select 'My Orders' to view details, tracking links, and invoices.",
+    answer:
+      "📦 You can track your order live inside your **Orders** history page. Log in, click on your profile, and select 'My Orders' to view details, tracking links, and invoices.",
   },
   {
     keywords: ['book', 'booking', 'slot', 'appointment', 'salon', '2'],
-    answer: "📅 Ready for a self-care day? Head over to our **Booking** tab in the main navigation. Select your services, pick a date, choose a stylist, and confirm your slot instantly!",
+    answer:
+      '📅 Ready for a self-care day? Head over to our **Booking** tab in the main navigation. Select your services, pick a date, choose a stylist, and confirm your slot instantly!',
   },
   {
     keywords: ['return', 'refund', 'policy', 'cancel', '3'],
-    answer: "💄 **Hassle-Free Returns**: We accept returns on unopened, unused products within 15 days. Contact support at `support@beautyparle.com` to initiate a refund.",
+    answer:
+      '💄 **Hassle-Free Returns**: We accept returns on unopened, unused products within 15 days. Contact support at `support@beautyparle.com` to initiate a refund.',
   },
   {
-    keywords: ['human', 'agent', 'support', 'talk', 'chat', '4', 'person', 'representative'],
-    answer: "👩‍💼 Escalling to a human support agent now! A representative has been notified and will reply shortly. Please type your detailed inquiry.",
+    keywords: [
+      'human',
+      'agent',
+      'support',
+      'talk',
+      'chat',
+      '4',
+      'person',
+      'representative',
+    ],
+    answer:
+      '👩‍💼 Escalling to a human support agent now! A representative has been notified and will reply shortly. Please type your detailed inquiry.',
   },
 ];
 
@@ -92,7 +106,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.roomId = guestId;
       // Tell the guest which room the server assigned so it can join its own room
       client.emit('assigned_room', guestId);
-      console.log(`🔌 Guest client connected: ${client.id} (server-assigned room ${guestId})`);
+      console.log(
+        `🔌 Guest client connected: ${client.id} (server-assigned room ${guestId})`,
+      );
       return;
     }
     client.data.user = user;
@@ -102,7 +118,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (this.isAdminUser(user)) {
       client.join(ADMIN_ROOM);
     }
-    console.log(`🔌 Authenticated client connected: ${client.id} (role: ${user.role})`);
+    console.log(
+      `🔌 Authenticated client connected: ${client.id} (role: ${user.role})`,
+    );
   }
 
   handleDisconnect(client: Socket) {
@@ -112,7 +130,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private authenticate(client: Socket): AuthedUser | null {
-    let token: string | undefined = client.handshake.auth?.token as string | undefined;
+    let token: string | undefined = client.handshake.auth?.token as
+      string | undefined;
     if (!token) {
       const authHeader = client.handshake.headers?.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -135,9 +154,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Token via query string is NOT accepted — avoids leakage in logs/referrers (M7)
     if (!token) return null;
     try {
-      const payload = this.jwtService.verify<{ sub: number; email: string; role: string }>(token);
+      const payload = this.jwtService.verify<{
+        sub: number;
+        email: string;
+        role: string;
+      }>(token);
       if (!payload?.sub) return null;
-      return { id: Number(payload.sub), email: payload.email, role: payload.role };
+      return {
+        id: Number(payload.sub),
+        email: payload.email,
+        role: payload.role,
+      };
     } catch {
       return null;
     }
@@ -167,7 +194,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     client.join(roomId);
-    console.log(`👥 Client ${client.id} joined room: ${roomId} (admin: ${isAdmin})`);
+    console.log(
+      `👥 Client ${client.id} joined room: ${roomId} (admin: ${isAdmin})`,
+    );
 
     if (!this.activeRooms.has(roomId)) {
       this.activeRooms.set(roomId, {
@@ -227,11 +256,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const allowedRoom = client.data.roomId as string;
     if (!isAdmin && roomId !== allowedRoom) return;
 
-    const senderId = user ? String(user.id) : (client.data.guestId as string) || 'guest';
+    const senderId = user
+      ? String(user.id)
+      : (client.data.guestId as string) || 'guest';
     const senderName = user
       ? isAdmin
         ? 'Support Agent'
-        : (user.email?.split('@')[0] || 'Customer')
+        : user.email?.split('@')[0] || 'Customer'
       : 'Guest';
 
     const message = {
@@ -304,7 +335,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.broadcastActiveRooms();
   }
 
-  private async sendAiReply(roomId: string, content: string, senderId?: string) {
+  private async sendAiReply(
+    roomId: string,
+    content: string,
+    senderId?: string,
+  ) {
     const room = this.activeRooms.get(roomId);
     if (!room) return;
 
@@ -335,7 +370,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         id: 'bot_fallback_' + Date.now(),
         senderId: 'beauty_bot',
         senderName: 'Beauty Assistant',
-        content: "Sorry, I didn't quite catch that. Type **4** or **agent** to escalate this conversation to a human support agent!",
+        content:
+          "Sorry, I didn't quite catch that. Type **4** or **agent** to escalate this conversation to a human support agent!",
         isAdmin: true,
         createdAt: new Date(),
       };
@@ -364,6 +400,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private broadcastActiveRooms() {
     // Only admins may see the list of active rooms + guest emails (prevents data leak)
-    this.server.to(ADMIN_ROOM).emit('active_rooms_list', this.buildActiveRoomsList());
+    this.server
+      .to(ADMIN_ROOM)
+      .emit('active_rooms_list', this.buildActiveRoomsList());
   }
 }

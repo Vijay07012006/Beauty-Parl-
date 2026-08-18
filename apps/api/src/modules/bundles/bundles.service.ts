@@ -25,12 +25,37 @@ export class BundlesService implements OnModuleInit {
       const count = await this.bundleRepo.count();
       if (count === 0) {
         const defaults: Array<Partial<Bundle>> = [
-          { name: 'Skincare Starter Kit', description: 'Everything you need for a glowing skincare routine.', discountPercentage: 15, isActive: true },
-          { name: 'Makeup Essentials', description: 'Foundation, mascara, and lip color — the holy trinity.', discountPercentage: 10, isActive: true },
-          { name: 'Hair Care Duo', description: 'Shampoo + Conditioner — the perfect pair for silky hair.', discountPercentage: 12, isActive: true },
-          { name: 'Glow Up Bundle', description: 'Vitamin C serum, moisturizer, and SPF for radiant skin.', discountPercentage: 20, isActive: true },
+          {
+            name: 'Skincare Starter Kit',
+            description: 'Everything you need for a glowing skincare routine.',
+            discountPercentage: 15,
+            isActive: true,
+          },
+          {
+            name: 'Makeup Essentials',
+            description:
+              'Foundation, mascara, and lip color — the holy trinity.',
+            discountPercentage: 10,
+            isActive: true,
+          },
+          {
+            name: 'Hair Care Duo',
+            description:
+              'Shampoo + Conditioner — the perfect pair for silky hair.',
+            discountPercentage: 12,
+            isActive: true,
+          },
+          {
+            name: 'Glow Up Bundle',
+            description:
+              'Vitamin C serum, moisturizer, and SPF for radiant skin.',
+            discountPercentage: 20,
+            isActive: true,
+          },
         ];
-        const saved = await this.bundleRepo.save(this.bundleRepo.create(defaults));
+        const saved = await this.bundleRepo.save(
+          this.bundleRepo.create(defaults),
+        );
         // Assign pairs of products
         const products = await this.productRepo.find({ take: 8 });
         if (products.length >= 4) {
@@ -41,7 +66,9 @@ export class BundlesService implements OnModuleInit {
             products.slice(1, 4),
           ];
           for (let i = 0; i < saved.length; i++) {
-            const bps = (pairs[i] || []).map(p => this.bpRepo.create({ bundleId: saved[i].id, productId: p.id }));
+            const bps = (pairs[i] || []).map((p) =>
+              this.bpRepo.create({ bundleId: saved[i].id, productId: p.id }),
+            );
             if (bps.length) await this.bpRepo.save(bps);
           }
         }
@@ -53,8 +80,11 @@ export class BundlesService implements OnModuleInit {
   }
 
   async findAll(): Promise<any[]> {
-    const bundles = await this.bundleRepo.find({ where: { isActive: true }, order: { createdAt: 'ASC' } });
-    return Promise.all(bundles.map(b => this.enrichBundle(b)));
+    const bundles = await this.bundleRepo.find({
+      where: { isActive: true },
+      order: { createdAt: 'ASC' },
+    });
+    return Promise.all(bundles.map((b) => this.enrichBundle(b)));
   }
 
   async findOne(id: number): Promise<any> {
@@ -64,23 +94,39 @@ export class BundlesService implements OnModuleInit {
   }
 
   private async enrichBundle(bundle: Bundle): Promise<any> {
-    const bps = await this.bpRepo.find({ where: { bundleId: bundle.id }, relations: ['product'] });
-    const products = bps.map(bp => bp.product).filter(Boolean);
-    const originalTotal = products.reduce((sum, p) => sum + Number(p!.price), 0);
+    const bps = await this.bpRepo.find({
+      where: { bundleId: bundle.id },
+      relations: ['product'],
+    });
+    const products = bps.map((bp) => bp.product).filter(Boolean);
+    const originalTotal = products.reduce(
+      (sum, p) => sum + Number(p!.price),
+      0,
+    );
     const discountValue = bundle.discountPercentage
       ? (originalTotal * bundle.discountPercentage) / 100
       : Number(bundle.discountAmount || 0);
-    return { ...bundle, products, originalTotal, discountValue, finalTotal: originalTotal - discountValue };
+    return {
+      ...bundle,
+      products,
+      originalTotal,
+      discountValue,
+      finalTotal: originalTotal - discountValue,
+    };
   }
 
   async getRecommended(cartProductIds: number[]): Promise<any[]> {
     if (!cartProductIds.length) return this.findAll();
     // Find bundles that contain any of the cart products
-    const bps = await this.bpRepo.find({ where: { productId: In(cartProductIds) } });
-    const bundleIds = [...new Set(bps.map(bp => bp.bundleId))];
+    const bps = await this.bpRepo.find({
+      where: { productId: In(cartProductIds) },
+    });
+    const bundleIds = [...new Set(bps.map((bp) => bp.bundleId))];
     if (!bundleIds.length) return this.findAll();
-    const bundles = await this.bundleRepo.find({ where: { id: In(bundleIds), isActive: true } });
-    return Promise.all(bundles.map(b => this.enrichBundle(b)));
+    const bundles = await this.bundleRepo.find({
+      where: { id: In(bundleIds), isActive: true },
+    });
+    return Promise.all(bundles.map((b) => this.enrichBundle(b)));
   }
 
   async create(data: Partial<Bundle>): Promise<Bundle> {

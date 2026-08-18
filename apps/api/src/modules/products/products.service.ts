@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './product.entity';
@@ -19,7 +23,7 @@ export class ProductsService {
   async findAll(category?: string): Promise<Product[]> {
     if (category && category.toLowerCase() !== 'all') {
       return this.productRepository.find({
-        where: { category }
+        where: { category },
       });
     }
     return this.productRepository.find();
@@ -36,25 +40,41 @@ export class ProductsService {
     sort?: string;
     tags?: string;
   }) {
-    const { skip, take, category, search, minPrice, maxPrice, minRating, sort, tags } = options;
+    const {
+      skip,
+      take,
+      category,
+      search,
+      minPrice,
+      maxPrice,
+      minRating,
+      sort,
+      tags,
+    } = options;
 
     const queryBuilder = this.productRepository.createQueryBuilder('product');
 
     if (category && category.toLowerCase() !== 'all') {
       // Allow case insensitive category match or slug mapping
       if (category.toLowerCase() === 'tools') {
-        queryBuilder.andWhere('product.category IN (:...cats)', { cats: ['Tools & Brushes', 'Tools'] });
+        queryBuilder.andWhere('product.category IN (:...cats)', {
+          cats: ['Tools & Brushes', 'Tools'],
+        });
       } else if (category.toLowerCase() === 'luxury') {
-        queryBuilder.andWhere('product.category IN (:...cats)', { cats: ['Luxury Collection', 'Luxury'] });
+        queryBuilder.andWhere('product.category IN (:...cats)', {
+          cats: ['Luxury Collection', 'Luxury'],
+        });
       } else {
-        queryBuilder.andWhere('LOWER(product.category) = :category', { category: category.toLowerCase() });
+        queryBuilder.andWhere('LOWER(product.category) = :category', {
+          category: category.toLowerCase(),
+        });
       }
     }
 
     if (search) {
       queryBuilder.andWhere(
         '(product.name ILIKE :search OR product.description ILIKE :search OR product.brand ILIKE :search)',
-        { search: `%${search}%` }
+        { search: `%${search}%` },
       );
     }
 
@@ -70,9 +90,13 @@ export class ProductsService {
     }
 
     if (tags) {
-      const tagList = tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      const tagList = tags
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
       if (tagList.length > 0) {
-        const subQuery = queryBuilder.subQuery()
+        const subQuery = queryBuilder
+          .subQuery()
           .select('ptm.productId')
           .from('product_tag_mapping', 'ptm')
           .innerJoin('product_tags', 'pt', 'pt.id = ptm.tagId')
@@ -132,7 +156,7 @@ export class ProductsService {
     const results = await this.productRepository.manager.query(query);
     return results.map((r: any) => ({
       ...r,
-      count: parseInt(r.count, 10)
+      count: parseInt(r.count, 10),
     }));
   }
 
@@ -150,37 +174,46 @@ export class ProductsService {
       rating?: number;
       brand?: string;
       search?: string;
-    }
+    },
   ): Promise<{ data: Product[]; total: number; page: number; limit: number }> {
     const query = this.productRepository.createQueryBuilder('product');
 
     if (filters) {
       if (filters.category && filters.category.toLowerCase() !== 'all') {
-        query.andWhere('LOWER(product.category) = :category', { category: filters.category.toLowerCase() });
+        query.andWhere('LOWER(product.category) = :category', {
+          category: filters.category.toLowerCase(),
+        });
       }
       if (filters.minPrice !== undefined && !isNaN(filters.minPrice)) {
-        query.andWhere('product.price >= :minPrice', { minPrice: filters.minPrice });
+        query.andWhere('product.price >= :minPrice', {
+          minPrice: filters.minPrice,
+        });
       }
       if (filters.maxPrice !== undefined && !isNaN(filters.maxPrice)) {
-        query.andWhere('product.price <= :maxPrice', { maxPrice: filters.maxPrice });
+        query.andWhere('product.price <= :maxPrice', {
+          maxPrice: filters.maxPrice,
+        });
       }
       if (filters.rating !== undefined && !isNaN(filters.rating)) {
         query.andWhere('product.rating >= :rating', { rating: filters.rating });
       }
       if (filters.brand) {
-        query.andWhere('LOWER(product.brand) = :brand', { brand: filters.brand.toLowerCase() });
+        query.andWhere('LOWER(product.brand) = :brand', {
+          brand: filters.brand.toLowerCase(),
+        });
       }
       if (filters.search) {
         query.andWhere(
           '(LOWER(product.name) LIKE :search OR LOWER(product.description) LIKE :search OR LOWER(product.brand) LIKE :search)',
-          { search: `%${filters.search.toLowerCase()}%` }
+          { search: `%${filters.search.toLowerCase()}%` },
         );
       }
     }
 
-    query.orderBy('product.id', 'ASC')
-         .skip((page - 1) * limit)
-         .take(limit);
+    query
+      .orderBy('product.id', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
 
     const [data, total] = await query.getManyAndCount();
     return { data, total, page, limit };
@@ -191,7 +224,10 @@ export class ProductsService {
     return this.productRepository.save(product);
   }
 
-  async update(id: number, productData: Partial<Product>): Promise<Product | null> {
+  async update(
+    id: number,
+    productData: Partial<Product>,
+  ): Promise<Product | null> {
     await this.productRepository.update(id, productData);
     return this.findOne(id);
   }
@@ -205,19 +241,21 @@ export class ProductsService {
   async findReviews(productId: number): Promise<ProductReview[]> {
     return this.reviewRepository.find({
       where: { productId },
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
   async findApprovedReviews(productId: number): Promise<ProductReview[]> {
     return this.reviewRepository.find({
       where: { productId, isApproved: true },
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
   async approveReview(reviewId: number): Promise<void> {
-    const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
+    const review = await this.reviewRepository.findOne({
+      where: { id: reviewId },
+    });
     if (!review) {
       throw new NotFoundException(`Review with ID ${reviewId} not found`);
     }
@@ -243,7 +281,9 @@ export class ProductsService {
     // Rating must be 1-5 (P3) — prevents corrupting the product average
     const rating = Number(reviewData.rating);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      throw new BadRequestException('Rating must be an integer between 1 and 5');
+      throw new BadRequestException(
+        'Rating must be an integer between 1 and 5',
+      );
     }
 
     // Content caps (P1)
@@ -252,23 +292,35 @@ export class ProductsService {
       throw new BadRequestException('Review comment is required');
     }
     if (comment.length > 1000) {
-      throw new BadRequestException('Review comment must be at most 1000 characters');
+      throw new BadRequestException(
+        'Review comment must be at most 1000 characters',
+      );
     }
-    const reviewerName = String(reviewData.reviewerName || '').trim().slice(0, 60);
+    const reviewerName = String(reviewData.reviewerName || '')
+      .trim()
+      .slice(0, 60);
 
     // Only verified purchasers may review (P1)
     const purchased = await this.orderRepository
       .createQueryBuilder('o')
       .where('o.userId = :userId', { userId })
-      .andWhere('o.status IN (:...statuses)', { statuses: ['paid', 'processing', 'shipped', 'delivered'] })
-      .andWhere('o.items @> :filter', { filter: JSON.stringify([{ productId }]) })
+      .andWhere('o.status IN (:...statuses)', {
+        statuses: ['paid', 'processing', 'shipped', 'delivered'],
+      })
+      .andWhere('o.items @> :filter', {
+        filter: JSON.stringify([{ productId }]),
+      })
       .getCount();
     if (purchased === 0) {
-      throw new BadRequestException('You can only review a product you have purchased');
+      throw new BadRequestException(
+        'You can only review a product you have purchased',
+      );
     }
 
     // One review per user per product (P1)
-    const existing = await this.reviewRepository.findOne({ where: { userId, productId } });
+    const existing = await this.reviewRepository.findOne({
+      where: { userId, productId },
+    });
     if (existing) {
       throw new BadRequestException('You have already reviewed this product');
     }
@@ -278,7 +330,7 @@ export class ProductsService {
       userId,
       reviewerName,
       rating,
-      comment
+      comment,
     });
     await this.reviewRepository.save(review);
 
@@ -288,8 +340,12 @@ export class ProductsService {
     return review;
   }
 
-  async getRatingStats(productId: number): Promise<{ average: number; count: number }> {
-    const reviews = await this.reviewRepository.find({ where: { productId, isApproved: true } });
+  async getRatingStats(
+    productId: number,
+  ): Promise<{ average: number; count: number }> {
+    const reviews = await this.reviewRepository.find({
+      where: { productId, isApproved: true },
+    });
     const count = reviews.length;
     if (count === 0) return { average: 0, count: 0 };
     const total = reviews.reduce((sum, r) => sum + r.rating, 0);
@@ -297,16 +353,27 @@ export class ProductsService {
   }
 
   private async recalculateRating(productId: number): Promise<void> {
-    const reviews = await this.reviewRepository.find({ where: { productId, isApproved: true } });
+    const reviews = await this.reviewRepository.find({
+      where: { productId, isApproved: true },
+    });
     const ratingCount = reviews.length;
     const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
-    const avgRating = ratingCount > 0 ? parseFloat((totalRating / ratingCount).toFixed(2)) : 4.50;
-    await this.productRepository.update(productId, { rating: avgRating, ratingCount });
+    const avgRating =
+      ratingCount > 0
+        ? parseFloat((totalRating / ratingCount).toFixed(2))
+        : 4.5;
+    await this.productRepository.update(productId, {
+      rating: avgRating,
+      ratingCount,
+    });
   }
 
   // ========== 🔧 ADMIN REVIEW METHODS ==========
 
-  async getAllReviews(page: number = 1, limit: number = 20): Promise<{ reviews: ProductReview[]; total: number }> {
+  async getAllReviews(
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ reviews: ProductReview[]; total: number }> {
     const [reviews, total] = await this.reviewRepository.findAndCount({
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
@@ -316,7 +383,9 @@ export class ProductsService {
   }
 
   async deleteReview(reviewId: number): Promise<{ success: boolean }> {
-    const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
+    const review = await this.reviewRepository.findOne({
+      where: { id: reviewId },
+    });
     if (!review) throw new NotFoundException('Review not found');
     const { productId } = review;
     await this.reviewRepository.delete(reviewId);
@@ -324,4 +393,3 @@ export class ProductsService {
     return { success: true };
   }
 }
-

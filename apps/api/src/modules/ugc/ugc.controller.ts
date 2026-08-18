@@ -1,18 +1,29 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { UgcService } from './ugc.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('ugc')
 export class UgcController {
-  constructor(
-    private readonly ugcService: UgcService,
-  ) {}
+  constructor(private readonly ugcService: UgcService) {}
 
   private requireAdmin(req: Request): void {
-    const user = req.user as { role?: string } | undefined;
+    const user = req.user;
     if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
-      throw new UnauthorizedException('Access denied. Administrator privileges required.');
+      throw new UnauthorizedException(
+        'Access denied. Administrator privileges required.',
+      );
     }
   }
 
@@ -23,7 +34,12 @@ export class UgcController {
     @Req() req: Request,
   ) {
     const userId = (req.user as { id: number }).id;
-    return this.ugcService.uploadPhoto(body.productId, body.imageUrl, body.caption, userId);
+    return this.ugcService.uploadPhoto(
+      body.productId,
+      body.imageUrl,
+      body.caption,
+      userId,
+    );
   }
 
   @Get('product/:productId')

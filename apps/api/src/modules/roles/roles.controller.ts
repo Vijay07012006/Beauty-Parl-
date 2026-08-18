@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from './role.entity';
@@ -13,7 +22,7 @@ import { UserRole } from '../auth/user.entity';
 export class RolesController {
   constructor(
     @InjectRepository(Role)
-    private roleRepo: Repository<Role>
+    private roleRepo: Repository<Role>,
   ) {}
 
   @Get()
@@ -33,7 +42,7 @@ export class RolesController {
   @Put(':id')
   async updateRole(
     @Param('id') id: number,
-    @Body() body: { name?: string; permissions?: string[]; isActive?: boolean }
+    @Body() body: { name?: string; permissions?: string[]; isActive?: boolean },
   ) {
     await this.roleRepo.update(id, body);
     return this.roleRepo.findOne({ where: { id } });

@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Return } from './return.entity';
@@ -13,23 +17,35 @@ export class ReturnsService {
     private readonly orderRepo: Repository<Order>,
   ) {}
 
-  async requestReturn(userId: number, orderId: number, reason: string): Promise<Return> {
+  async requestReturn(
+    userId: number,
+    orderId: number,
+    reason: string,
+  ): Promise<Return> {
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!order) {
       throw new NotFoundException(`Order with ID ${orderId} not found`);
     }
 
     if (order.userId !== userId) {
-      throw new BadRequestException('You can only request returns for your own orders');
+      throw new BadRequestException(
+        'You can only request returns for your own orders',
+      );
     }
 
     if (order.status !== 'delivered') {
-      throw new BadRequestException('Returns can only be requested for delivered orders');
+      throw new BadRequestException(
+        'Returns can only be requested for delivered orders',
+      );
     }
 
-    const existingReturn = await this.returnRepo.findOne({ where: { orderId } });
+    const existingReturn = await this.returnRepo.findOne({
+      where: { orderId },
+    });
     if (existingReturn) {
-      throw new BadRequestException('A return request already exists for this order');
+      throw new BadRequestException(
+        'A return request already exists for this order',
+      );
     }
 
     const returnRequest = this.returnRepo.create({
@@ -60,13 +76,16 @@ export class ReturnsService {
     id: number,
     status: 'approved' | 'rejected' | 'completed',
   ): Promise<Return> {
-    const returnRequest = await this.returnRepo.findOne({ where: { id }, relations: ['order'] });
+    const returnRequest = await this.returnRepo.findOne({
+      where: { id },
+      relations: ['order'],
+    });
     if (!returnRequest) {
       throw new NotFoundException(`Return request with ID ${id} not found`);
     }
 
     returnRequest.status = status;
-    
+
     // If the return is marked completed, update the order status
     if (status === 'completed' && returnRequest.order) {
       returnRequest.order.status = 'cancelled'; // or custom status like 'returned'

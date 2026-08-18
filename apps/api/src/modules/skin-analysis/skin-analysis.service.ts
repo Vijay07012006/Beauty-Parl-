@@ -22,7 +22,9 @@ export class SkinAnalysisService {
       this.hf = new HfInference(apiKey);
       console.log('✅ Hugging Face Inference client initialized');
     } else {
-      console.warn('⚠️ HUGGINGFACE_API_KEY is not set — falling back to offline diagnostic classification');
+      console.warn(
+        '⚠️ HUGGINGFACE_API_KEY is not set — falling back to offline diagnostic classification',
+      );
     }
   }
 
@@ -65,8 +67,10 @@ export class SkinAnalysisService {
             chunks.push(value);
           }
         }
-        const blob = new Blob(chunks as BlobPart[], { type: response.headers.get('content-type') || 'image/*' });
-        
+        const blob = new Blob(chunks as BlobPart[], {
+          type: response.headers.get('content-type') || 'image/*',
+        });
+
         const classification = await this.hf.imageClassification({
           model: 'google/vit-base-patch16-224',
           data: blob,
@@ -78,17 +82,26 @@ export class SkinAnalysisService {
         for (let i = 0; i < primaryLabel.length; i++) {
           hash = primaryLabel.charCodeAt(i) + ((hash << 5) - hash);
         }
-        
+
         const types = ['dry', 'oily', 'combination', 'sensitive'];
         skinType = types[Math.abs(hash) % types.length];
-        
-        const allConcerns = ['acne', 'redness', 'dryness', 'dark_spots', 'pores'];
+
+        const allConcerns = [
+          'acne',
+          'redness',
+          'dryness',
+          'dark_spots',
+          'pores',
+        ];
         concerns = [
           allConcerns[Math.abs(hash + 1) % allConcerns.length],
           allConcerns[Math.abs(hash + 2) % allConcerns.length],
         ];
       } catch (err: any) {
-        console.error('Hugging Face inference error, running fallback:', err.message);
+        console.error(
+          'Hugging Face inference error, running fallback:',
+          err.message,
+        );
         const { type, list } = this.getFallbackDiagnosis(imageUrl);
         skinType = type;
         concerns = list;
@@ -109,7 +122,12 @@ export class SkinAnalysisService {
       imageUrl,
       skinType,
       concerns,
-      recommendedProducts: matchedProducts.map((p) => ({ id: p.id, name: p.name, price: p.price, image: p.image })),
+      recommendedProducts: matchedProducts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        image: p.image,
+      })),
     });
 
     const saved = await this.saRepo.save(scan);
@@ -199,7 +217,9 @@ export class SkinAnalysisService {
       hostname.endsWith('.localhost') ||
       hostname === 'metadata.google.internal'
     ) {
-      throw new BadRequestException('Image URLs pointing to local/internal hosts are not allowed');
+      throw new BadRequestException(
+        'Image URLs pointing to local/internal hosts are not allowed',
+      );
     }
 
     // Resolve and reject any address that is private / link-local / loopback
@@ -209,7 +229,9 @@ export class SkinAnalysisService {
       const addresses = await dns.lookup(hostname, { all: true });
       for (const addr of addresses) {
         if (this.isPrivateIp(addr.address)) {
-          throw new BadRequestException('Image URLs resolving to private IP addresses are not allowed');
+          throw new BadRequestException(
+            'Image URLs resolving to private IP addresses are not allowed',
+          );
         }
       }
     } catch (err: any) {
@@ -219,14 +241,17 @@ export class SkinAnalysisService {
     }
   }
 
-  private getFallbackDiagnosis(imageUrl: string): { type: string; list: string[] } {
+  private getFallbackDiagnosis(imageUrl: string): {
+    type: string;
+    list: string[];
+  } {
     let hash = 0;
     for (let i = 0; i < imageUrl.length; i++) {
       hash = imageUrl.charCodeAt(i) + ((hash << 5) - hash);
     }
     const types = ['dry', 'oily', 'combination', 'sensitive'];
     const type = types[Math.abs(hash) % types.length];
-    
+
     const allConcerns = ['acne', 'redness', 'dryness', 'dark_spots', 'pores'];
     const list = [
       allConcerns[Math.abs(hash + 1) % allConcerns.length],
@@ -235,20 +260,39 @@ export class SkinAnalysisService {
     return { type, list };
   }
 
-  private async getRecommendations(skinType: string, concerns: string[]): Promise<Product[]> {
+  private async getRecommendations(
+    skinType: string,
+    concerns: string[],
+  ): Promise<Product[]> {
     const products = await this.productRepo.find();
     const scored = products.map((product) => {
       let score = 0;
-      const searchText = `${product.name} ${product.description} ${product.category}`.toLowerCase();
+      const searchText =
+        `${product.name} ${product.description} ${product.category}`.toLowerCase();
 
       // Skin type matching
-      if (skinType === 'dry' && (searchText.includes('dry') || searchText.includes('moist') || searchText.includes('hydrate'))) {
+      if (
+        skinType === 'dry' &&
+        (searchText.includes('dry') ||
+          searchText.includes('moist') ||
+          searchText.includes('hydrate'))
+      ) {
         score += 5;
       }
-      if (skinType === 'oily' && (searchText.includes('oil') || searchText.includes('matte') || searchText.includes('acne'))) {
+      if (
+        skinType === 'oily' &&
+        (searchText.includes('oil') ||
+          searchText.includes('matte') ||
+          searchText.includes('acne'))
+      ) {
         score += 5;
       }
-      if (skinType === 'sensitive' && (searchText.includes('sooth') || searchText.includes('gentle') || searchText.includes('sensitive'))) {
+      if (
+        skinType === 'sensitive' &&
+        (searchText.includes('sooth') ||
+          searchText.includes('gentle') ||
+          searchText.includes('sensitive'))
+      ) {
         score += 5;
       }
 
@@ -262,7 +306,9 @@ export class SkinAnalysisService {
       return { product, score };
     });
 
-    const sorted = scored.filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
+    const sorted = scored
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score);
     if (sorted.length === 0) {
       return products.slice(0, 4); // return first 4 as fallback
     }

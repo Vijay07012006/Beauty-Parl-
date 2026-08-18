@@ -1,20 +1,22 @@
-import { Controller, Post, Body, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  BadRequestException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { SkinAnalysisService } from './skin-analysis.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('skin-analysis')
 export class SkinAnalysisController {
-  constructor(
-    private readonly saService: SkinAnalysisService,
-  ) {}
+  constructor(private readonly saService: SkinAnalysisService) {}
 
   @Post('analyze')
   @UseGuards(JwtAuthGuard)
-  async analyze(
-    @Body() body: { imageUrl: string },
-    @Req() req: Request,
-  ) {
+  async analyze(@Body() body: { imageUrl: string }, @Req() req: Request) {
     const userId = (req.user as { id: number }).id;
 
     // imageUrl is required, a string, and bounded (entity column is varchar(500))

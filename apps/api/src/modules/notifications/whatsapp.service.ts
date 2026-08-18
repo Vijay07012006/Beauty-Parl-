@@ -15,18 +15,26 @@ export class WhatsappService {
     if (this.accountSid && this.authToken && this.whatsappNumber) {
       this.logger.log('✅ Twilio WhatsApp API initialized');
     } else {
-      this.logger.warn('⚠️ Twilio WhatsApp environment variables missing. Falling back to Mock WhatsApp console logging.');
+      this.logger.warn(
+        '⚠️ Twilio WhatsApp environment variables missing. Falling back to Mock WhatsApp console logging.',
+      );
     }
   }
 
   async sendWhatsappMessage(to: string, body: string): Promise<boolean> {
     // Standardize phone number format for WhatsApp. Twilio format is: whatsapp:+91xxxxxxxxxx
-    const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to.startsWith('+') ? to : `+91${to}`}`;
-    const formattedFrom = this.whatsappNumber?.startsWith('whatsapp:') ? this.whatsappNumber : `whatsapp:${this.whatsappNumber}`;
+    const formattedTo = to.startsWith('whatsapp:')
+      ? to
+      : `whatsapp:${to.startsWith('+') ? to : `+91${to}`}`;
+    const formattedFrom = this.whatsappNumber?.startsWith('whatsapp:')
+      ? this.whatsappNumber
+      : `whatsapp:${this.whatsappNumber}`;
 
     if (this.accountSid && this.authToken && this.whatsappNumber) {
       try {
-        const auth = Buffer.from(`${this.accountSid}:${this.authToken}`).toString('base64');
+        const auth = Buffer.from(
+          `${this.accountSid}:${this.authToken}`,
+        ).toString('base64');
         const params = new URLSearchParams();
         params.append('To', formattedTo);
         params.append('From', formattedFrom);
@@ -37,7 +45,7 @@ export class WhatsappService {
           {
             method: 'POST',
             headers: {
-              'Authorization': `Basic ${auth}`,
+              Authorization: `Basic ${auth}`,
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: params.toString(),
@@ -46,7 +54,9 @@ export class WhatsappService {
 
         if (!response.ok) {
           const errText = await response.text();
-          this.logger.error(`Failed to send Twilio WhatsApp message: ${errText}`);
+          this.logger.error(
+            `Failed to send Twilio WhatsApp message: ${errText}`,
+          );
           return false;
         }
 
@@ -54,7 +64,9 @@ export class WhatsappService {
         this.logger.log(`WhatsApp message sent successfully: ${data.sid}`);
         return true;
       } catch (err: any) {
-        this.logger.error(`Error occurred while sending Twilio WhatsApp message: ${err.message}`);
+        this.logger.error(
+          `Error occurred while sending Twilio WhatsApp message: ${err.message}`,
+        );
         return false;
       }
     } else {
@@ -65,12 +77,17 @@ export class WhatsappService {
     }
   }
 
-  async sendOrderStatusUpdate(phone: string, orderId: number, status: string): Promise<boolean> {
+  async sendOrderStatusUpdate(
+    phone: string,
+    orderId: number,
+    status: string,
+  ): Promise<boolean> {
     const statusMap: Record<string, string> = {
       pending: 'is pending confirmation ⏳',
       processing: 'is being packed 📦',
       shipped: 'has been shipped 🚚',
-      delivered: 'has been delivered! 🎉 Thank you for shopping with Beauty Parlé.',
+      delivered:
+        'has been delivered! 🎉 Thank you for shopping with Beauty Parlé.',
       cancelled: 'has been cancelled ❌',
     };
     const message = `Hello! Your Beauty Parlé Order #${orderId} status has been updated. Your package ${statusMap[status] || `is now: ${status}`}. Track details on your portal.`;

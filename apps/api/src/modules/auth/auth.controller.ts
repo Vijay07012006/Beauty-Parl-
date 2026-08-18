@@ -1,4 +1,19 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Get, Put, Request, Res, UnauthorizedException, BadRequestException, Delete, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Get,
+  Put,
+  Request,
+  Res,
+  UnauthorizedException,
+  BadRequestException,
+  Delete,
+  Param,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -48,15 +63,27 @@ export class AuthController {
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: { email?: string; password?: string }, @Request() req: any, @Res({ passthrough: true }) res: any) {
-    const email = typeof loginDto?.email === 'string' ? loginDto.email.trim().toLowerCase() : '';
-    const password = typeof loginDto?.password === 'string' ? loginDto.password : '';
+  async login(
+    @Body() loginDto: { email?: string; password?: string },
+    @Request() req: any,
+    @Res({ passthrough: true }) res: any,
+  ) {
+    const email =
+      typeof loginDto?.email === 'string'
+        ? loginDto.email.trim().toLowerCase()
+        : '';
+    const password =
+      typeof loginDto?.password === 'string' ? loginDto.password : '';
     if (!email || !password) {
       throw new BadRequestException('Email and password are required');
     }
     const user = await this.authService.validateUser(email, password);
     if (!user) {
-      await this.auditLogsService.recordFailedLogin(email, req.ip, req.headers['user-agent']);
+      await this.auditLogsService.recordFailedLogin(
+        email,
+        req.ip,
+        req.headers['user-agent'],
+      );
       throw new BadRequestException('Invalid credentials');
     }
     const ipAddress = req.ip;
@@ -84,7 +111,11 @@ export class AuthController {
           }
         }
       }
-      const rawToken = cookieToken || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.substring(7) : '');
+      const rawToken =
+        cookieToken ||
+        (req.headers.authorization?.startsWith('Bearer ')
+          ? req.headers.authorization.substring(7)
+          : '');
       if (rawToken) {
         await this.authService.revokeToken(rawToken);
       }
@@ -103,13 +134,16 @@ export class AuthController {
 
   @Put('profile')
   @UseGuards(JwtAuthGuard)
-  async updateProfile(@Request() req: any, @Body() body: { name?: string; phone?: string; birthday?: string }) {
+  async updateProfile(
+    @Request() req: any,
+    @Body() body: { name?: string; phone?: string; birthday?: string },
+  ) {
     try {
       const user = await this.authService.updateProfile(
         req.user.id,
         body.name,
         body.phone,
-        body.birthday ? new Date(body.birthday) : undefined
+        body.birthday ? new Date(body.birthday) : undefined,
       );
       return { success: true, user };
     } catch (error: any) {
@@ -126,9 +160,17 @@ export class AuthController {
 
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
-  async changePassword(@Request() req: any, @Body() body: { currentPassword: string; newPassword: string }) {
+  async changePassword(
+    @Request() req: any,
+    @Body() body: { currentPassword: string; newPassword: string },
+  ) {
     try {
-      return await this.authService.changePassword(req.user.id, body.currentPassword, body.newPassword, req.user?.sessionId);
+      return await this.authService.changePassword(
+        req.user.id,
+        body.currentPassword,
+        body.newPassword,
+        req.user?.sessionId,
+      );
     } catch (error: any) {
       throw new BadRequestException(error.message);
     }
@@ -163,7 +205,10 @@ export class AuthController {
   @Put('preferences')
   @UseGuards(JwtAuthGuard)
   async updatePreferences(@Request() req: any, @Body() preferences: any) {
-    const updated = await this.authService.updatePreferences(req.user.id, preferences);
+    const updated = await this.authService.updatePreferences(
+      req.user.id,
+      preferences,
+    );
     return { success: true, preferences: updated };
   }
 
@@ -226,7 +271,10 @@ export class AuthController {
   @Post('oauth/exchange')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async exchangeOauthCode(@Body() body: { code: string }, @Res({ passthrough: true }) res: any) {
+  async exchangeOauthCode(
+    @Body() body: { code: string },
+    @Res({ passthrough: true }) res: any,
+  ) {
     const result = await this.authService.exchangeOauthCode(body.code);
     this.setAuthCookie(res, result.access_token);
     return result;
@@ -297,7 +345,11 @@ export class AuthController {
     }
     const ipAddress = req.ip;
     const userAgent = req.headers['user-agent'];
-    const result = await this.authService.verifyTwoFactorLogin(body.email, body.token, { ipAddress, userAgent });
+    const result = await this.authService.verifyTwoFactorLogin(
+      body.email,
+      body.token,
+      { ipAddress, userAgent },
+    );
     if (result.access_token) {
       this.setAuthCookie(res, result.access_token);
     }

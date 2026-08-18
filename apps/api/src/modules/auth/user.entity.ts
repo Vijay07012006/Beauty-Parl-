@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 import { Role } from '../roles/role.entity';
 import { EncryptionTransformer } from '../security/encryption.transformer';
 import { JsonEncryptionTransformer } from '../security/json-encryption.transformer';
@@ -90,10 +98,19 @@ export class User {
   @Column({ name: 'is_two_factor_enabled', default: false })
   isTwoFactorEnabled!: boolean;
 
-  @Column({ name: 'two_factor_secret', nullable: true, transformer: new EncryptionTransformer() })
+  @Column({
+    name: 'two_factor_secret',
+    nullable: true,
+    transformer: new EncryptionTransformer(),
+  })
   twoFactorSecret?: string;
 
-  @Column({ name: 'two_factor_backup_codes', type: 'jsonb', nullable: true, transformer: new JsonEncryptionTransformer() })
+  @Column({
+    name: 'two_factor_backup_codes',
+    type: 'jsonb',
+    nullable: true,
+    transformer: new JsonEncryptionTransformer(),
+  })
   twoFactorBackupCodes?: string[];
 
   @Column({ nullable: true })
@@ -111,7 +128,12 @@ export class User {
   @Column({ type: 'integer', default: 0 })
   loyaltyPoints!: number;
 
-  @Column({ type: 'varchar', length: 20, default: 'silver', name: 'loyalty_tier' })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: 'silver',
+    name: 'loyalty_tier',
+  })
   loyaltyTier!: string;
 
   @Column({ type: 'jsonb', default: {}, name: 'tier_benefits' })

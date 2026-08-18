@@ -5,9 +5,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('routine-builder')
 export class RoutinesController {
-  constructor(
-    private readonly routineService: RoutinesService,
-  ) {}
+  constructor(private readonly routineService: RoutinesService) {}
 
   @Post('analyze')
   async analyze(@Body() body: { skinType: string; primaryConcern: string }) {

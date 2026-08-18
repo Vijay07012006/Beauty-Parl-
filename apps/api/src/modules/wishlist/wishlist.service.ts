@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wishlist } from './wishlist.entity';
@@ -14,10 +18,14 @@ export class WishlistService {
   ) {}
 
   async addToWishlist(userId: number, productId: number) {
-    const product = await this.productRepo.findOne({ where: { id: productId } });
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+    });
     if (!product) throw new NotFoundException('Product not found');
 
-    const existing = await this.wishlistRepo.findOne({ where: { userId, productId } });
+    const existing = await this.wishlistRepo.findOne({
+      where: { userId, productId },
+    });
     if (existing) throw new BadRequestException('Product already in wishlist');
 
     const entry = this.wishlistRepo.create({ userId, productId });
@@ -27,7 +35,8 @@ export class WishlistService {
 
   async removeFromWishlist(userId: number, productId: number) {
     const result = await this.wishlistRepo.delete({ userId, productId });
-    if (result.affected === 0) throw new NotFoundException('Product not in wishlist');
+    if (result.affected === 0)
+      throw new NotFoundException('Product not in wishlist');
     return { success: true, message: 'Removed from wishlist' };
   }
 
@@ -41,7 +50,9 @@ export class WishlistService {
   }
 
   async isInWishlist(userId: number, productId: number): Promise<boolean> {
-    const count = await this.wishlistRepo.count({ where: { userId, productId } });
+    const count = await this.wishlistRepo.count({
+      where: { userId, productId },
+    });
     return count > 0;
   }
 

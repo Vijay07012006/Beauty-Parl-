@@ -41,7 +41,14 @@ import { MarketingModule } from '../marketing/marketing.module';
     MarketingModule,
   ],
   controllers: [AuthController, OtpController],
-  providers: [AuthService, OtpService, JwtStrategy, GoogleStrategy, FacebookStrategy, AdminSeeder],
+  providers: [
+    AuthService,
+    OtpService,
+    JwtStrategy,
+    GoogleStrategy,
+    FacebookStrategy,
+    AdminSeeder,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

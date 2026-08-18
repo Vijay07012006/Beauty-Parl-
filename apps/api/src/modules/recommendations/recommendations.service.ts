@@ -63,7 +63,9 @@ export class RecommendationsService {
    * Finds products sharing the same category (or brand), excluding the target product.
    */
   async getSimilar(productId: number, limit = 4): Promise<Product[]> {
-    const product = await this.productRepo.findOne({ where: { id: productId } });
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+    });
     if (!product) {
       return this.getPopular(limit);
     }
@@ -82,7 +84,9 @@ export class RecommendationsService {
       // Fill remaining slots with popular items
       const popular = await this.getPopular(limit);
       const existingIds = similar.map((p) => p.id);
-      const remaining = popular.filter((p) => p.id !== productId && !existingIds.includes(p.id));
+      const remaining = popular.filter(
+        (p) => p.id !== productId && !existingIds.includes(p.id),
+      );
       similar = [...similar, ...remaining].slice(0, limit);
     }
 
@@ -130,7 +134,8 @@ export class RecommendationsService {
 
       for (const prod of products) {
         if (prod.category) {
-          categoryCounts[prod.category] = (categoryCounts[prod.category] || 0) + 1;
+          categoryCounts[prod.category] =
+            (categoryCounts[prod.category] || 0) + 1;
         }
       }
     }
@@ -148,7 +153,10 @@ export class RecommendationsService {
     const recommendations = await this.productRepo.find({
       where: {
         category: In(topCategories),
-        id: purchasedProductIds.length > 0 ? Not(In(purchasedProductIds)) : undefined,
+        id:
+          purchasedProductIds.length > 0
+            ? Not(In(purchasedProductIds))
+            : undefined,
       },
       take: limit,
       order: { rating: 'DESC' },

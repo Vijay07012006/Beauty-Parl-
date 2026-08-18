@@ -117,6 +117,7 @@ import { BlogModule } from './modules/blog/blog.module';
 import { BlogPost } from './modules/blog/blog-post.entity';
 import { BlogComment } from './modules/blog/blog-comment.entity';
 import { MarketingModule } from './modules/marketing/marketing.module';
+import { ObservabilityModule } from './observability/observability.module';
 
 import configuration from './config/configuration';
 
@@ -131,20 +132,68 @@ import configuration from './config/configuration';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('database.url'),
-        host: config.get('database.url') ? undefined : config.get('database.host'),
-        port: config.get('database.url') ? undefined : config.get('database.port'),
-        username: config.get('database.url') ? undefined : config.get('database.username'),
-        password: config.get('database.url') ? undefined : config.get('database.password'),
-        database: config.get('database.url') ? undefined : config.get('database.database'),
+        host: config.get('database.url')
+          ? undefined
+          : config.get('database.host'),
+        port: config.get('database.url')
+          ? undefined
+          : config.get('database.port'),
+        username: config.get('database.url')
+          ? undefined
+          : config.get('database.username'),
+        password: config.get('database.url')
+          ? undefined
+          : config.get('database.password'),
+        database: config.get('database.url')
+          ? undefined
+          : config.get('database.database'),
         entities: [
-          Product, User, Order, ProductReview, Wishlist, Address, Coupon, Cart,
-          RecentlyViewed, WishlistAlert, QuizResponse, UgcPhoto, SkinAnalysis,
-          Subscription, BeautyBox, UserRoutine, LiveEvent, LoyaltyTransaction,
-          LoyaltyReward, Referral, ReferralTracking, Achievement, UserAchievement,
-          ProductTag, ProductTagMapping, Look, LookProduct, Bundle, BundleProduct,
-          AuditLog, AiConversation, AiGeneration, Role, ActiveSession, FailedLogin,
-          SupportTicket, TicketReply, Notification, AiMemory, Return, Waitlist,
-          DeletionRequest, FraudAlert, FlashSale, BlogPost, BlogComment
+          Product,
+          User,
+          Order,
+          ProductReview,
+          Wishlist,
+          Address,
+          Coupon,
+          Cart,
+          RecentlyViewed,
+          WishlistAlert,
+          QuizResponse,
+          UgcPhoto,
+          SkinAnalysis,
+          Subscription,
+          BeautyBox,
+          UserRoutine,
+          LiveEvent,
+          LoyaltyTransaction,
+          LoyaltyReward,
+          Referral,
+          ReferralTracking,
+          Achievement,
+          UserAchievement,
+          ProductTag,
+          ProductTagMapping,
+          Look,
+          LookProduct,
+          Bundle,
+          BundleProduct,
+          AuditLog,
+          AiConversation,
+          AiGeneration,
+          Role,
+          ActiveSession,
+          FailedLogin,
+          SupportTicket,
+          TicketReply,
+          Notification,
+          AiMemory,
+          Return,
+          Waitlist,
+          DeletionRequest,
+          FraudAlert,
+          FlashSale,
+          BlogPost,
+          BlogComment,
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -154,9 +203,13 @@ import configuration from './config/configuration';
             : process.env.DB_SYNCHRONIZE !== 'false',
         logging: process.env.NODE_ENV === 'development',
         // M-3: verify the server cert by default; opt-out only via explicit DB_SSL_REJECT_UNAUTHORIZED=false
-        ssl: process.env.NODE_ENV === 'production'
-          ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
-          : false,
+        ssl:
+          process.env.NODE_ENV === 'production'
+            ? {
+                rejectUnauthorized:
+                  process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+              }
+            : false,
       }),
       inject: [ConfigService],
     }),
@@ -164,10 +217,12 @@ import configuration from './config/configuration';
       isGlobal: true,
       ttl: 60000, // 60 seconds default TTL
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     ScheduleModule.forRoot(),
     AuthModule,
     ProductsModule,
@@ -218,6 +273,7 @@ import configuration from './config/configuration';
     FlashSalesModule,
     BlogModule,
     MarketingModule,
+    ObservabilityModule,
   ],
   controllers: [AppController],
   providers: [
@@ -228,4 +284,4 @@ import configuration from './config/configuration';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

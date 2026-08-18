@@ -61,10 +61,13 @@ importers:
         version: 6.5.0(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(reflect-metadata@0.2.2)
       '@nestjs/typeorm':
         specifier: ^11.0.3
-        version: 11.0.3(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0)(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3)))
+        version: 11.0.3(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0(@opentelemetry/api@1.9.1))(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3)))
       '@nestjs/websockets':
         specifier: ^11.1.28
         version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@nestjs/platform-socket.io@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@opentelemetry/api':
+        specifier: ^1.9.1
+        version: 1.9.1
       '@sendinblue/client':
         specifier: ^3.3.1
         version: 3.3.1
@@ -124,7 +127,7 @@ importers:
         version: 2.9.8
       redis:
         specifier: ^6.1.0
-        version: 6.2.0
+        version: 6.2.0(@opentelemetry/api@1.9.1)
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -142,7 +145,7 @@ importers:
         version: 22.4.0(@types/node@24.13.3)
       typeorm:
         specifier: ^0.3.20
-        version: 0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0)(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3))
+        version: 0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0(@opentelemetry/api@1.9.1))(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3))
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -278,10 +281,10 @@ importers:
         version: 1.30.0(react@19.2.4)
       next:
         specifier: 16.2.10
-        version: 16.2.10(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       next-intl:
         specifier: ^4.13.1
-        version: 4.13.5(@swc/helpers@0.5.23)(next@16.2.10(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+        version: 4.13.5(@swc/helpers@0.5.23)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1460,6 +1463,10 @@ packages:
   '@nolyfill/is-core-module@1.0.39':
     resolution: {integrity: sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==}
     engines: {node: '>=12.4.0'}
+
+  '@opentelemetry/api@1.9.1':
+    resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
+    engines: {node: '>=8.0.0'}
 
   '@otplib/core@13.4.1':
     resolution: {integrity: sha512-KIXgK1hNtWJEBMTastbe1bpmuais+3f+ATeO8TkMs2rNkfGO1FbQy8+/UWVEu3TR/iTJerU0idkPudaPmLP2BA==}
@@ -7125,13 +7132,13 @@ snapshots:
       '@nestjs/core': 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(@nestjs/websockets@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       reflect-metadata: 0.2.2
 
-  '@nestjs/typeorm@11.0.3(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0)(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3)))':
+  '@nestjs/typeorm@11.0.3(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0(@opentelemetry/api@1.9.1))(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3)))':
     dependencies:
       '@nestjs/common': 11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(@nestjs/websockets@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       reflect-metadata: 0.2.2
       rxjs: 7.8.2
-      typeorm: 0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0)(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3))
+      typeorm: 0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0(@opentelemetry/api@1.9.1))(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3))
 
   '@nestjs/websockets@11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@nestjs/platform-socket.io@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
     dependencies:
@@ -7194,6 +7201,8 @@ snapshots:
       fastq: 1.20.1
 
   '@nolyfill/is-core-module@1.0.39': {}
+
+  '@opentelemetry/api@1.9.1': {}
 
   '@otplib/core@13.4.1': {}
 
@@ -7357,9 +7366,9 @@ snapshots:
     dependencies:
       '@redis/client': 1.6.1
 
-  '@redis/bloom@6.2.0(@redis/client@6.2.0)':
+  '@redis/bloom@6.2.0(@redis/client@6.2.0(@opentelemetry/api@1.9.1))':
     dependencies:
-      '@redis/client': 6.2.0
+      '@redis/client': 6.2.0(@opentelemetry/api@1.9.1)
 
   '@redis/client@1.6.1':
     dependencies:
@@ -7367,9 +7376,11 @@ snapshots:
       generic-pool: 3.9.0
       yallist: 4.0.0
 
-  '@redis/client@6.2.0':
+  '@redis/client@6.2.0(@opentelemetry/api@1.9.1)':
     dependencies:
       cluster-key-slot: 1.1.2
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.1
 
   '@redis/graph@1.1.1(@redis/client@1.6.1)':
     dependencies:
@@ -7379,25 +7390,25 @@ snapshots:
     dependencies:
       '@redis/client': 1.6.1
 
-  '@redis/json@6.2.0(@redis/client@6.2.0)':
+  '@redis/json@6.2.0(@redis/client@6.2.0(@opentelemetry/api@1.9.1))':
     dependencies:
-      '@redis/client': 6.2.0
+      '@redis/client': 6.2.0(@opentelemetry/api@1.9.1)
 
   '@redis/search@1.2.0(@redis/client@1.6.1)':
     dependencies:
       '@redis/client': 1.6.1
 
-  '@redis/search@6.2.0(@redis/client@6.2.0)':
+  '@redis/search@6.2.0(@redis/client@6.2.0(@opentelemetry/api@1.9.1))':
     dependencies:
-      '@redis/client': 6.2.0
+      '@redis/client': 6.2.0(@opentelemetry/api@1.9.1)
 
   '@redis/time-series@1.1.0(@redis/client@1.6.1)':
     dependencies:
       '@redis/client': 1.6.1
 
-  '@redis/time-series@6.2.0(@redis/client@6.2.0)':
+  '@redis/time-series@6.2.0(@redis/client@6.2.0(@opentelemetry/api@1.9.1))':
     dependencies:
-      '@redis/client': 6.2.0
+      '@redis/client': 6.2.0(@opentelemetry/api@1.9.1)
 
   '@rtsao/scc@1.1.0': {}
 
@@ -10611,14 +10622,14 @@ snapshots:
 
   next-intl-swc-plugin-extractor@4.13.5: {}
 
-  next-intl@4.13.5(@swc/helpers@0.5.23)(next@16.2.10(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)(typescript@5.9.3):
+  next-intl@4.13.5(@swc/helpers@0.5.23)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)(typescript@5.9.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.8.13
       '@parcel/watcher': 2.6.0
       '@swc/core': 1.15.47(@swc/helpers@0.5.23)
       icu-minify: 4.13.5
       negotiator: 1.0.0
-      next: 16.2.10(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      next: 16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       next-intl-swc-plugin-extractor: 4.13.5
       po-parser: 2.1.1
       react: 19.2.4
@@ -10633,7 +10644,7 @@ snapshots:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
-  next@16.2.10(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+  next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:
       '@next/env': 16.2.10
       '@swc/helpers': 0.5.15
@@ -10652,6 +10663,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 16.2.10
       '@next/swc-win32-arm64-msvc': 16.2.10
       '@next/swc-win32-x64-msvc': 16.2.10
+      '@opentelemetry/api': 1.9.1
       sharp: 0.34.5
     transitivePeerDependencies:
       - '@babel/core'
@@ -11109,13 +11121,13 @@ snapshots:
       '@redis/search': 1.2.0(@redis/client@1.6.1)
       '@redis/time-series': 1.1.0(@redis/client@1.6.1)
 
-  redis@6.2.0:
+  redis@6.2.0(@opentelemetry/api@1.9.1):
     dependencies:
-      '@redis/bloom': 6.2.0(@redis/client@6.2.0)
-      '@redis/client': 6.2.0
-      '@redis/json': 6.2.0(@redis/client@6.2.0)
-      '@redis/search': 6.2.0(@redis/client@6.2.0)
-      '@redis/time-series': 6.2.0(@redis/client@6.2.0)
+      '@redis/bloom': 6.2.0(@redis/client@6.2.0(@opentelemetry/api@1.9.1))
+      '@redis/client': 6.2.0(@opentelemetry/api@1.9.1)
+      '@redis/json': 6.2.0(@redis/client@6.2.0(@opentelemetry/api@1.9.1))
+      '@redis/search': 6.2.0(@redis/client@6.2.0(@opentelemetry/api@1.9.1))
+      '@redis/time-series': 6.2.0(@redis/client@6.2.0(@opentelemetry/api@1.9.1))
     transitivePeerDependencies:
       - '@node-rs/xxhash'
       - '@opentelemetry/api'
@@ -11907,7 +11919,7 @@ snapshots:
 
   typedarray@0.0.6: {}
 
-  typeorm@0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0)(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3)):
+  typeorm@0.3.31(ioredis@5.11.1)(pg@8.22.0)(redis@6.2.0(@opentelemetry/api@1.9.1))(ts-node@10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3)):
     dependencies:
       '@sqltools/formatter': 1.2.5
       ansis: 4.3.1
@@ -11927,7 +11939,7 @@ snapshots:
     optionalDependencies:
       ioredis: 5.11.1
       pg: 8.22.0
-      redis: 6.2.0
+      redis: 6.2.0(@opentelemetry/api@1.9.1)
       ts-node: 10.9.2(@swc/core@1.15.47(@swc/helpers@0.5.23))(@types/node@24.13.3)(typescript@5.9.3)
     transitivePeerDependencies:
       - babel-plugin-macros

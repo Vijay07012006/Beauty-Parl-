@@ -33,7 +33,10 @@ export class WishlistAlertsService {
         await this.lockRepo.save(existing);
         return true;
       }
-      const lock = this.lockRepo.create({ name, expiresAt: new Date(now.getTime() + ttlMs) });
+      const lock = this.lockRepo.create({
+        name,
+        expiresAt: new Date(now.getTime() + ttlMs),
+      });
       await this.lockRepo.save(lock);
       return true;
     } catch {
@@ -54,7 +57,9 @@ export class WishlistAlertsService {
     userId?: number,
   ): Promise<WishlistAlert> {
     if (!userId) {
-      throw new Error('User authentication required to configure wishlist alerts');
+      throw new Error(
+        'User authentication required to configure wishlist alerts',
+      );
     }
 
     let alert = await this.alertRepo.findOne({
@@ -94,7 +99,9 @@ export class WishlistAlertsService {
   async checkPriceDrops() {
     console.log('⏰ Running Wishlist Alerts: Daily Price Drop Check...');
     if (!(await this.acquireLock('wishlist:price-drop', 60 * 60 * 1000))) {
-      console.log('⏭️ Price-drop cron skipped — lock held by another instance.');
+      console.log(
+        '⏭️ Price-drop cron skipped — lock held by another instance.',
+      );
       return;
     }
     try {
@@ -104,7 +111,12 @@ export class WishlistAlertsService {
       });
 
       for (const alert of alerts) {
-        if (alert.product && alert.user && alert.priceThreshold != null && Number(alert.priceThreshold) > 0) {
+        if (
+          alert.product &&
+          alert.user &&
+          alert.priceThreshold != null &&
+          Number(alert.priceThreshold) > 0
+        ) {
           const currentPrice = Number(alert.product.price);
           if (currentPrice <= Number(alert.priceThreshold)) {
             try {
@@ -117,11 +129,16 @@ export class WishlistAlertsService {
                 'price_drop',
                 alert.priceThreshold,
               );
-              console.log(`📧 Sent price drop alert to: ${alert.user.email} for ${alert.product.name}`);
+              console.log(
+                `📧 Sent price drop alert to: ${alert.user.email} for ${alert.product.name}`,
+              );
             } catch (err: any) {
               alert.isTriggered = false;
               await this.alertRepo.save(alert).catch(() => {});
-              console.error(`Failed to send price drop alert email to ${alert.user.email}:`, err.message);
+              console.error(
+                `Failed to send price drop alert email to ${alert.user.email}:`,
+                err.message,
+              );
             }
           }
         }
@@ -135,7 +152,9 @@ export class WishlistAlertsService {
   async checkBackInStock() {
     console.log('⏰ Running Wishlist Alerts: Back In Stock Check...');
     if (!(await this.acquireLock('wishlist:back-in-stock', 60 * 60 * 1000))) {
-      console.log('⏭️ Back-in-stock cron skipped — lock held by another instance.');
+      console.log(
+        '⏭️ Back-in-stock cron skipped — lock held by another instance.',
+      );
       return;
     }
     try {
@@ -155,11 +174,16 @@ export class WishlistAlertsService {
                 alert.product,
                 'back_in_stock',
               );
-              console.log(`📧 Sent restock alert to: ${alert.user.email} for ${alert.product.name}`);
+              console.log(
+                `📧 Sent restock alert to: ${alert.user.email} for ${alert.product.name}`,
+              );
             } catch (err: any) {
               alert.isTriggered = false;
               await this.alertRepo.save(alert).catch(() => {});
-              console.error(`Failed to send back-in-stock alert email to ${alert.user.email}:`, err.message);
+              console.error(
+                `Failed to send back-in-stock alert email to ${alert.user.email}:`,
+                err.message,
+              );
             }
           }
         }

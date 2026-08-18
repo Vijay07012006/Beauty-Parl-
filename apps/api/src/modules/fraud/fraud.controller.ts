@@ -1,4 +1,12 @@
-import { Controller, Get, Put, Param, Body, UseGuards, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Param,
+  Body,
+  UseGuards,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FraudAlert } from './fraud-alert.entity';

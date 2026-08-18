@@ -11,8 +11,12 @@ export class TikTokService {
   ) {}
 
   async generateFeed(): Promise<any> {
-    const products = await this.productRepo.find({ where: { stock: undefined }, take: 200, order: { createdAt: 'DESC' } });
-    const feed = products.map(p => ({
+    const products = await this.productRepo.find({
+      where: { stock: undefined },
+      take: 200,
+      order: { createdAt: 'DESC' },
+    });
+    const feed = products.map((p) => ({
       id: String(p.id),
       title: p.name,
       description: p.description?.substring(0, 500) || '',

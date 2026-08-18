@@ -1,16 +1,24 @@
-import { Controller, Get, Post, Param, Body, Headers, UseGuards, Req, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Headers,
+  UseGuards,
+  Req,
+  NotFoundException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { QuizzesService } from './quizzes.service';
 import { OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('quizzes')
 export class QuizzesController {
-  constructor(
-    private readonly quizzesService: QuizzesService,
-  ) {}
+  constructor(private readonly quizzesService: QuizzesService) {}
 
   private userOrSession(req: Request, sessionHeader?: string) {
-    const user = req.user as { id?: number } | undefined;
+    const user = req.user;
     return { userId: user?.id, sessionId: sessionHeader };
   }
 
@@ -35,6 +43,11 @@ export class QuizzesController {
     @Headers('x-session-id') sessionHeader?: string,
   ) {
     const { userId, sessionId } = this.userOrSession(req, sessionHeader);
-    return this.quizzesService.submitAnswers(id, body.answers, userId, sessionId);
+    return this.quizzesService.submitAnswers(
+      id,
+      body.answers,
+      userId,
+      sessionId,
+    );
   }
 }

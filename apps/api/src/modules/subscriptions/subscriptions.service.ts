@@ -51,7 +51,12 @@ export class SubscriptionsService {
     });
   }
 
-  async update(id: number, frequency: 'monthly' | 'quarterly' | 'bi-monthly', quantity: number, userId: number): Promise<Subscription> {
+  async update(
+    id: number,
+    frequency: 'monthly' | 'quarterly' | 'bi-monthly',
+    quantity: number,
+    userId: number,
+  ): Promise<Subscription> {
     const sub = await this.subRepo.findOneOrFail({ where: { id, userId } });
     sub.frequency = frequency;
     sub.quantity = quantity;
@@ -63,7 +68,10 @@ export class SubscriptionsService {
     await this.subRepo.delete({ id, userId });
   }
 
-  private calculateNextDelivery(from: Date, frequency: 'monthly' | 'quarterly' | 'bi-monthly'): Date {
+  private calculateNextDelivery(
+    from: Date,
+    frequency: 'monthly' | 'quarterly' | 'bi-monthly',
+  ): Date {
     const date = new Date(from);
     if (frequency === 'monthly') {
       date.setDate(date.getDate() + 30);
@@ -82,8 +90,12 @@ export class SubscriptionsService {
 
     // CRON-2: distributed lock — only one instance may run the job within the
     // lease window. If another instance just ran it, skip this tick.
-    if (!(await this.acquireLock('subscriptions:auto-replenish', 60 * 60 * 1000))) {
-      console.log('⏭️ Subscriptions cron skipped — lock held by another instance.');
+    if (
+      !(await this.acquireLock('subscriptions:auto-replenish', 60 * 60 * 1000))
+    ) {
+      console.log(
+        '⏭️ Subscriptions cron skipped — lock held by another instance.',
+      );
       return;
     }
 
@@ -113,7 +125,9 @@ export class SubscriptionsService {
         // If no address is on file, do not fabricate one and bill the customer —
         // defer the delivery instead.
         if (!userAddress) {
-          console.warn(`Skipping subscription #${sub.id}: no shipping address on file`);
+          console.warn(
+            `Skipping subscription #${sub.id}: no shipping address on file`,
+          );
           continue;
         }
 
@@ -144,7 +158,9 @@ export class SubscriptionsService {
           tax: 0,
           shipping: 0,
           total: totalAmount,
-          paymentMethod: (sub.paymentMethod && sub.paymentMethod !== 'cod' ? sub.paymentMethod : 'razorpay') as any, // never COD
+          paymentMethod: (sub.paymentMethod && sub.paymentMethod !== 'cod'
+            ? sub.paymentMethod
+            : 'razorpay') as any, // never COD
           status: 'processing',
           shippingAddress: addressPayload,
           paymentId: 'sub_auto_' + Math.random().toString(36).substring(2, 9),
@@ -157,15 +173,23 @@ export class SubscriptionsService {
           .createQueryBuilder()
           .update(Product)
           .set({ stock: () => 'stock - ' + Number(sub.quantity) })
-          .where('id = :id AND stock >= :qty', { id: sub.product.id, qty: sub.quantity })
+          .where('id = :id AND stock >= :qty', {
+            id: sub.product.id,
+            qty: sub.quantity,
+          })
           .execute();
 
         sub.nextDeliveryDate = this.calculateNextDelivery(now, sub.frequency);
         await this.subRepo.save(sub);
 
-        console.log(`📦 Subscription replenished order created for User #${sub.userId} for product ${sub.product.name}`);
+        console.log(
+          `📦 Subscription replenished order created for User #${sub.userId} for product ${sub.product.name}`,
+        );
       } catch (err: any) {
-        console.error(`Failed to auto-replenish subscription #${sub.id}:`, err.message);
+        console.error(
+          `Failed to auto-replenish subscription #${sub.id}:`,
+          err.message,
+        );
       }
     }
 
@@ -182,7 +206,10 @@ export class SubscriptionsService {
         await this.lockRepo.save(existing);
         return true;
       }
-      const lock = this.lockRepo.create({ name, expiresAt: new Date(now.getTime() + ttlMs) });
+      const lock = this.lockRepo.create({
+        name,
+        expiresAt: new Date(now.getTime() + ttlMs),
+      });
       await this.lockRepo.save(lock);
       return true;
     } catch {

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserSession } from '../auth/user-session.entity';
@@ -32,10 +36,14 @@ export class SessionsService {
   }
 
   async logoutAllOtherSessions(userId: number, currentSessionId: string) {
-    await this.userSessionRepository.createQueryBuilder()
+    await this.userSessionRepository
+      .createQueryBuilder()
       .update(UserSession)
       .set({ isActive: false })
-      .where('userId = :userId AND sessionId != :currentSessionId', { userId, currentSessionId })
+      .where('userId = :userId AND sessionId != :currentSessionId', {
+        userId,
+        currentSessionId,
+      })
       .execute();
   }
 }

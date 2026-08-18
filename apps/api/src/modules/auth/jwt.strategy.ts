@@ -33,9 +33,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {
-    const jwtSecret = config.get<string>('jwt.secret') || process.env.JWT_SECRET;
+    const jwtSecret =
+      config.get<string>('jwt.secret') || process.env.JWT_SECRET;
     if (!jwtSecret) {
-      throw new Error('JWT_SECRET environment variable is required. Refusing to start with an insecure default secret.');
+      throw new Error(
+        'JWT_SECRET environment variable is required. Refusing to start with an insecure default secret.',
+      );
     }
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -62,7 +65,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
 
     if (!session) {
-      throw new UnauthorizedException('Session has been revoked or is inactive');
+      throw new UnauthorizedException(
+        'Session has been revoked or is inactive',
+      );
     }
 
     // Reject deactivated accounts even with a valid, un-revoked token (H2)
@@ -74,11 +79,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Account has been deactivated');
     }
 
-    await this.userSessionRepository.update(
-      session.id,
-      { lastActivity: new Date() },
-    );
+    await this.userSessionRepository.update(session.id, {
+      lastActivity: new Date(),
+    });
 
-    return { id: payload.sub, email: payload.email, role: payload.role, sessionId: session.sessionId };
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      sessionId: session.sessionId,
+    };
   }
 }

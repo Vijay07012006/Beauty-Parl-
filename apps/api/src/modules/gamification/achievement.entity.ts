@@ -18,5 +18,11 @@ export class Achievement {
   pointsReward!: number;
 
   @Column({ type: 'varchar', length: 50 })
-  triggerType!: 'review' | 'social_share' | 'profile_complete' | 'daily_visit' | 'purchase' | 'referral';
+  triggerType!:
+    | 'review'
+    | 'social_share'
+    | 'profile_complete'
+    | 'daily_visit'
+    | 'purchase'
+    | 'referral';
 }

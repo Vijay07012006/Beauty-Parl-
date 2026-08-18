@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { AddressesService } from './addresses.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -18,10 +29,7 @@ export class AddressesController {
   }
 
   @Get(':id')
-  async getAddress(
-    @Request() req: any,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  async getAddress(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
     return this.addressesService.getAddress(req.user.id, id);
   }
 

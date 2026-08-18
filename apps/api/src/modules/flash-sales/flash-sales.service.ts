@@ -25,7 +25,7 @@ export class FlashSalesService {
       startTime: new Date(data.startTime),
       endTime: new Date(data.endTime),
       isActive: true,
-      products: data.productIds.map(id => ({ id } as any)),
+      products: data.productIds.map((id) => ({ id }) as any),
     });
     return this.flashSaleRepo.save(sale);
   }

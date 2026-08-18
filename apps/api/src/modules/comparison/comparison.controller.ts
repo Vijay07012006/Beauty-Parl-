@@ -1,16 +1,23 @@
-import { Controller, Get, Post, Delete, Param, Headers, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Headers,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { ComparisonService } from './comparison.service';
 import { OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('comparison')
 export class ComparisonController {
-  constructor(
-    private readonly comparisonService: ComparisonService,
-  ) {}
+  constructor(private readonly comparisonService: ComparisonService) {}
 
   private userOrSession(req: Request, sessionHeader?: string) {
-    const user = req.user as { id?: number } | undefined;
+    const user = req.user;
     return { userId: user?.id, sessionId: sessionHeader };
   }
 

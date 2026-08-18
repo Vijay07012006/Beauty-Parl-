@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, DataSource } from 'typeorm';
 import { Order } from './order.entity';
@@ -49,11 +53,21 @@ export class OrdersService {
    * - prices/totals are recomputed server-side from DB product prices
    * - stock & coupon usage are reserved atomically inside a transaction (O2/O3/O4/O5)
    */
-  async create(orderData: any, userId?: number, metadata?: { ipAddress?: string; userAgent?: string }): Promise<Order> {
+  async create(
+    orderData: any,
+    userId?: number,
+    metadata?: { ipAddress?: string; userAgent?: string },
+  ): Promise<Order> {
     // ========== STRICT INPUT WHITELIST (no mass assignment) ==========
     const rawItems = Array.isArray(orderData?.items) ? orderData.items : [];
-    const couponCode = typeof orderData?.couponCode === 'string' ? orderData.couponCode.trim().toUpperCase() : undefined;
-    const guestEmail = typeof orderData?.guestEmail === 'string' ? orderData.guestEmail.trim().toLowerCase() : undefined;
+    const couponCode =
+      typeof orderData?.couponCode === 'string'
+        ? orderData.couponCode.trim().toUpperCase()
+        : undefined;
+    const guestEmail =
+      typeof orderData?.guestEmail === 'string'
+        ? orderData.guestEmail.trim().toLowerCase()
+        : undefined;
     const shippingAddress = orderData?.shippingAddress;
     const paymentMethod = orderData?.paymentMethod;
     const requestedPoints = Number(orderData?.pointsRedeemed) || 0;
@@ -67,7 +81,10 @@ export class OrdersService {
       throw new BadRequestException('Shipping address is required');
     }
 
-    if (!paymentMethod || !['cod', 'razorpay', 'stripe'].includes(paymentMethod)) {
+    if (
+      !paymentMethod ||
+      !['cod', 'razorpay', 'stripe'].includes(paymentMethod)
+    ) {
       throw new BadRequestException('Invalid payment method');
     }
 
@@ -81,7 +98,9 @@ export class OrdersService {
         throw new BadRequestException('Invalid product id in items');
       }
       if (qty > 100) {
-        throw new BadRequestException(`Quantity for product ${pid} exceeds the maximum allowed (100)`);
+        throw new BadRequestException(
+          `Quantity for product ${pid} exceeds the maximum allowed (100)`,
+        );
       }
       qtyMap.set(pid, (qtyMap.get(pid) || 0) + qty);
     }
@@ -133,7 +152,9 @@ export class OrdersService {
           throw new BadRequestException('This coupon has expired');
         }
         if (subtotal < Number(coupon.minOrder)) {
-          throw new BadRequestException(`Minimum order amount is ${Number(coupon.minOrder).toFixed(2)}`);
+          throw new BadRequestException(
+            `Minimum order amount is ${Number(coupon.minOrder).toFixed(2)}`,
+          );
         }
 
         // Reserve coupon usage ATOMICALLY before granting the discount (O5)
@@ -145,7 +166,9 @@ export class OrdersService {
           .andWhere('(usageLimit = 0 OR usedCount < usageLimit)')
           .execute();
         if (!reserveResult.affected || reserveResult.affected === 0) {
-          throw new BadRequestException('This coupon has reached its usage limit');
+          throw new BadRequestException(
+            'This coupon has reached its usage limit',
+          );
         }
 
         if (coupon.type === 'percentage') {
@@ -181,7 +204,10 @@ export class OrdersService {
         }
       }
 
-      const total = Math.max(0, round2(subtotal + tax + shipping - discount - pointsRedeemed));
+      const total = Math.max(
+        0,
+        round2(subtotal + tax + shipping - discount - pointsRedeemed),
+      );
 
       // ========== ATOMIC STOCK RESERVATION (no oversell, no negative stock) ==========
       for (const item of validatedItems) {
@@ -189,10 +215,15 @@ export class OrdersService {
           .createQueryBuilder()
           .update(Product)
           .set({ stock: () => 'stock - :qty' })
-          .where('id = :id AND stock >= :qty', { id: item.productId, qty: item.quantity })
+          .where('id = :id AND stock >= :qty', {
+            id: item.productId,
+            qty: item.quantity,
+          })
           .execute();
         if (!result.affected || result.affected === 0) {
-          throw new BadRequestException(`Insufficient stock for product id ${item.productId}`);
+          throw new BadRequestException(
+            `Insufficient stock for product id ${item.productId}`,
+          );
         }
       }
 
@@ -228,7 +259,8 @@ export class OrdersService {
 
           // Revert stock decrement
           for (const item of validatedItems) {
-            await em.createQueryBuilder()
+            await em
+              .createQueryBuilder()
               .update(Product)
               .set({ stock: () => 'stock + :qty' })
               .where('id = :id', { id: item.productId, qty: item.quantity })
@@ -237,7 +269,8 @@ export class OrdersService {
 
           // Revert coupon usage
           if (couponCode) {
-            await em.createQueryBuilder()
+            await em
+              .createQueryBuilder()
               .update(Coupon)
               .set({ usedCount: () => 'usedCount - 1' })
               .where('code = :couponCode', { couponCode })
@@ -245,7 +278,10 @@ export class OrdersService {
           }
         }
       } catch (err: any) {
-        console.error('Fraud detection failed during order creation:', err.message);
+        console.error(
+          'Fraud detection failed during order creation:',
+          err.message,
+        );
       }
 
       // Broadcast real-time WebSocket order alert to admin dashboards
@@ -259,21 +295,39 @@ export class OrdersService {
       }
 
       // Clear or mark cart checked out (best-effort, outside stock/price correctness)
-      const email = guestEmail || (userId ? await this.getUserEmail(userId) : null);
+      const email =
+        guestEmail || (userId ? await this.getUserEmail(userId) : null);
       try {
-        await this.cartService.clearOrMarkCheckedOut(userId, email || undefined);
+        await this.cartService.clearOrMarkCheckedOut(
+          userId,
+          email || undefined,
+        );
       } catch (err: any) {
-        console.error('Failed to clear cart after order creation:', err.message);
+        console.error(
+          'Failed to clear cart after order creation:',
+          err.message,
+        );
       }
 
-      await this.auditLogsService.log('ORDER_CREATED', email || undefined, saved.userId || undefined, { orderId: saved.id, total: saved.total });
+      await this.auditLogsService.log(
+        'ORDER_CREATED',
+        email || undefined,
+        saved.userId || undefined,
+        { orderId: saved.id, total: saved.total },
+      );
 
       // Send order confirmation (best-effort, non-blocking) if not auto-rejected
       if (email && !isFraudConfirmed) {
         try {
           await this.emailService.sendOrderConfirmation(email, saved);
           if (saved.shippingAddress?.phone) {
-            await this.whatsappService.sendOrderStatusUpdate(saved.shippingAddress.phone, saved.id, saved.status).catch(() => {});
+            await this.whatsappService
+              .sendOrderStatusUpdate(
+                saved.shippingAddress.phone,
+                saved.id,
+                saved.status,
+              )
+              .catch(() => {});
           }
         } catch (err) {
           console.error('Failed to send order confirmation email:', err);
@@ -285,9 +339,15 @@ export class OrdersService {
       if (saved.userId && !isFraudConfirmed) {
         try {
           await this.loyaltyService.recordPurchase(saved.userId, saved.total);
-          await this.gamificationService.triggerAchievement(saved.userId, 'purchase');
+          await this.gamificationService.triggerAchievement(
+            saved.userId,
+            'purchase',
+          );
         } catch (err: any) {
-          console.error('Failed to credit loyalty points for purchase:', err.message);
+          console.error(
+            'Failed to credit loyalty points for purchase:',
+            err.message,
+          );
         }
       }
 
@@ -295,12 +355,16 @@ export class OrdersService {
     });
 
     if (isFraudConfirmed) {
-      throw new BadRequestException('Order was auto-rejected due to high fraud risk');
+      throw new BadRequestException(
+        'Order was auto-rejected due to high fraud risk',
+      );
     }
 
     if (saved && Array.isArray(saved.items)) {
       for (const item of saved.items) {
-        const prod = await this.productRepo.findOne({ where: { id: item.productId } });
+        const prod = await this.productRepo.findOne({
+          where: { id: item.productId },
+        });
         if (prod && prod.id !== undefined && prod.id !== null) {
           await this.inventoryAlertService.checkAndAlert(prod.id, prod.stock);
         }
@@ -308,10 +372,14 @@ export class OrdersService {
     }
 
     if (saved && !isFraudConfirmed) {
-      const email = saved.guestEmail || (saved.userId ? await this.getUserEmail(saved.userId) : null);
+      const email =
+        saved.guestEmail ||
+        (saved.userId ? await this.getUserEmail(saved.userId) : null);
       if (email) {
         setImmediate(() => {
-          this.dripCampaignService.triggerPostPurchaseSeries(email, 'Valued Customer', saved.id).catch(() => {});
+          this.dripCampaignService
+            .triggerPostPurchaseSeries(email, 'Valued Customer', saved.id)
+            .catch(() => {});
         });
       }
     }
@@ -360,18 +428,43 @@ export class OrdersService {
     const updated = await this.findOne(id);
 
     // Restore stock when an order is cancelled (O2 rollback)
-    if (updated && data.status === 'cancelled' && originalOrder.status !== 'cancelled') {
+    if (
+      updated &&
+      data.status === 'cancelled' &&
+      originalOrder.status !== 'cancelled'
+    ) {
       await this.restoreStock(originalOrder);
     }
 
     if (updated && data.status && originalOrder.status !== data.status) {
-      const email = updated.guestEmail || (updated.userId ? await this.getUserEmail(updated.userId) : null);
-      await this.auditLogsService.log('ORDER_STATUS_CHANGED', email || undefined, updated.userId || undefined, { orderId: updated.id, oldStatus: originalOrder.status, newStatus: data.status });
+      const email =
+        updated.guestEmail ||
+        (updated.userId ? await this.getUserEmail(updated.userId) : null);
+      await this.auditLogsService.log(
+        'ORDER_STATUS_CHANGED',
+        email || undefined,
+        updated.userId || undefined,
+        {
+          orderId: updated.id,
+          oldStatus: originalOrder.status,
+          newStatus: data.status,
+        },
+      );
       if (email) {
         try {
-          await this.emailService.sendOrderStatusEmail(email, updated.id, data.status);
+          await this.emailService.sendOrderStatusEmail(
+            email,
+            updated.id,
+            data.status,
+          );
           if (updated.shippingAddress?.phone) {
-            await this.whatsappService.sendOrderStatusUpdate(updated.shippingAddress.phone, updated.id, data.status).catch(() => {});
+            await this.whatsappService
+              .sendOrderStatusUpdate(
+                updated.shippingAddress.phone,
+                updated.id,
+                data.status,
+              )
+              .catch(() => {});
           }
         } catch (err) {
           console.error('Failed to send order status update email:', err);

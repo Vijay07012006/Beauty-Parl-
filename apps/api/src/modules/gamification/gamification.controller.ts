@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Param, UseGuards, Req, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  UseGuards,
+  Req,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -13,8 +22,10 @@ export class GamificationController {
   constructor(
     private readonly gameService: GamificationService,
     @InjectRepository(Order) private readonly orderRepo: Repository<Order>,
-    @InjectRepository(Referral) private readonly referralRepo: Repository<Referral>,
-    @InjectRepository(ReferralTracking) private readonly trackingRepo: Repository<ReferralTracking>,
+    @InjectRepository(Referral)
+    private readonly referralRepo: Repository<Referral>,
+    @InjectRepository(ReferralTracking)
+    private readonly trackingRepo: Repository<ReferralTracking>,
   ) {}
 
   @Get('achievements')
@@ -31,10 +42,7 @@ export class GamificationController {
 
   @Post('trigger/:type')
   @UseGuards(JwtAuthGuard)
-  async trigger(
-    @Param('type') type: any,
-    @Req() req: Request,
-  ) {
+  async trigger(@Param('type') type: any, @Req() req: Request) {
     const userId = (req.user as { id: number }).id;
 
     // Server-side proof: only grant achievements that are backed by real user activity.
@@ -46,20 +54,28 @@ export class GamificationController {
         break;
       }
       case 'referral': {
-        const refs = await this.referralRepo.find({ where: { referrerId: userId } });
+        const refs = await this.referralRepo.find({
+          where: { referrerId: userId },
+        });
         const refIds = refs.map((r) => r.id);
         const completed = refIds.length
-          ? await this.trackingRepo.count({ where: { referralId: In(refIds), status: 'completed' } })
+          ? await this.trackingRepo.count({
+              where: { referralId: In(refIds), status: 'completed' },
+            })
           : 0;
         proven = completed > 0;
         break;
       }
       default:
-        throw new BadRequestException('Unknown or unsupported achievement trigger type');
+        throw new BadRequestException(
+          'Unknown or unsupported achievement trigger type',
+        );
     }
 
     if (!proven) {
-      throw new ForbiddenException('Achievement cannot be unlocked without the corresponding activity');
+      throw new ForbiddenException(
+        'Achievement cannot be unlocked without the corresponding activity',
+      );
     }
 
     const unlocked = await this.gameService.triggerAchievement(userId, type);

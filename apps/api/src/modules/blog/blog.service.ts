@@ -28,7 +28,7 @@ export class BlogService {
       .trim()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
-    
+
     // Ensure slug uniqueness simple suffix strategy
     let finalSlug = slug;
     let count = 1;
@@ -71,7 +71,11 @@ export class BlogService {
     return post;
   }
 
-  async addComment(postId: number, userId: number, commentText: string): Promise<BlogComment> {
+  async addComment(
+    postId: number,
+    userId: number,
+    commentText: string,
+  ): Promise<BlogComment> {
     const post = await this.postRepo.findOne({ where: { id: postId } });
     if (!post) {
       throw new NotFoundException('Blog post not found');
@@ -86,7 +90,9 @@ export class BlogService {
   }
 
   async approveComment(commentId: number): Promise<BlogComment> {
-    const comment = await this.commentRepo.findOne({ where: { id: commentId } });
+    const comment = await this.commentRepo.findOne({
+      where: { id: commentId },
+    });
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }

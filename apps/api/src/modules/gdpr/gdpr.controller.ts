@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Query, Param, Request, Res, UseGuards, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  Param,
+  Request,
+  Res,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { GdprService } from './gdpr.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -41,11 +51,17 @@ export class GdprController {
     if (format === 'csv') {
       const csv = this.gdprService.formatAsCsv(data);
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename=gdpr-export-${userId}-${Date.now()}.csv`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=gdpr-export-${userId}-${Date.now()}.csv`,
+      );
       return res.send(csv);
     } else {
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename=gdpr-export-${userId}-${Date.now()}.json`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=gdpr-export-${userId}-${Date.now()}.json`,
+      );
       return res.json(data);
     }
   }

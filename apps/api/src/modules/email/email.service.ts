@@ -18,8 +18,11 @@ export class EmailService {
     private userRepo: Repository<User>,
   ) {
     const apiKey = process.env.BREVO_API_KEY || '';
-    this.fromEmail = this.config.get<string>('email.from') || 'Beauty Parlé <noreply@beautyparle.com>';
-    this.frontendUrl = this.config.get<string>('frontendUrl') || 'http://localhost:3000';
+    this.fromEmail =
+      this.config.get<string>('email.from') ||
+      'Beauty Parlé <noreply@beautyparle.com>';
+    this.frontendUrl =
+      this.config.get<string>('frontendUrl') || 'http://localhost:3000';
 
     this.apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
     this.apiInstance.setApiKey(
@@ -34,10 +37,15 @@ export class EmailService {
     }
   }
 
-  private buildEmail(to: string, subject: string, html: string): SibApiV3Sdk.SendSmtpEmail {
+  private buildEmail(
+    to: string,
+    subject: string,
+    html: string,
+  ): SibApiV3Sdk.SendSmtpEmail {
     const email = new SibApiV3Sdk.SendSmtpEmail();
     // ✅ Extract plain email from "Name <email>" format — Brevo requires plain email only
-    const plainEmail = this.fromEmail.replace(/.*<(.+)>/, '$1').trim() || this.fromEmail;
+    const plainEmail =
+      this.fromEmail.replace(/.*<(.+)>/, '$1').trim() || this.fromEmail;
     email.sender = { name: 'Beauty Parlé', email: plainEmail };
     email.to = [{ email: to }];
     email.subject = subject;
@@ -154,7 +162,7 @@ export class EmailService {
             <p style="color: #6B4C5A; font-size: 12px;">If you believe this is a mistake, please reach out to our helpdesk.</p>
           </div>
         </div>
-      `
+      `,
     );
     await this.apiInstance.sendTransacEmail(email);
   }
@@ -187,14 +195,23 @@ export class EmailService {
   async sendOrderConfirmation(to: string, order: any) {
     // Check user preferences
     const user = await this.userRepo.findOne({ where: { email: to } });
-    if (user && user.emailPreferences && user.emailPreferences.order_updates === false) {
-      console.log(`📧 Order confirmation email skipped for ${to} (preference disabled)`);
+    if (
+      user &&
+      user.emailPreferences &&
+      user.emailPreferences.order_updates === false
+    ) {
+      console.log(
+        `📧 Order confirmation email skipped for ${to} (preference disabled)`,
+      );
       return;
     }
 
-    const itemsHtml = order.items.map((i: any) =>
-      `<tr><td style="padding: 8px 0; border-bottom: 1px solid #FDF0F0;">${this.escapeHtml(i.name)}</td><td style="padding: 8px 0; text-align: center;">${this.escapeHtml(i.quantity)}</td><td style="padding: 8px 0; text-align: right;">$${Number(i.price).toFixed(2)}</td></tr>`
-    ).join('');
+    const itemsHtml = order.items
+      .map(
+        (i: any) =>
+          `<tr><td style="padding: 8px 0; border-bottom: 1px solid #FDF0F0;">${this.escapeHtml(i.name)}</td><td style="padding: 8px 0; text-align: center;">${this.escapeHtml(i.quantity)}</td><td style="padding: 8px 0; text-align: right;">$${Number(i.price).toFixed(2)}</td></tr>`,
+      )
+      .join('');
 
     const email = this.buildEmail(
       to,
@@ -225,10 +242,13 @@ export class EmailService {
         {
           content: pdfBuffer.toString('base64'),
           name: `invoice_${order.id}.pdf`,
-        }
+        },
       ];
     } catch (err) {
-      console.error(`❌ Failed to attach invoice PDF to confirmation email for Order #${order.id}:`, err);
+      console.error(
+        `❌ Failed to attach invoice PDF to confirmation email for Order #${order.id}:`,
+        err,
+      );
     }
 
     await this.apiInstance.sendTransacEmail(email);
@@ -239,40 +259,78 @@ export class EmailService {
       try {
         const doc = new PDFDocument({ margin: 50, size: 'A4' });
         const buffers: Buffer[] = [];
-        doc.on('data', chunk => buffers.push(chunk));
+        doc.on('data', (chunk) => buffers.push(chunk));
         doc.on('end', () => resolve(Buffer.concat(buffers)));
 
         // Title & Logo
-        doc.fillColor('#E8A0BF').fontSize(24).font('Helvetica-Bold').text('Beauty Parlé', 50, 50);
-        doc.fillColor('#6B4C5A').fontSize(10).font('Helvetica-Oblique').text('Where Beauty Speaks Your Language', 50, 80);
-        
+        doc
+          .fillColor('#E8A0BF')
+          .fontSize(24)
+          .font('Helvetica-Bold')
+          .text('Beauty Parlé', 50, 50);
+        doc
+          .fillColor('#6B4C5A')
+          .fontSize(10)
+          .font('Helvetica-Oblique')
+          .text('Where Beauty Speaks Your Language', 50, 80);
+
         // Invoice label
-        doc.fillColor('#2D1B2E').fontSize(20).font('Helvetica-Bold').text('INVOICE', 400, 50, { align: 'right' });
-        doc.fontSize(12).font('Helvetica').text(`#${order.id}`, 400, 75, { align: 'right' });
+        doc
+          .fillColor('#2D1B2E')
+          .fontSize(20)
+          .font('Helvetica-Bold')
+          .text('INVOICE', 400, 50, { align: 'right' });
+        doc
+          .fontSize(12)
+          .font('Helvetica')
+          .text(`#${order.id}`, 400, 75, { align: 'right' });
 
         // Horizontal line
-        doc.moveTo(50, 110).lineTo(545, 110).strokeColor('#FDF0F0').lineWidth(2).stroke();
+        doc
+          .moveTo(50, 110)
+          .lineTo(545, 110)
+          .strokeColor('#FDF0F0')
+          .lineWidth(2)
+          .stroke();
 
         // Info metadata
-        doc.fillColor('#6B4C5A').fontSize(10).font('Helvetica-Bold').text('SHIPPING ADDRESS', 50, 130);
+        doc
+          .fillColor('#6B4C5A')
+          .fontSize(10)
+          .font('Helvetica-Bold')
+          .text('SHIPPING ADDRESS', 50, 130);
         doc.fillColor('#2D1B2E').font('Helvetica').fontSize(10);
         const addr = order.shippingAddress || {};
         doc.text(addr.name || 'N/A', 50, 145);
         doc.text(addr.address || '', 50, 160);
-        doc.text(`${addr.city || ''}, ${addr.state || ''} - ${addr.pincode || ''}`, 50, 175);
+        doc.text(
+          `${addr.city || ''}, ${addr.state || ''} - ${addr.pincode || ''}`,
+          50,
+          175,
+        );
         doc.text(`Phone: ${addr.phone || 'N/A'}`, 50, 190);
 
-        doc.fillColor('#6B4C5A').font('Helvetica-Bold').text('ORDER DETAILS', 350, 130);
+        doc
+          .fillColor('#6B4C5A')
+          .font('Helvetica-Bold')
+          .text('ORDER DETAILS', 350, 130);
         doc.fillColor('#2D1B2E').font('Helvetica');
         const dateStr = new Date(order.createdAt).toLocaleDateString('en-IN', {
-          day: '2-digit', month: 'long', year: 'numeric'
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
         });
         doc.text(`Order Date: ${dateStr}`, 350, 145);
         doc.text(`Status: ${order.status.toUpperCase()}`, 350, 160);
         doc.text(`Payment: ${order.paymentMethod.toUpperCase()}`, 350, 175);
 
         // Line before table
-        doc.moveTo(50, 220).lineTo(545, 220).strokeColor('#FDF0F0').lineWidth(1).stroke();
+        doc
+          .moveTo(50, 220)
+          .lineTo(545, 220)
+          .strokeColor('#FDF0F0')
+          .lineWidth(1)
+          .stroke();
 
         // Table headers
         doc.fillColor('#6B4C5A').font('Helvetica-Bold');
@@ -282,7 +340,12 @@ export class EmailService {
         doc.text('Total', 470, 235, { width: 75, align: 'right' });
 
         // Header underline
-        doc.moveTo(50, 250).lineTo(545, 250).strokeColor('#E8A0BF').lineWidth(1).stroke();
+        doc
+          .moveTo(50, 250)
+          .lineTo(545, 250)
+          .strokeColor('#E8A0BF')
+          .lineWidth(1)
+          .stroke();
 
         // Table rows
         let y = 265;
@@ -293,12 +356,23 @@ export class EmailService {
             doc.addPage();
             y = 50;
           }
-          
+
           doc.text(item.name || 'Product', 50, y, { width: 230 });
-          doc.text(String(item.quantity), 300, y, { width: 50, align: 'center' });
-          doc.text(`$${Number(item.price).toFixed(2)}`, 380, y, { width: 70, align: 'right' });
-          doc.text(`$${(Number(item.price) * item.quantity).toFixed(2)}`, 470, y, { width: 75, align: 'right' });
-          
+          doc.text(String(item.quantity), 300, y, {
+            width: 50,
+            align: 'center',
+          });
+          doc.text(`$${Number(item.price).toFixed(2)}`, 380, y, {
+            width: 70,
+            align: 'right',
+          });
+          doc.text(
+            `$${(Number(item.price) * item.quantity).toFixed(2)}`,
+            470,
+            y,
+            { width: 75, align: 'right' },
+          );
+
           y += 25;
         }
 
@@ -309,11 +383,20 @@ export class EmailService {
         }
 
         y += 15;
-        doc.moveTo(350, y).lineTo(545, y).strokeColor('#FDF0F0').lineWidth(1).stroke();
+        doc
+          .moveTo(350, y)
+          .lineTo(545, y)
+          .strokeColor('#FDF0F0')
+          .lineWidth(1)
+          .stroke();
         y += 10;
 
         // Pricing layout
-        const printSummaryLine = (label: string, val: string, isBold = false) => {
+        const printSummaryLine = (
+          label: string,
+          val: string,
+          isBold = false,
+        ) => {
           doc.fillColor(isBold ? '#4A1A2C' : '#6B4C5A');
           doc.font(isBold ? 'Helvetica-Bold' : 'Helvetica');
           doc.text(label, 350, y);
@@ -325,19 +408,43 @@ export class EmailService {
         printSummaryLine('Shipping', `$${Number(order.shipping).toFixed(2)}`);
         printSummaryLine('Tax', `$${Number(order.tax).toFixed(2)}`);
         if (order.discount > 0) {
-          printSummaryLine('Discount', `-$${Number(order.discount).toFixed(2)}`);
+          printSummaryLine(
+            'Discount',
+            `-$${Number(order.discount).toFixed(2)}`,
+          );
         }
         y += 5;
-        doc.moveTo(350, y).lineTo(545, y).strokeColor('#E8A0BF').lineWidth(1.5).stroke();
+        doc
+          .moveTo(350, y)
+          .lineTo(545, y)
+          .strokeColor('#E8A0BF')
+          .lineWidth(1.5)
+          .stroke();
         y += 10;
         printSummaryLine('Total', `$${Number(order.total).toFixed(2)}`, true);
 
         // Footer
-        doc.fillColor('#6B4C5A').font('Helvetica-Oblique').fontSize(10)
-          .text('Thank you for shopping with Beauty Parlé!', 50, 720, { align: 'center', width: 495 });
-        doc.fontSize(8).font('Helvetica')
-          .text('support@beautyparle.com | +91 98765 43210', 50, 740, { align: 'center', width: 495 });
-        doc.text(`© ${new Date().getFullYear()} Beauty Parlé. All rights reserved.`, 50, 755, { align: 'center', width: 495 });
+        doc
+          .fillColor('#6B4C5A')
+          .font('Helvetica-Oblique')
+          .fontSize(10)
+          .text('Thank you for shopping with Beauty Parlé!', 50, 720, {
+            align: 'center',
+            width: 495,
+          });
+        doc
+          .fontSize(8)
+          .font('Helvetica')
+          .text('support@beautyparle.com | +91 98765 43210', 50, 740, {
+            align: 'center',
+            width: 495,
+          });
+        doc.text(
+          `© ${new Date().getFullYear()} Beauty Parlé. All rights reserved.`,
+          50,
+          755,
+          { align: 'center', width: 495 },
+        );
 
         doc.end();
       } catch (err) {
@@ -349,8 +456,14 @@ export class EmailService {
   async sendOrderStatusEmail(to: string, orderId: number, status: string) {
     // Check user preferences
     const user = await this.userRepo.findOne({ where: { email: to } });
-    if (user && user.emailPreferences && user.emailPreferences.order_updates === false) {
-      console.log(`📧 Order status email skipped for ${to} (preference disabled)`);
+    if (
+      user &&
+      user.emailPreferences &&
+      user.emailPreferences.order_updates === false
+    ) {
+      console.log(
+        `📧 Order status email skipped for ${to} (preference disabled)`,
+      );
       return;
     }
 
@@ -404,7 +517,9 @@ export class EmailService {
 
     const email = this.buildEmail(
       to,
-      discountCode ? '🎁 Complete your purchase with 10% OFF!' : '💄 Did you forget something in your cart?',
+      discountCode
+        ? '🎁 Complete your purchase with 10% OFF!'
+        : '💄 Did you forget something in your cart?',
       `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background: #FFF8F0; border-radius: 20px; border: 1px solid #FDF0F0;">
           <div style="text-align: center; margin-bottom: 24px;">
@@ -426,7 +541,12 @@ export class EmailService {
     await this.apiInstance.sendTransacEmail(email);
   }
 
-  async sendWishlistAlertEmail(to: string, product: any, alertType: 'price_drop' | 'back_in_stock', priceThreshold?: number) {
+  async sendWishlistAlertEmail(
+    to: string,
+    product: any,
+    alertType: 'price_drop' | 'back_in_stock',
+    priceThreshold?: number,
+  ) {
     const isPriceDrop = alertType === 'price_drop';
     const safeName = this.escapeHtml(product.name);
     const safeImage = this.escapeHtml(product.image);
@@ -468,7 +588,16 @@ export class EmailService {
     await this.apiInstance.sendTransacEmail(email);
   }
 
-  async sendSecurityAlertEmail(to: string, type: 'failed_logins' | 'suspicious_login', details: { ipAddress?: string; userAgent?: string; location?: string; count?: number }) {
+  async sendSecurityAlertEmail(
+    to: string,
+    type: 'failed_logins' | 'suspicious_login',
+    details: {
+      ipAddress?: string;
+      userAgent?: string;
+      location?: string;
+      count?: number;
+    },
+  ) {
     const isFailed = type === 'failed_logins';
     const subject = isFailed
       ? `🚨 Security Alert: Multiple Failed Login Attempts Detected`
@@ -524,7 +653,12 @@ export class EmailService {
     await this.apiInstance.sendTransacEmail(email);
   }
 
-  async sendTerminationEmail(to: string, name: string, reason: string, adminName: string) {
+  async sendTerminationEmail(
+    to: string,
+    name: string,
+    reason: string,
+    adminName: string,
+  ) {
     const email = this.buildEmail(
       to,
       'Your Beauty Parlé Account Has Been Terminated',
@@ -550,12 +684,17 @@ export class EmailService {
           </div>
           <p style="color: #6B4C5A; font-size: 11px; margin-top: 24px; text-align: center;">Beauty Parlé — Where Beauty Speaks Your Language 🌸</p>
         </div>
-      `
+      `,
     );
     await this.apiInstance.sendTransacEmail(email);
   }
 
-  async sendTicketConfirmation(to: string, ticketId: number, subject: string, message: string) {
+  async sendTicketConfirmation(
+    to: string,
+    ticketId: number,
+    subject: string,
+    message: string,
+  ) {
     const email = this.buildEmail(
       to,
       `We've received your support request (Ticket #${ticketId})`,
@@ -579,12 +718,17 @@ export class EmailService {
           </div>
           <p style="color: #6B4C5A; font-size: 11px; margin-top: 24px; text-align: center;">Beauty Parlé — Where Beauty Speaks Your Language 🌸</p>
         </div>
-      `
+      `,
     );
     await this.apiInstance.sendTransacEmail(email);
   }
 
-  async sendTicketAdminAlert(ticketId: number, userName: string, subject: string, message: string) {
+  async sendTicketAdminAlert(
+    ticketId: number,
+    userName: string,
+    subject: string,
+    message: string,
+  ) {
     try {
       const admins = await this.userRepo.find({
         where: { role: In(['admin', 'super_admin']) },
@@ -614,7 +758,7 @@ export class EmailService {
                 </div>
               </div>
             </div>
-          `
+          `,
         );
         await this.apiInstance.sendTransacEmail(email);
       }
@@ -638,7 +782,11 @@ export class EmailService {
     await this.apiInstance.sendTransacEmail(email);
   }
 
-  async sendInventoryAlertEmail(to: string, productName: string, stock: number) {
+  async sendInventoryAlertEmail(
+    to: string,
+    productName: string,
+    stock: number,
+  ) {
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #FFF0F0; border-radius: 20px;">
         <h1 style="color: #FF5A5A; text-align: center;">💄 Beauty Parlé</h1>
@@ -653,7 +801,11 @@ export class EmailService {
         </div>
       </div>
     `;
-    const email = this.buildEmail(to, `🚨 Low Stock Alert: ${productName}`, html);
+    const email = this.buildEmail(
+      to,
+      `🚨 Low Stock Alert: ${productName}`,
+      html,
+    );
     await this.apiInstance.sendTransacEmail(email);
   }
 }

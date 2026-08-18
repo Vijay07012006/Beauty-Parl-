@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards, Request, Query, BadRequestException, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  Query,
+  BadRequestException,
+  UseInterceptors,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -10,7 +22,10 @@ export class SupportController {
   constructor(private supportService: SupportService) {}
 
   @Post('tickets')
-  async createTicket(@Body() body: { subject: string; message: string; orderId?: number }, @Request() req: any) {
+  async createTicket(
+    @Body() body: { subject: string; message: string; orderId?: number },
+    @Request() req: any,
+  ) {
     if (!body.subject || !body.message) {
       throw new BadRequestException('Subject and message are required');
     }
@@ -22,7 +37,9 @@ export class SupportController {
   @Get('tickets')
   @UseGuards(JwtAuthGuard)
   async getUserTickets(@Request() req: any, @Query('status') status?: string) {
-    const isAdmin = req.user.role === UserRole.ADMIN || req.user.role === UserRole.SUPER_ADMIN;
+    const isAdmin =
+      req.user.role === UserRole.ADMIN ||
+      req.user.role === UserRole.SUPER_ADMIN;
     if (isAdmin) {
       return this.supportService.getTickets(status);
     }
@@ -48,8 +65,15 @@ export class SupportController {
     if (!body.message) {
       throw new BadRequestException('Message content is required');
     }
-    const isAdmin = req.user.role === UserRole.ADMIN || req.user.role === UserRole.SUPER_ADMIN;
-    return this.supportService.addReply(Number(id), req.user, body.message, isAdmin);
+    const isAdmin =
+      req.user.role === UserRole.ADMIN ||
+      req.user.role === UserRole.SUPER_ADMIN;
+    return this.supportService.addReply(
+      Number(id),
+      req.user,
+      body.message,
+      isAdmin,
+    );
   }
 
   @Put('tickets/:id/resolve')

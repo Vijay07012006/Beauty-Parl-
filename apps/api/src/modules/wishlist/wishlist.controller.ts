@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Delete, Param, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { WishlistService } from './wishlist.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -23,7 +32,10 @@ export class WishlistController {
     @Request() req: any,
     @Param('productId', ParseIntPipe) productId: number,
   ) {
-    const inWishlist = await this.wishlistService.isInWishlist(req.user.id, productId);
+    const inWishlist = await this.wishlistService.isInWishlist(
+      req.user.id,
+      productId,
+    );
     return { inWishlist };
   }
 

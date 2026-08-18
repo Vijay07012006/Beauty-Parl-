@@ -17,16 +17,22 @@ export class WaitlistService {
   ) {}
 
   async joinWaitlist(userId: number, productId: number): Promise<Waitlist> {
-    const product = await this.productRepo.findOne({ where: { id: productId } });
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+    });
     if (!product) {
       throw new BadRequestException('Product not found');
     }
 
     if (product.stock > 0) {
-      throw new BadRequestException('Product is already in stock; you can buy it directly');
+      throw new BadRequestException(
+        'Product is already in stock; you can buy it directly',
+      );
     }
 
-    const existing = await this.waitlistRepo.findOne({ where: { userId, productId } });
+    const existing = await this.waitlistRepo.findOne({
+      where: { userId, productId },
+    });
     if (existing) {
       return existing;
     }
@@ -35,8 +41,13 @@ export class WaitlistService {
     return this.waitlistRepo.save(entry);
   }
 
-  async checkStatus(userId: number, productId: number): Promise<{ onWaitlist: boolean }> {
-    const entry = await this.waitlistRepo.findOne({ where: { userId, productId } });
+  async checkStatus(
+    userId: number,
+    productId: number,
+  ): Promise<{ onWaitlist: boolean }> {
+    const entry = await this.waitlistRepo.findOne({
+      where: { userId, productId },
+    });
     return { onWaitlist: !!entry };
   }
 
@@ -57,12 +68,17 @@ export class WaitlistService {
               entry.product,
               'back_in_stock',
             );
-            console.log(`📧 Waitlist Restock alert email sent to: ${entry.user.email} for product: ${entry.product.name}`);
-            
+            console.log(
+              `📧 Waitlist Restock alert email sent to: ${entry.user.email} for product: ${entry.product.name}`,
+            );
+
             // Delete waitlist entry once notified
             await this.waitlistRepo.delete(entry.id);
           } catch (err: any) {
-            console.error(`Failed to send waitlist restock email to ${entry.user.email}:`, err.message);
+            console.error(
+              `Failed to send waitlist restock email to ${entry.user.email}:`,
+              err.message,
+            );
           }
         }
       }

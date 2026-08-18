@@ -7,10 +7,7 @@ import { WaitlistService } from './waitlist.service';
 import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Waitlist, Product]),
-    EmailModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Waitlist, Product]), EmailModule],
   controllers: [WaitlistController],
   providers: [WaitlistService],
   exports: [WaitlistService],

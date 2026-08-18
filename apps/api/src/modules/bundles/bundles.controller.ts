@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Query,
+  Body,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { BundlesService } from './bundles.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -17,7 +28,10 @@ export class BundlesController {
   @Get('recommended')
   getRecommended(@Query('cart_ids') cartIds: string) {
     const ids = cartIds
-      ? cartIds.split(',').map(id => parseInt(id.trim(), 10)).filter(Boolean)
+      ? cartIds
+          .split(',')
+          .map((id) => parseInt(id.trim(), 10))
+          .filter(Boolean)
       : [];
     return this.bundlesService.getRecommended(ids);
   }

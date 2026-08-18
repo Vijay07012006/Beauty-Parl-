@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('orders')
 export class Order {
@@ -36,7 +42,8 @@ export class Order {
   paymentMethod!: 'cod' | 'razorpay' | 'stripe';
 
   @Column({ default: 'pending' })
-  status!: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status!:
+    'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
   @Column('jsonb')
   shippingAddress!: {
@@ -65,7 +72,13 @@ export class Order {
   trackingLongitude?: number;
 
   @Column({ type: 'jsonb', default: [] })
-  trackingHistory!: { status: string; description: string; timestamp: Date; latitude?: number; longitude?: number }[];
+  trackingHistory!: {
+    status: string;
+    description: string;
+    timestamp: Date;
+    latitude?: number;
+    longitude?: number;
+  }[];
 
   @CreateDateColumn()
   createdAt!: Date;

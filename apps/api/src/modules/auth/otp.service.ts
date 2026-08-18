@@ -1,4 +1,9 @@
-import { Injectable, Optional, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Optional,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
@@ -11,7 +16,10 @@ const MAX_VERIFY_ATTEMPTS = 5; // per OTP
 const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes after exhausting attempts
 
 // In-memory fallback for verify-attempt counters (Redis is preferred)
-const verifyAttempts = new Map<string, { count: number; lockedUntil: number }>();
+const verifyAttempts = new Map<
+  string,
+  { count: number; lockedUntil: number }
+>();
 
 @Injectable()
 export class OtpService {
@@ -45,11 +53,19 @@ export class OtpService {
         const cur = await this.redisService.get(countKey);
         const next = (cur ? Number(cur) : 0) + 1;
         if (next >= MAX_VERIFY_ATTEMPTS) {
-          await this.redisService.set(`otp:lock:${email}`, '1', Math.floor(LOCKOUT_MS / 1000));
+          await this.redisService.set(
+            `otp:lock:${email}`,
+            '1',
+            Math.floor(LOCKOUT_MS / 1000),
+          );
           await this.redisService.del(countKey);
           return true;
         }
-        await this.redisService.set(countKey, String(next), Math.floor(LOCKOUT_MS / 1000));
+        await this.redisService.set(
+          countKey,
+          String(next),
+          Math.floor(LOCKOUT_MS / 1000),
+        );
         return false;
       } catch {
         // fall through to in-memory
@@ -108,7 +124,9 @@ export class OtpService {
   async verifyOtp(email: string, otp: string): Promise<boolean> {
     const normalizedEmail = email.trim().toLowerCase();
     if (await this.isLockedOut(normalizedEmail)) {
-      throw new ForbiddenException('Too many attempts. Please try again later.');
+      throw new ForbiddenException(
+        'Too many attempts. Please try again later.',
+      );
     }
 
     const key = `otp:${normalizedEmail}`;
@@ -124,9 +142,14 @@ export class OtpService {
     }
 
     if (record) {
-      const ok = crypto.timingSafeEqual(Buffer.from(record, 'utf8'), Buffer.from(this.hashOtp(otp), 'utf8'));
+      const ok = crypto.timingSafeEqual(
+        Buffer.from(record, 'utf8'),
+        Buffer.from(this.hashOtp(otp), 'utf8'),
+      );
       if (ok) {
-        try { await this.redisService?.del(key); } catch {}
+        try {
+          await this.redisService?.del(key);
+        } catch {}
         this.clearAttempts(normalizedEmail);
         return true;
       }
@@ -156,7 +179,9 @@ export class OtpService {
   private async handleFailure(email: string): Promise<boolean> {
     const locked = await this.recordFailedAttempt(email);
     if (locked) {
-      throw new ForbiddenException('Too many attempts. Please try again later.');
+      throw new ForbiddenException(
+        'Too many attempts. Please try again later.',
+      );
     }
     return false;
   }
@@ -165,8 +190,12 @@ export class OtpService {
     const normalizedEmail = email.trim().toLowerCase();
     const lastSent = resendCooldown.get(normalizedEmail) || 0;
     if (Date.now() - lastSent < RESEND_COOLDOWN_MS) {
-      const waitSeconds = Math.ceil((RESEND_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
-      throw new BadRequestException(`Please wait ${waitSeconds}s before requesting another OTP`);
+      const waitSeconds = Math.ceil(
+        (RESEND_COOLDOWN_MS - (Date.now() - lastSent)) / 1000,
+      );
+      throw new BadRequestException(
+        `Please wait ${waitSeconds}s before requesting another OTP`,
+      );
     }
     resendCooldown.set(normalizedEmail, Date.now());
     const otp = await this.generateAndStoreOtp(normalizedEmail);

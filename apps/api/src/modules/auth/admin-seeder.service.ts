@@ -18,11 +18,15 @@ export class AdminSeeder implements OnModuleInit {
   async seedAdmin() {
     try {
       const adminEmail = 'vijaytechno28@gmail.com';
-      const existing = await this.userRepo.findOne({ where: { email: adminEmail } });
+      const existing = await this.userRepo.findOne({
+        where: { email: adminEmail },
+      });
 
       const seedPassword = process.env.ADMIN_SEED_PASSWORD;
       if (!seedPassword) {
-        console.warn('⚠️ [AdminSeeder] Missing env var: ADMIN_SEED_PASSWORD. Skipping admin seeding.');
+        console.warn(
+          '⚠️ [AdminSeeder] Missing env var: ADMIN_SEED_PASSWORD. Skipping admin seeding.',
+        );
         return;
       }
 
@@ -31,7 +35,9 @@ export class AdminSeeder implements OnModuleInit {
       // silently promoted to SUPER_ADMIN with a password they control.
       if (existing) {
         if (existing.role === UserRole.SUPER_ADMIN && existing.isVerified) {
-          console.log('ℹ️ [AdminSeeder] Admin account already present and verified. No changes made.');
+          console.log(
+            'ℹ️ [AdminSeeder] Admin account already present and verified. No changes made.',
+          );
           return;
         }
         console.error(
@@ -42,7 +48,9 @@ export class AdminSeeder implements OnModuleInit {
       }
 
       if (seedPassword.length < 10) {
-        console.error('❌ [AdminSeeder] ADMIN_SEED_PASSWORD is too weak. Refusing to create a super admin with a weak password.');
+        console.error(
+          '❌ [AdminSeeder] ADMIN_SEED_PASSWORD is too weak. Refusing to create a super admin with a weak password.',
+        );
         return;
       }
 
@@ -58,7 +66,10 @@ export class AdminSeeder implements OnModuleInit {
       await this.userRepo.save(admin);
       console.log('✅ Admin user created:', adminEmail);
     } catch (error: any) {
-      console.error('❌ [AdminSeeder] Admin seeding failed gracefully:', error.message);
+      console.error(
+        '❌ [AdminSeeder] Admin seeding failed gracefully:',
+        error.message,
+      );
     }
   }
 }

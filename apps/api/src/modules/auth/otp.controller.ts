@@ -40,6 +40,9 @@ export class OtpController {
       }
       // swallow unknown-email / send errors — keep enumeration closed
     }
-    return { success: true, message: 'If this account exists, a new OTP has been sent' };
+    return {
+      success: true,
+      message: 'If this account exists, a new OTP has been sent',
+    };
   }
 }

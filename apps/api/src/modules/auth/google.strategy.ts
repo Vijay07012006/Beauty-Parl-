@@ -10,12 +10,20 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private config: ConfigService,
     private authService: AuthService,
   ) {
-    const clientID = config.get<string>('google.clientId') || process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = config.get<string>('google.clientSecret') || process.env.GOOGLE_CLIENT_SECRET;
-    const callbackURL = config.get<string>('google.callbackUrl') || process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/auth/google/callback';
+    const clientID =
+      config.get<string>('google.clientId') || process.env.GOOGLE_CLIENT_ID;
+    const clientSecret =
+      config.get<string>('google.clientSecret') ||
+      process.env.GOOGLE_CLIENT_SECRET;
+    const callbackURL =
+      config.get<string>('google.callbackUrl') ||
+      process.env.GOOGLE_CALLBACK_URL ||
+      'http://localhost:3001/auth/google/callback';
 
     if (!clientID || clientID === 'placeholder_id') {
-      console.warn('⚠️ [GoogleStrategy] Missing GOOGLE_CLIENT_ID. Google OAuth will fail on invocation.');
+      console.warn(
+        '⚠️ [GoogleStrategy] Missing GOOGLE_CLIENT_ID. Google OAuth will fail on invocation.',
+      );
     }
 
     super({
@@ -37,13 +45,19 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const { name, emails, photos } = profile;
     const user = {
       email: emails[0].value,
-      name: `${name.givenName || ''} ${name.familyName || ''}`.trim() || 'Google User',
+      name:
+        `${name.givenName || ''} ${name.familyName || ''}`.trim() ||
+        'Google User',
       avatar: photos && photos.length > 0 ? photos[0].value : null,
       googleId: profile.id,
     };
     const ipAddress = req?.ip;
     const userAgent = req?.headers?.['user-agent'];
-    const validatedUser = await this.authService.validateOAuthUser(user, 'google', { ipAddress, userAgent });
+    const validatedUser = await this.authService.validateOAuthUser(
+      user,
+      'google',
+      { ipAddress, userAgent },
+    );
     done(null, validatedUser);
   }
 }

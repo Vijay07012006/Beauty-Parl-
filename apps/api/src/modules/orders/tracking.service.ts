@@ -41,21 +41,32 @@ export class TrackingService {
     });
     order.trackingHistory = history;
 
-    if (status && ['pending', 'processing', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+    if (
+      status &&
+      ['pending', 'processing', 'shipped', 'delivered', 'cancelled'].includes(
+        status,
+      )
+    ) {
       order.status = status as any;
-      
+
       // Try sending status update email
       if (order.guestEmail) {
-        await this.emailService.sendOrderStatusEmail(order.guestEmail, order.id, status).catch(() => {});
+        await this.emailService
+          .sendOrderStatusEmail(order.guestEmail, order.id, status)
+          .catch(() => {});
       } else if (order.userId) {
         // Fetch user email
         const userRepo = this.orderRepo.manager.getRepository('User');
         const user = await userRepo.findOne({ where: { id: order.userId } });
         if (user && (user as any).email) {
-          await this.emailService.sendOrderStatusEmail((user as any).email, order.id, status).catch(() => {});
+          await this.emailService
+            .sendOrderStatusEmail((user as any).email, order.id, status)
+            .catch(() => {});
           // Send WhatsApp update if user phone is saved
           if ((user as any).phone) {
-            await this.whatsappService.sendOrderStatusUpdate((user as any).phone, order.id, status).catch(() => {});
+            await this.whatsappService
+              .sendOrderStatusUpdate((user as any).phone, order.id, status)
+              .catch(() => {});
           }
         }
       }
@@ -86,7 +97,9 @@ export class TrackingService {
       orderId: order.id,
       status: order.status,
       latitude: order.trackingLatitude ? Number(order.trackingLatitude) : null,
-      longitude: order.trackingLongitude ? Number(order.trackingLongitude) : null,
+      longitude: order.trackingLongitude
+        ? Number(order.trackingLongitude)
+        : null,
       history: order.trackingHistory || [],
     };
   }

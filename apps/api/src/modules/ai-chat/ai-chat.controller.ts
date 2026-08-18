@@ -1,4 +1,13 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Req, UseGuards, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Req,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { AiChatService } from './ai-chat.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';

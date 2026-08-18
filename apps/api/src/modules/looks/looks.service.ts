@@ -28,54 +28,66 @@ export class LooksService implements OnModuleInit {
           {
             name: 'Date Night Glam',
             slug: 'date-night-glam',
-            description: 'Sultry, bold looks for a perfect evening out. Deep tones, dewy skin, and defined eyes.',
+            description:
+              'Sultry, bold looks for a perfect evening out. Deep tones, dewy skin, and defined eyes.',
             occasion: 'Date Night',
-            imageUrl: 'https://images.unsplash.com/photo-1487412912498-0447578fcca8?w=800&q=80',
+            imageUrl:
+              'https://images.unsplash.com/photo-1487412912498-0447578fcca8?w=800&q=80',
             skinType: 'All',
             isActive: true,
           },
           {
             name: 'Office Ready',
             slug: 'office-ready',
-            description: 'Polished and professional. Clean skin, subtle lip, and neat brows.',
+            description:
+              'Polished and professional. Clean skin, subtle lip, and neat brows.',
             occasion: 'Office',
-            imageUrl: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&q=80',
+            imageUrl:
+              'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&q=80',
             skinType: 'All',
             isActive: true,
           },
           {
             name: 'Dewy Skin Glow',
             slug: 'dewy-skin-glow',
-            description: 'Glass skin meets effortless glow. Minimalist makeup, maximum radiance.',
+            description:
+              'Glass skin meets effortless glow. Minimalist makeup, maximum radiance.',
             occasion: 'Casual',
-            imageUrl: 'https://images.unsplash.com/photo-1515688594390-b649af70d282?w=800&q=80',
+            imageUrl:
+              'https://images.unsplash.com/photo-1515688594390-b649af70d282?w=800&q=80',
             skinType: 'Dry',
             isActive: true,
           },
           {
             name: 'Festival Vibes',
             slug: 'festival-vibes',
-            description: 'Bold colors, glitter, and statement looks for festival season.',
+            description:
+              'Bold colors, glitter, and statement looks for festival season.',
             occasion: 'Festival',
-            imageUrl: 'https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80',
+            imageUrl:
+              'https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80',
             skinType: 'All',
             isActive: true,
           },
           {
             name: 'Bridal Bliss',
             slug: 'bridal-bliss',
-            description: 'Timeless bridal beauty — luminous foundation, flushed cheeks, and delicate lips.',
+            description:
+              'Timeless bridal beauty — luminous foundation, flushed cheeks, and delicate lips.',
             occasion: 'Bridal',
-            imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80',
+            imageUrl:
+              'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80',
             skinType: 'All',
             isActive: true,
           },
           {
             name: 'No-Makeup Makeup',
             slug: 'no-makeup-makeup',
-            description: 'Your skin but better. Light coverage, natural tones, and fresh glow.',
+            description:
+              'Your skin but better. Light coverage, natural tones, and fresh glow.',
             occasion: 'Everyday',
-            imageUrl: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=800&q=80',
+            imageUrl:
+              'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=800&q=80',
             skinType: 'Oily',
             isActive: true,
           },
@@ -86,7 +98,13 @@ export class LooksService implements OnModuleInit {
         if (products.length >= 3) {
           for (const look of saved) {
             const slice = products.splice(0, 2);
-            const lps = slice.map((p, i) => this.lpRepo.create({ lookId: look.id, productId: p.id, position: i }));
+            const lps = slice.map((p, i) =>
+              this.lpRepo.create({
+                lookId: look.id,
+                productId: p.id,
+                position: i,
+              }),
+            );
             await this.lpRepo.save(lps);
           }
         }
@@ -98,23 +116,30 @@ export class LooksService implements OnModuleInit {
   }
 
   async findAll(): Promise<any[]> {
-    const looks = await this.lookRepo.find({ where: { isActive: true }, order: { createdAt: 'ASC' } });
-    const result = await Promise.all(looks.map(async look => {
-      const count = await this.lpRepo.count({ where: { lookId: look.id } });
-      return { ...look, productCount: count };
-    }));
+    const looks = await this.lookRepo.find({
+      where: { isActive: true },
+      order: { createdAt: 'ASC' },
+    });
+    const result = await Promise.all(
+      looks.map(async (look) => {
+        const count = await this.lpRepo.count({ where: { lookId: look.id } });
+        return { ...look, productCount: count };
+      }),
+    );
     return result;
   }
 
   async findBySlug(slug: string): Promise<any> {
-    const look = await this.lookRepo.findOne({ where: { slug, isActive: true } });
+    const look = await this.lookRepo.findOne({
+      where: { slug, isActive: true },
+    });
     if (!look) throw new NotFoundException(`Look "${slug}" not found`);
     const lookProducts = await this.lpRepo.find({
       where: { lookId: look.id },
       relations: ['product'],
       order: { position: 'ASC' },
     });
-    const products = lookProducts.map(lp => lp.product).filter(Boolean);
+    const products = lookProducts.map((lp) => lp.product).filter(Boolean);
     return { ...look, products };
   }
 
@@ -135,7 +160,9 @@ export class LooksService implements OnModuleInit {
 
   async addProductsToLook(lookId: number, productIds: number[]): Promise<void> {
     await this.lpRepo.delete({ lookId });
-    const lps = productIds.map((pid, i) => this.lpRepo.create({ lookId, productId: pid, position: i }));
+    const lps = productIds.map((pid, i) =>
+      this.lpRepo.create({ lookId, productId: pid, position: i }),
+    );
     await this.lpRepo.save(lps);
   }
 }

@@ -23,7 +23,7 @@ export class InventoryAlertService {
   async getLowStockProducts(): Promise<Product[]> {
     return this.productRepo.find({
       where: {
-        stock: In([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) // stock < 10
+        stock: In([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), // stock < 10
       },
       order: { stock: 'ASC' },
     });
@@ -32,7 +32,9 @@ export class InventoryAlertService {
   async checkAndAlert(productId: number, newStock: number): Promise<void> {
     if (newStock >= 10) return;
 
-    const product = await this.productRepo.findOne({ where: { id: productId } });
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+    });
     if (!product) return;
 
     // 1. Broadcast real-time WebSocket warning to administrative dashboards
@@ -63,15 +65,25 @@ export class InventoryAlertService {
         });
         await this.notificationRepo.save(notif);
       } catch (err: any) {
-        console.error(`Failed to save low stock notification for Admin #${admin.id}:`, err.message);
+        console.error(
+          `Failed to save low stock notification for Admin #${admin.id}:`,
+          err.message,
+        );
       }
 
       // 4. Send Brevo SMTP email warning
       if (admin.email) {
         try {
-          await this.emailService.sendInventoryAlertEmail(admin.email, product.name, newStock);
+          await this.emailService.sendInventoryAlertEmail(
+            admin.email,
+            product.name,
+            newStock,
+          );
         } catch (emailErr: any) {
-          console.error(`Failed to email stock alert to ${admin.email}:`, emailErr.message);
+          console.error(
+            `Failed to email stock alert to ${admin.email}:`,
+            emailErr.message,
+          );
         }
       }
     }

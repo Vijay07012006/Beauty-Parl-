@@ -22,7 +22,11 @@ export class ComparisonService {
     return `session:${sessionId || this.anonFallbackKey}`;
   }
 
-  async add(productId: number, userId?: number, sessionId?: string): Promise<number[]> {
+  async add(
+    productId: number,
+    userId?: number,
+    sessionId?: string,
+  ): Promise<number[]> {
     const key = this.getStoreKey(userId, sessionId);
     const current = await this.getIds(key);
     if (!current.includes(productId)) {
@@ -35,7 +39,11 @@ export class ComparisonService {
     return current;
   }
 
-  async remove(productId: number, userId?: number, sessionId?: string): Promise<number[]> {
+  async remove(
+    productId: number,
+    userId?: number,
+    sessionId?: string,
+  ): Promise<number[]> {
     const key = this.getStoreKey(userId, sessionId);
     const current = await this.getIds(key);
     const updated = current.filter((id) => id !== productId);
@@ -43,7 +51,10 @@ export class ComparisonService {
     return updated;
   }
 
-  async getComparisonList(userId?: number, sessionId?: string): Promise<number[]> {
+  async getComparisonList(
+    userId?: number,
+    sessionId?: string,
+  ): Promise<number[]> {
     const key = this.getStoreKey(userId, sessionId);
     return this.getIds(key);
   }

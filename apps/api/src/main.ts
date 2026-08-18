@@ -16,27 +16,46 @@ async function bootstrap() {
   for (const envVar of criticalEnvVars) {
     if (!process.env[envVar]) {
       if (envVar === 'JWT_SECRET' || envVar === 'DB_ENCRYPTION_KEY') {
-        console.error(`❌ [Config] Missing required environment variable: ${envVar}. Refusing to start with insecure defaults.`);
+        console.error(
+          `❌ [Config] Missing required environment variable: ${envVar}. Refusing to start with insecure defaults.`,
+        );
         process.exit(1);
       }
-      console.warn(`⚠️ [Config] Missing critical environment variable: ${envVar}. Application may fail to start or run.`);
+      console.warn(
+        `⚠️ [Config] Missing critical environment variable: ${envVar}. Application may fail to start or run.`,
+      );
     }
   }
 
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://checkout.razorpay.com", "https://js.stripe.com"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https://images.unsplash.com", "https://res.cloudinary.com"],
-        connectSrc: ["'self'", "https://beauty-parl-api.onrender.com", "http://localhost:3001"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            'https://checkout.razorpay.com',
+            'https://js.stripe.com',
+          ],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: [
+            "'self'",
+            'data:',
+            'https://images.unsplash.com',
+            'https://res.cloudinary.com',
+          ],
+          connectSrc: [
+            "'self'",
+            'https://beauty-parl-api.onrender.com',
+            'http://localhost:3001',
+          ],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        },
       },
-    },
-  }));
+    }),
+  );
 
   app.use((req: any, res: any, next: any) => {
     res.setHeader('Permissions-Policy', 'microphone=*');
@@ -46,17 +65,20 @@ async function bootstrap() {
   // Trust the first hop so req.ip reflects the real client behind the Render/Vercel proxy
   // (required for per-IP rate limiting — otherwise every request shares the proxy IP bucket)
   const httpAdapter = app.getHttpAdapter().getInstance();
-  (httpAdapter as any).set('trust proxy', 1);
+  httpAdapter.set('trust proxy', 1);
 
   // 🔐 SECURE CORS — Parse origins from env
   const corsOriginsEnv = process.env.CORS_ORIGINS || '';
   const allowedOrigins = corsOriginsEnv
     .split(',')
-    .map(o => o.trim())  // ✅ Trim spaces
-    .filter(o => o.length > 0);
+    .map((o) => o.trim()) // ✅ Trim spaces
+    .filter((o) => o.length > 0);
 
   // Fallback for local development
-  const defaultOrigins = ['http://localhost:3000', 'https://beauty-parle.vercel.app'];
+  const defaultOrigins = [
+    'http://localhost:3000',
+    'https://beauty-parle.vercel.app',
+  ];
 
   const origins = allowedOrigins.length > 0 ? allowedOrigins : defaultOrigins;
 
@@ -70,7 +92,11 @@ async function bootstrap() {
     if (origins.includes(origin)) return true;
 
     // M-1: allow Vercel preview deployments ONLY when explicitly enabled via env
-    if (process.env.CORS_ALLOW_VERCEL_PREVIEWS === 'true' && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)) return true;
+    if (
+      process.env.CORS_ALLOW_VERCEL_PREVIEWS === 'true' &&
+      /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin)
+    )
+      return true;
 
     // Allow local development on any port
     if (/^http:\/\/localhost:\d+$/.test(origin)) return true;
@@ -79,7 +105,10 @@ async function bootstrap() {
   };
 
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       if (!origin || isOriginAllowed(origin)) {
         callback(null, true);
       } else {
@@ -89,7 +118,13 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'x-session-id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'X-Requested-With',
+      'x-session-id',
+    ],
   });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));

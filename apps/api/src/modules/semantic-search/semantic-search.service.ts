@@ -40,7 +40,10 @@ export class SemanticSearchService {
     }
 
     const cacheKey = `semantic_search:${query.toLowerCase()}:${limit}`;
-    const cached = await this.cacheManager.get<{ products: Product[]; total: number }>(cacheKey);
+    const cached = await this.cacheManager.get<{
+      products: Product[];
+      total: number;
+    }>(cacheKey);
     if (cached) {
       return { ...cached, fromCache: true };
     }
@@ -66,7 +69,10 @@ export class SemanticSearchService {
         scoredProducts = await this.semanticSearch(query, limit);
         usedSemantic = scoredProducts.length > 0;
       } catch (err) {
-        console.warn('Semantic search failed, falling back to keyword search:', (err as any)?.message || err);
+        console.warn(
+          'Semantic search failed, falling back to keyword search:',
+          (err as any)?.message || err,
+        );
       }
     }
 
@@ -84,7 +90,10 @@ export class SemanticSearchService {
     };
   }
 
-  private async semanticSearch(query: string, limit: number): Promise<ScoredProduct[]> {
+  private async semanticSearch(
+    query: string,
+    limit: number,
+  ): Promise<ScoredProduct[]> {
     if (!this.hf) return [];
 
     const allProducts = await this.productRepository.find();
@@ -102,7 +111,10 @@ export class SemanticSearchService {
       const text = `${p.name} ${p.brand || ''} ${p.category || ''} ${p.description}`;
       const productEmbedding = await this.getCachedEmbedding(text);
       if (!productEmbedding.length) continue;
-      const similarity = this.cosineSimilarity(queryEmbedding, productEmbedding);
+      const similarity = this.cosineSimilarity(
+        queryEmbedding,
+        productEmbedding,
+      );
       scored.push({ product: p, score: similarity });
     }
 
@@ -117,7 +129,9 @@ export class SemanticSearchService {
     const embedding = await this.getEmbedding(text);
     if (embedding.length > 0) {
       // Cache embeddings for 24h — products are rarely updated
-      await this.cacheManager.set(key, embedding, 24 * 60 * 60 * 1000).catch(() => {});
+      await this.cacheManager
+        .set(key, embedding, 24 * 60 * 60 * 1000)
+        .catch(() => {});
     }
     return embedding;
   }
@@ -156,7 +170,9 @@ export class SemanticSearchService {
     return dot / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
-  private async keywordSearchWithRanking(query: string): Promise<ScoredProduct[]> {
+  private async keywordSearchWithRanking(
+    query: string,
+  ): Promise<ScoredProduct[]> {
     const terms = query
       .toLowerCase()
       .split(/\s+/)

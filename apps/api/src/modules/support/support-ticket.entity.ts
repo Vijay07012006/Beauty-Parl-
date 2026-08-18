@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../auth/user.entity';
 import { Order } from '../orders/order.entity';
 
@@ -30,17 +38,17 @@ export class SupportTicket {
   @Column({ type: 'text' })
   message!: string;
 
-  @Column({ 
-    type: 'varchar', 
-    length: 20, 
-    default: 'open' 
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: 'open',
   })
   status!: 'open' | 'in_progress' | 'resolved' | 'closed';
 
-  @Column({ 
-    type: 'varchar', 
-    length: 20, 
-    default: 'medium' 
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: 'medium',
   })
   priority!: 'low' | 'medium' | 'high';
 

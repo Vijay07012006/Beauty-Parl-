@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../auth/user.entity';
 
 @Entity('referrals')
@@ -19,7 +26,13 @@ export class Referral {
   @Column({ type: 'boolean', default: false, name: 'reward_claimed' })
   rewardClaimed!: boolean;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'reward_amount' })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+    name: 'reward_amount',
+  })
   rewardAmount!: number;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

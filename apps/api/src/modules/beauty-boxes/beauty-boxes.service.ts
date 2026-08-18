@@ -19,9 +19,11 @@ export class BeautyBoxesService {
         const defaults = [
           {
             name: 'Glow Essentials Discovery Box',
-            description: 'Unbox the secrets to radiant skin. Features clarifying face washes, vitamin C glow boosters, and skin firming creams.',
-            price: 1499.00,
-            imageUrl: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=400',
+            description:
+              'Unbox the secrets to radiant skin. Features clarifying face washes, vitamin C glow boosters, and skin firming creams.',
+            price: 1499.0,
+            imageUrl:
+              'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=400',
             items: [
               { name: 'Foaming Cleanser', size: '50ml' },
               { name: 'Vitamin C Brightening Serum', size: '15ml' },
@@ -31,9 +33,11 @@ export class BeautyBoxesService {
           },
           {
             name: 'Matte Finish Makeup Box',
-            description: 'All-day matte look beauty kit. Curated primers, setting sprays, and ultra-wear foundation samples.',
-            price: 1999.00,
-            imageUrl: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=400',
+            description:
+              'All-day matte look beauty kit. Curated primers, setting sprays, and ultra-wear foundation samples.',
+            price: 1999.0,
+            imageUrl:
+              'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=400',
             items: [
               { name: 'Poreless Matte Primer', size: '20ml' },
               { name: 'Longwear Liquid Foundation', size: '15ml' },

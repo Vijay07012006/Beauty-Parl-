@@ -54,7 +54,9 @@ export class ProductTagsService implements OnModuleInit {
     // Remove existing
     await this.mappingRepo.delete({ productId });
     // Insert new
-    const mappings = tagIds.map(tagId => this.mappingRepo.create({ productId, tagId }));
+    const mappings = tagIds.map((tagId) =>
+      this.mappingRepo.create({ productId, tagId }),
+    );
     await this.mappingRepo.save(mappings);
   }
 
@@ -63,7 +65,7 @@ export class ProductTagsService implements OnModuleInit {
       where: { productId },
       relations: ['tag'],
     });
-    return mappings.map(m => m.tag!).filter(Boolean);
+    return mappings.map((m) => m.tag!).filter(Boolean);
   }
 
   async getProductsByTags(tagNames: string[]): Promise<number[]> {
@@ -71,7 +73,7 @@ export class ProductTagsService implements OnModuleInit {
     // Find tag IDs
     const tags = await this.tagRepo.find({ where: { name: In(tagNames) } });
     if (!tags.length) return [];
-    const tagIds = tags.map(t => t.id);
+    const tagIds = tags.map((t) => t.id);
     // Find products that have ALL these tags (intersection)
     const raw: { productId: number; cnt: string }[] = await this.mappingRepo
       .createQueryBuilder('m')
@@ -81,6 +83,6 @@ export class ProductTagsService implements OnModuleInit {
       .groupBy('m.productId')
       .having('COUNT(m.tagId) >= :required', { required: tagIds.length })
       .getRawMany();
-    return raw.map(r => r.productId);
+    return raw.map((r) => r.productId);
   }
 }

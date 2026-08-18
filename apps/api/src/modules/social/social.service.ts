@@ -10,7 +10,11 @@ export class SocialService {
   async trackClick(platform: string, productId: number): Promise<void> {
     // M-11: only known platforms are stored — arbitrary strings cannot create unbounded keys
     const normPlatform = platform.toLowerCase();
-    if (!['instagram', 'facebook', 'whatsapp', 'pinterest', 'twitter'].includes(normPlatform)) {
+    if (
+      !['instagram', 'facebook', 'whatsapp', 'pinterest', 'twitter'].includes(
+        normPlatform,
+      )
+    ) {
       return;
     }
     const key = `clicks:${normPlatform}`;
@@ -19,15 +23,27 @@ export class SocialService {
         const current = await this.redis.get(key);
         await this.redis.set(key, String(Number(current || 0) + 1));
       } catch {
-        this.memoryClicks.set(normPlatform, (this.memoryClicks.get(normPlatform) || 0) + 1);
+        this.memoryClicks.set(
+          normPlatform,
+          (this.memoryClicks.get(normPlatform) || 0) + 1,
+        );
       }
     } else {
-      this.memoryClicks.set(normPlatform, (this.memoryClicks.get(normPlatform) || 0) + 1);
+      this.memoryClicks.set(
+        normPlatform,
+        (this.memoryClicks.get(normPlatform) || 0) + 1,
+      );
     }
   }
 
   async getAnalytics(): Promise<Record<string, number>> {
-    const platforms = ['instagram', 'facebook', 'whatsapp', 'pinterest', 'twitter'];
+    const platforms = [
+      'instagram',
+      'facebook',
+      'whatsapp',
+      'pinterest',
+      'twitter',
+    ];
     const result: Record<string, number> = {};
 
     for (const p of platforms) {

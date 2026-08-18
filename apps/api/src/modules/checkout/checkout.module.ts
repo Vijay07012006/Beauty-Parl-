@@ -7,11 +7,7 @@ import { OrdersModule } from '../orders/orders.module';
 import { CartModule } from '../cart/cart.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User]),
-    OrdersModule,
-    CartModule,
-  ],
+  imports: [TypeOrmModule.forFeature([User]), OrdersModule, CartModule],
   controllers: [CheckoutController],
   providers: [OneClickCheckoutService],
   exports: [OneClickCheckoutService],

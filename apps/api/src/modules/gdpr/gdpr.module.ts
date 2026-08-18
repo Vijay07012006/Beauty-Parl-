@@ -16,7 +16,14 @@ import { GdprController } from './gdpr.controller';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      User, Order, Address, Wishlist, ProductReview, AiConversation, SupportTicket, DeletionRequest
+      User,
+      Order,
+      Address,
+      Wishlist,
+      ProductReview,
+      AiConversation,
+      SupportTicket,
+      DeletionRequest,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

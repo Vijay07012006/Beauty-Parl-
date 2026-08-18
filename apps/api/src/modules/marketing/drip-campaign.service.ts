@@ -12,7 +12,8 @@ export class DripCampaignService {
     await this.emailService.sendWelcomeEmail(email, name);
 
     // Tip & Hacks Email (Simulated: 5 seconds in development, otherwise 24 hours)
-    const delay2 = process.env.NODE_ENV === 'production' ? 24 * 60 * 60 * 1000 : 5000;
+    const delay2 =
+      process.env.NODE_ENV === 'production' ? 24 * 60 * 60 * 1000 : 5000;
     setTimeout(async () => {
       await this.emailService.sendEmail(
         email,
@@ -27,11 +28,14 @@ export class DripCampaignService {
           </div>
         `,
       );
-      console.log(`📧 [DripCampaign] Welcome Series Day 2 Email sent to ${email}`);
+      console.log(
+        `📧 [DripCampaign] Welcome Series Day 2 Email sent to ${email}`,
+      );
     }, delay2);
 
     // Onboarding Coupon Email (Simulated: 10 seconds in dev, otherwise 5 days)
-    const delay5 = process.env.NODE_ENV === 'production' ? 5 * 24 * 60 * 60 * 1000 : 10000;
+    const delay5 =
+      process.env.NODE_ENV === 'production' ? 5 * 24 * 60 * 60 * 1000 : 10000;
     setTimeout(async () => {
       await this.emailService.sendEmail(
         email,
@@ -47,15 +51,20 @@ export class DripCampaignService {
           </div>
         `,
       );
-      console.log(`📧 [DripCampaign] Welcome Series Day 5 Email sent to ${email}`);
+      console.log(
+        `📧 [DripCampaign] Welcome Series Day 5 Email sent to ${email}`,
+      );
     }, delay5);
   }
 
   async triggerAbandonedCartSeries(email: string, name: string, total: number) {
-    console.log(`📧 [DripCampaign] Starting Abandoned Cart Series for: ${email}`);
+    console.log(
+      `📧 [DripCampaign] Starting Abandoned Cart Series for: ${email}`,
+    );
 
     // Email 1 (Simulated: 3 seconds, otherwise 2 hours)
-    const delay1 = process.env.NODE_ENV === 'production' ? 2 * 60 * 60 * 1000 : 3000;
+    const delay1 =
+      process.env.NODE_ENV === 'production' ? 2 * 60 * 60 * 1000 : 3000;
     setTimeout(async () => {
       await this.emailService.sendEmail(
         email,
@@ -73,7 +82,8 @@ export class DripCampaignService {
     }, delay1);
 
     // Email 2 (Simulated: 6 seconds, otherwise 24 hours)
-    const delay2 = process.env.NODE_ENV === 'production' ? 24 * 60 * 60 * 1000 : 6000;
+    const delay2 =
+      process.env.NODE_ENV === 'production' ? 24 * 60 * 60 * 1000 : 6000;
     setTimeout(async () => {
       await this.emailService.sendEmail(
         email,
@@ -90,11 +100,18 @@ export class DripCampaignService {
     }, delay2);
   }
 
-  async triggerPostPurchaseSeries(email: string, name: string, orderId: number) {
-    console.log(`📧 [DripCampaign] Starting Post-Purchase Series for: ${email}`);
+  async triggerPostPurchaseSeries(
+    email: string,
+    name: string,
+    orderId: number,
+  ) {
+    console.log(
+      `📧 [DripCampaign] Starting Post-Purchase Series for: ${email}`,
+    );
 
     // Email 1 (Simulated: 4 seconds, otherwise 7 days)
-    const delay = process.env.NODE_ENV === 'production' ? 7 * 24 * 60 * 60 * 1000 : 4000;
+    const delay =
+      process.env.NODE_ENV === 'production' ? 7 * 24 * 60 * 60 * 1000 : 4000;
     setTimeout(async () => {
       await this.emailService.sendEmail(
         email,

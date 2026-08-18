@@ -15,7 +15,20 @@ export class BulkExportService {
       order: { id: 'ASC' },
     });
 
-    const headers = ['id', 'name', 'price', 'mrp', 'discountpercent', 'category', 'stock', 'brand', 'rating', 'ratingcount', 'description', 'image'];
+    const headers = [
+      'id',
+      'name',
+      'price',
+      'mrp',
+      'discountpercent',
+      'category',
+      'stock',
+      'brand',
+      'rating',
+      'ratingcount',
+      'description',
+      'image',
+    ];
     const csvRows = [headers.join(',')];
 
     for (const product of products) {
@@ -42,7 +55,12 @@ export class BulkExportService {
   private escapeCsvValue(val: any): string {
     if (val === null || val === undefined) return '';
     const stringVal = String(val);
-    if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n') || stringVal.includes('\r')) {
+    if (
+      stringVal.includes(',') ||
+      stringVal.includes('"') ||
+      stringVal.includes('\n') ||
+      stringVal.includes('\r')
+    ) {
       return `"${stringVal.replace(/"/g, '""')}"`;
     }
     return stringVal;

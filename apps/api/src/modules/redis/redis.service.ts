@@ -9,10 +9,13 @@ export class RedisService implements OnModuleDestroy {
 
   constructor(private config: ConfigService) {
     const url = this.config.get<string>('redis.url');
-    const isRedisDisabled = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_URL;
+    const isRedisDisabled =
+      process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_URL;
 
     if (isRedisDisabled) {
-      console.warn('⚠️ [Redis] Redis is disabled. Falling back to in-memory store.');
+      console.warn(
+        '⚠️ [Redis] Redis is disabled. Falling back to in-memory store.',
+      );
       this.client = null;
     } else {
       try {
@@ -27,7 +30,10 @@ export class RedisService implements OnModuleDestroy {
           console.warn('⚠️ [Redis] Client error:', err.message);
         });
       } catch (err: any) {
-        console.error('⚠️ [Redis] Failed to initialize Redis client:', err.message);
+        console.error(
+          '⚠️ [Redis] Failed to initialize Redis client:',
+          err.message,
+        );
         this.client = null;
       }
     }

@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 import { Product } from '../products/product.entity';
 
 @Entity('flash_sales')
@@ -24,7 +31,11 @@ export class FlashSale {
   @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive!: boolean;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt!: Date;
 
   @ManyToMany(() => Product, { onDelete: 'CASCADE' })

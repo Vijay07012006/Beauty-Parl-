@@ -1,16 +1,23 @@
-import { Controller, Get, Post, Delete, Param, Headers, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Headers,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { RecentlyViewedService } from './recently-viewed.service';
 import { OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('recently-viewed')
 export class RecentlyViewedController {
-  constructor(
-    private readonly rvService: RecentlyViewedService,
-  ) {}
+  constructor(private readonly rvService: RecentlyViewedService) {}
 
   private userOrSession(req: Request, sessionHeader?: string) {
-    const user = req.user as { id?: number } | undefined;
+    const user = req.user;
     return { userId: user?.id, sessionId: sessionHeader };
   }
 

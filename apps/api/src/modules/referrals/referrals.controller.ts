@@ -5,9 +5,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('referral')
 export class ReferralsController {
-  constructor(
-    private readonly referralService: ReferralsService,
-  ) {}
+  constructor(private readonly referralService: ReferralsService) {}
 
   @Post('generate')
   @UseGuards(JwtAuthGuard)

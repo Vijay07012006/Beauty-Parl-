@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { BlogPost } from './blog-post.entity';
 import { User } from '../auth/user.entity';
 
@@ -10,7 +17,7 @@ export class BlogComment {
   @Column({ name: 'post_id' })
   postId!: number;
 
-  @ManyToOne(() => BlogPost, post => post.comments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => BlogPost, (post) => post.comments, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'post_id' })
   post?: BlogPost;
 
@@ -27,6 +34,10 @@ export class BlogComment {
   @Column({ type: 'boolean', default: false, name: 'is_approved' })
   isApproved!: boolean;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt!: Date;
 }

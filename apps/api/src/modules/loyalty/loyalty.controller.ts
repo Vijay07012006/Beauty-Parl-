@@ -5,9 +5,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('loyalty')
 export class LoyaltyController {
-  constructor(
-    private readonly loyaltyService: LoyaltyService,
-  ) {}
+  constructor(private readonly loyaltyService: LoyaltyService) {}
 
   @Get('points')
   @UseGuards(JwtAuthGuard)
