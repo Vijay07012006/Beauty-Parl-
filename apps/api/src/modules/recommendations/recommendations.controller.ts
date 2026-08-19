@@ -44,7 +44,7 @@ export class RecommendationsController {
   @UseGuards(OptionalJwtAuthGuard)
   async getPersonalized(@Req() req: Request, @Query('limit') limit?: string) {
     const max = this.safeLimit(limit);
-    const user = req.user;
+    const user = req.user as any;
     const userId = user?.id ?? null;
     return this.recommendationsService.getPersonalized(userId, max);
   }

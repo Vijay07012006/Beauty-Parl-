@@ -17,7 +17,7 @@ export class LiveShoppingController {
   constructor(private readonly liveService: LiveShoppingService) {}
 
   private requireAdmin(req: Request): void {
-    const user = req.user;
+    const user = req.user as any;
     // LS-4: super_admin was missing — both admin roles may manage live events
     if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
       throw new UnauthorizedException('Admin privileges required');

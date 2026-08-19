@@ -19,7 +19,7 @@ export class BeautyBoxesController {
   constructor(private readonly boxService: BeautyBoxesService) {}
 
   private requireAdmin(req: Request): void {
-    const user = req.user;
+    const user = req.user as any;
     // M-7: super_admin must be able to manage beauty boxes too
     if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
       throw new UnauthorizedException('Admin privileges required');

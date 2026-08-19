@@ -18,7 +18,7 @@ export class QuizzesController {
   constructor(private readonly quizzesService: QuizzesService) {}
 
   private userOrSession(req: Request, sessionHeader?: string) {
-    const user = req.user;
+    const user = req.user as any;
     return { userId: user?.id, sessionId: sessionHeader };
   }
 

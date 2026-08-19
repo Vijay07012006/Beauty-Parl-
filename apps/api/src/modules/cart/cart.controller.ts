@@ -13,7 +13,7 @@ export class CartController {
     @Body() body: { items: any[]; email?: string },
     @Req() req: Request,
   ) {
-    const user = req.user;
+    const user = req.user as any;
     const userId = user?.id;
 
     // A client-supplied email may only be used to key a guest cart if it matches the authenticated user.

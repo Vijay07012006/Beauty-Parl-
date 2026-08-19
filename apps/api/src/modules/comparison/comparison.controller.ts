@@ -17,7 +17,7 @@ export class ComparisonController {
   constructor(private readonly comparisonService: ComparisonService) {}
 
   private userOrSession(req: Request, sessionHeader?: string) {
-    const user = req.user;
+    const user = req.user as any;
     return { userId: user?.id, sessionId: sessionHeader };
   }
 

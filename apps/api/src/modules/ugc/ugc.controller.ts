@@ -19,7 +19,7 @@ export class UgcController {
   constructor(private readonly ugcService: UgcService) {}
 
   private requireAdmin(req: Request): void {
-    const user = req.user;
+    const user = req.user as any;
     if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
       throw new UnauthorizedException(
         'Access denied. Administrator privileges required.',
@@ -33,7 +33,7 @@ export class UgcController {
     @Body() body: { productId: number; imageUrl: string; caption?: string },
     @Req() req: Request,
   ) {
-    const userId = (req.user as { id: number }).id;
+    const userId = (req.user as any).id;
     return this.ugcService.uploadPhoto(
       body.productId,
       body.imageUrl,
