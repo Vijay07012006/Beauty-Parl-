@@ -37,7 +37,7 @@ export class SupportService {
 
     // Create ticket
     const ticket = this.ticketRepo.create({
-      userId: user?.id || null,
+      userId: user?.id ? Number(user.id) : null,
       guestEmail: user?.email || data.guestEmail || 'guest@beautyparle.com', // ✅ Capture real user email
       subject: data.subject,
       message: data.message,

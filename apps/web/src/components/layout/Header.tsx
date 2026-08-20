@@ -94,21 +94,21 @@ export function Header() {
           <Sparkles size={16} className="text-accent animate-pulse" />
         </Link>
  
-        {/* Desktop Navigation — visible from md (768px) */}
-        <nav className="hidden md:flex items-center gap-4 md:gap-5 lg:gap-6 xl:gap-8">
-          <Link href={`/${locale}/products`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
+        {/* Desktop Navigation — visible from lg (1024px) */}
+        <nav className="hidden lg:flex items-center gap-2 xl:gap-4">
+          <Link href={`/${locale}/products`} className="text-xs xl:text-sm font-medium hover:text-primary transition-colors relative group">
             {t('products')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
-          <Link href={`/${locale}/categories`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
+          <Link href={`/${locale}/categories`} className="text-xs xl:text-sm font-medium hover:text-primary transition-colors relative group">
             {t('categories')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
-          <Link href={`/${locale}/booking`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
+          <Link href={`/${locale}/booking`} className="text-xs xl:text-sm font-medium hover:text-primary transition-colors relative group">
             {t('book_appointment')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
-          <Link href={`/${locale}/looks`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
+          <Link href={`/${locale}/looks`} className="text-xs xl:text-sm font-medium hover:text-primary transition-colors relative group">
             Looks
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
@@ -121,7 +121,7 @@ export function Header() {
             onMouseLeave={() => setIsMoreOpen(false)}
           >
             <button
-              className="text-xs lg:text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 cursor-pointer select-none"
+              className="text-xs xl:text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 cursor-pointer select-none"
             >
               <span>More</span>
               <ChevronDown size={12} className={`text-muted-foreground transition-transform duration-200 ${isMoreOpen ? 'rotate-180' : ''}`} />
@@ -181,11 +181,11 @@ export function Header() {
               )}
             </AnimatePresence>
           </div>
-          <Link href={`/${locale}/live-shopping`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
+          <Link href={`/${locale}/live-shopping`} className="text-xs xl:text-sm font-medium hover:text-primary transition-colors relative group">
             Live Shopping
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
-          <Link href={`/${locale}/loyalty`} className="text-xs lg:text-sm font-medium hover:text-primary transition-colors relative group">
+          <Link href={`/${locale}/loyalty`} className="text-xs xl:text-sm font-medium hover:text-primary transition-colors relative group">
             Loyalty
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
@@ -197,7 +197,7 @@ export function Header() {
             onMouseLeave={() => setIsExploreOpen(false)}
           >
             <button
-              className="text-xs lg:text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 cursor-pointer select-none"
+              className="text-xs xl:text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 cursor-pointer select-none"
             >
               <span>Explore</span>
               <ChevronDown size={12} className={`transition-transform duration-200 ${isExploreOpen ? 'rotate-180' : ''}`} />
@@ -348,7 +348,7 @@ export function Header() {
 
           {/* Auth Button */}
           {user ? (
-            <div className="hidden md:flex items-center gap-3 lg:gap-4 text-xs font-semibold">
+            <div className="hidden lg:flex items-center gap-3 lg:gap-4 text-xs font-semibold">
               {user.loyaltyPoints !== undefined && (
                 <Link href={`/${locale}/loyalty`} className="px-2 py-0.5 bg-primary/10 border border-primary/20 text-primary rounded-full font-mono font-bold text-[10px]" title="Loyalty Points">
                   ⭐ {user.loyaltyPoints} pts
@@ -359,14 +359,14 @@ export function Header() {
               </Link>
             </div>
           ) : (
-            <Link href={`/${locale}/auth/login`} className="hidden md:block text-sm hover:text-primary transition-colors font-medium">
+            <Link href={`/${locale}/auth/login`} className="hidden lg:block text-sm hover:text-primary transition-colors font-medium">
               {t('sign_in')}
             </Link>
           )}
  
-          {/* Mobile Menu Toggle — only on mobile (<md) */}
+          {/* Mobile Menu Toggle — only on mobile (<lg) */}
           <button 
-            className="md:hidden p-2 hover:bg-secondary rounded-full transition-colors cursor-pointer text-foreground"
+            className="lg:hidden p-2 hover:bg-secondary rounded-full transition-colors cursor-pointer text-foreground"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -382,7 +382,7 @@ export function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-border/50 bg-card overflow-hidden shadow-lg transition-colors duration-300"
+            className="lg:hidden border-t border-border/50 bg-card overflow-hidden shadow-lg transition-colors duration-300"
           >
             <nav className="container mx-auto px-4 py-4 flex flex-col gap-1.5">
               

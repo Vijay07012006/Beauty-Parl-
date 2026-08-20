@@ -810,7 +810,7 @@ Be conversational, helpful, and witty. Always invoke the relevant tool if the us
                 serviceErr,
               );
               const ticket = this.ticketRepo.create({
-                userId: userObj?.id || null,
+                userId: userObj?.id ? Number(userObj.id) : null,
                 guestEmail: userObj?.email || 'guest@beautyparle.com',
                 subject: toolArgs.subject,
                 message: toolArgs.message,

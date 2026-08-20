@@ -11,7 +11,7 @@ import {
   BadRequestException,
   UseInterceptors,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../auth/user.entity';
@@ -22,6 +22,7 @@ export class SupportController {
   constructor(private supportService: SupportService) {}
 
   @Post('tickets')
+  @UseGuards(OptionalJwtAuthGuard)
   async createTicket(
     @Body() body: { subject: string; message: string; orderId?: number },
     @Request() req: any,
@@ -43,7 +44,7 @@ export class SupportController {
     if (isAdmin) {
       return this.supportService.getTickets(status);
     }
-    const tickets = await this.supportService.getUserTickets(req.user.id);
+    const tickets = await this.supportService.getUserTickets(Number(req.user.id));
     console.log(`📋 Found ${tickets.length} tickets for user ${req.user.id}`);
     return tickets;
   }
@@ -100,24 +101,24 @@ export class SupportController {
   @Get('my-tickets')
   @UseGuards(JwtAuthGuard)
   async getMyTickets(@Request() req: any) {
-    return this.supportService.getMyTickets(req.user.id);
+    return this.supportService.getMyTickets(Number(req.user.id));
   }
 
   @Get('my-tickets/:id')
   @UseGuards(JwtAuthGuard)
   async getMyTicketDetails(@Param('id') id: number, @Request() req: any) {
-    return this.supportService.getMyTicketDetails(Number(id), req.user.id);
+    return this.supportService.getMyTicketDetails(Number(id), Number(req.user.id));
   }
 
   @Get('my-notifications')
   @UseGuards(JwtAuthGuard)
   async getMyNotifications(@Request() req: any) {
-    return this.supportService.getMyNotifications(req.user.id);
+    return this.supportService.getMyNotifications(Number(req.user.id));
   }
 
   @Put('my-notifications/read')
   @UseGuards(JwtAuthGuard)
   async markMyNotificationsRead(@Request() req: any) {
-    return this.supportService.markMyNotificationsRead(req.user.id);
+    return this.supportService.markMyNotificationsRead(Number(req.user.id));
   }
 }
