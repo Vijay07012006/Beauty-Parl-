@@ -208,6 +208,29 @@ export function Header() {
                       </Link>
                     </div>
                   </div>
+
+                  {/* Column 4: Social & Community */}
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Social & Community</p>
+                    <div className="flex flex-col gap-1">
+                      <Link href={`/${locale}/live/room/CS-LOBBY`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        👥 Live Co-Shopping
+                        <span className="block text-[9px] text-muted-foreground font-normal">Shop together with video stream</span>
+                      </Link>
+                      <Link href={`/${locale}/community`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        🗣️ Community Forum
+                        <span className="block text-[9px] text-muted-foreground font-normal">Skincare advice & discussions</span>
+                      </Link>
+                      <Link href={`/${locale}/creator/dashboard`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        ✨ Creator Dashboard
+                        <span className="block text-[9px] text-muted-foreground font-normal">Track looks, clicks & earnings</span>
+                      </Link>
+                      <Link href={`/${locale}/creator/looks`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        📸 Creator Feed
+                        <span className="block text-[9px] text-muted-foreground font-normal">Explore looks & shop creations</span>
+                      </Link>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

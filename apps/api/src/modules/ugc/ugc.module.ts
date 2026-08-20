@@ -5,10 +5,21 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UgcService } from './ugc.service';
 import { UgcController } from './ugc.controller';
 import { UgcPhoto } from './ugc-photo.entity';
+import { CreatorLook } from './creator-look.entity';
+import { CommissionEarning } from './commission-earning.entity';
+import { CreatorLookClick } from './creator-look-click.entity';
+import { User } from '../auth/user.entity';
+import { OrderSubscriber } from './order.subscriber';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UgcPhoto]),
+    TypeOrmModule.forFeature([
+      UgcPhoto,
+      CreatorLook,
+      CommissionEarning,
+      CreatorLookClick,
+      User,
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -19,7 +30,7 @@ import { UgcPhoto } from './ugc-photo.entity';
     }),
   ],
   controllers: [UgcController],
-  providers: [UgcService],
+  providers: [UgcService, OrderSubscriber],
   exports: [UgcService],
 })
 export class UgcModule {}

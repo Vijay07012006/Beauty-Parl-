@@ -123,6 +123,14 @@ import { ProductEmbedding } from './modules/visual-search/product-embedding.enti
 import { VisualSearchModule } from './modules/visual-search/visual-search.module';
 import { SkinDnaModule } from './modules/skin-dna/skin-dna.module';
 
+import { Room } from './modules/co-shopping/entities/room.entity';
+import { CreatorLook } from './modules/ugc/creator-look.entity';
+import { CommissionEarning } from './modules/ugc/commission-earning.entity';
+import { CreatorLookClick } from './modules/ugc/creator-look-click.entity';
+import { ForumCategory, Thread, Reply } from './modules/forums/entities/forum.entities';
+import { CoShoppingModule } from './modules/co-shopping/co-shopping.module';
+import { ForumsModule } from './modules/forums/forums.module';
+
 import configuration from './config/configuration';
 
 @Module({
@@ -199,6 +207,13 @@ import configuration from './config/configuration';
           BlogPost,
           BlogComment,
           ProductEmbedding,
+          Room,
+          CreatorLook,
+          CommissionEarning,
+          CreatorLookClick,
+          ForumCategory,
+          Thread,
+          Reply,
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -281,6 +296,8 @@ import configuration from './config/configuration';
     ObservabilityModule,
     VisualSearchModule,
     SkinDnaModule,
+    CoShoppingModule,
+    ForumsModule,
   ],
   controllers: [AppController],
   providers: [
