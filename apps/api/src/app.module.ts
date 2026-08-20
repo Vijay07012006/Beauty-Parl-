@@ -119,6 +119,10 @@ import { BlogComment } from './modules/blog/blog-comment.entity';
 import { MarketingModule } from './modules/marketing/marketing.module';
 import { ObservabilityModule } from './observability/observability.module';
 
+import { ProductEmbedding } from './modules/visual-search/product-embedding.entity';
+import { VisualSearchModule } from './modules/visual-search/visual-search.module';
+import { SkinDnaModule } from './modules/skin-dna/skin-dna.module';
+
 import configuration from './config/configuration';
 
 @Module({
@@ -194,6 +198,7 @@ import configuration from './config/configuration';
           FlashSale,
           BlogPost,
           BlogComment,
+          ProductEmbedding,
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -274,6 +279,8 @@ import configuration from './config/configuration';
     BlogModule,
     MarketingModule,
     ObservabilityModule,
+    VisualSearchModule,
+    SkinDnaModule,
   ],
   controllers: [AppController],
   providers: [
