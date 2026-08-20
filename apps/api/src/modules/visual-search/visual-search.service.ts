@@ -57,7 +57,7 @@ export class VisualSearchService implements OnModuleInit {
             'Content-Type': 'application/octet-stream',
           },
           method: 'POST',
-          body: imageBuffer as any,
+          body: new Uint8Array(imageBuffer),
         },
       );
 
