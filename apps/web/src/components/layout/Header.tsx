@@ -289,57 +289,65 @@ export function Header() {
               <Link href={`/${locale}/profile`} className="hover:text-primary transition-colors">
                 {t('profile')}
               </Link>
+            </div>
+          ) : (
+            <Link href={`/${locale}/auth/login`} className="hidden lg:block text-sm hover:text-primary transition-colors font-medium">
+              {t('sign_in')}
+            </Link>
+          )}
 
-              {/* More Dropdown (Placed next to Profile) */}
-              <div
-                className="relative"
-                ref={moreRef}
-                onMouseEnter={() => setIsMoreOpen(true)}
-                onMouseLeave={() => setIsMoreOpen(false)}
-              >
-                <button
-                  className="text-xs xl:text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1 cursor-pointer select-none"
+          {/* More Dropdown (Always visible at the far right end on desktop) */}
+          <div
+            className="hidden lg:block relative"
+            ref={moreRef}
+            onMouseEnter={() => setIsMoreOpen(true)}
+            onMouseLeave={() => setIsMoreOpen(false)}
+          >
+            <button
+              className="text-xs xl:text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1 cursor-pointer select-none"
+            >
+              <span>More</span>
+              <ChevronDown size={12} className={`text-muted-foreground transition-transform duration-200 ${isMoreOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            <AnimatePresence>
+              {isMoreOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-full right-0 mt-2 bg-card rounded-2xl shadow-xl border border-border/50 p-2 w-48 z-50 flex flex-col gap-0.5"
                 >
-                  <span>More</span>
-                  <ChevronDown size={12} className={`text-muted-foreground transition-transform duration-200 ${isMoreOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                <AnimatePresence>
-                  {isMoreOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute top-full right-0 mt-2 bg-card rounded-2xl shadow-xl border border-border/50 p-2 w-48 z-50 flex flex-col gap-0.5"
-                    >
-                      <Link
-                        href={`/${locale}/orders`}
-                        onClick={() => setIsMoreOpen(false)}
-                        className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
-                      >
-                        {t('orders')}
-                      </Link>
-                      <Link
-                        href={`/${locale}/profile/tickets`}
-                        onClick={() => setIsMoreOpen(false)}
-                        className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
-                      >
-                        My Tickets
-                      </Link>
-                      <Link
-                        href={`/${locale}/subscriptions`}
-                        onClick={() => setIsMoreOpen(false)}
-                        className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
-                      >
-                        Subscriptions
-                      </Link>
-                      <Link
-                        href={`/${locale}/ai-history`}
-                        onClick={() => setIsMoreOpen(false)}
-                        className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
-                      >
-                        AI History
-                      </Link>
+                  <Link
+                    href={`/${locale}/orders`}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
+                  >
+                    {t('orders')}
+                  </Link>
+                  <Link
+                    href={`/${locale}/profile/tickets`}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
+                  >
+                    My Tickets
+                  </Link>
+                  <Link
+                    href={`/${locale}/subscriptions`}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
+                  >
+                    Subscriptions
+                  </Link>
+                  <Link
+                    href={`/${locale}/ai-history`}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="block px-3 py-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
+                  >
+                    AI History
+                  </Link>
+                  {user && (
+                    <>
                       <div className="border-t border-border/40 my-1" />
                       <button
                         onClick={() => {
@@ -350,16 +358,12 @@ export function Header() {
                       >
                         {t('logout')}
                       </button>
-                    </motion.div>
+                    </>
                   )}
-                </AnimatePresence>
-              </div>
-            </div>
-          ) : (
-            <Link href={`/${locale}/auth/login`} className="hidden lg:block text-sm hover:text-primary transition-colors font-medium">
-              {t('sign_in')}
-            </Link>
-          )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
  
           {/* Mobile Menu Toggle — only on mobile (<lg) */}
           <button 
