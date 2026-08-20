@@ -209,7 +209,7 @@ export function Header() {
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 15 }}
-                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-card/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-border/50 p-6 w-[560px] z-50 grid grid-cols-3 gap-6"
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-card/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-border/50 p-6 w-screen max-w-4xl z-50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                 >
                   {/* Column 1: AI Features */}
                   <div className="space-y-3">

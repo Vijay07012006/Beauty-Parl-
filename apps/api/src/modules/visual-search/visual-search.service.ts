@@ -39,21 +39,34 @@ export class VisualSearchService implements OnModuleInit {
     });
   }
 
-  /**
-   * Generates a 768-dimensional embedding vector for an image buffer.
-   * If CLIP returns 512 dimensions, we pad it with zeros to match database schema (768).
-   */
   async generateEmbedding(imageBuffer: Buffer): Promise<number[]> {
-    if (!this.hf) {
-      throw new Error('Hugging Face Inference client is not configured.');
+    const apiKey =
+      this.configService.get<string>('HUGGINGFACE_API_KEY') ||
+      process.env.HUGGINGFACE_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('Hugging Face API key is not configured.');
     }
 
     try {
-      const result = await this.hf.featureExtraction({
-        model: this.MODEL_NAME,
-        inputs: imageBuffer as any,
-      });
+      const response = await fetch(
+        'https://api-inference.huggingface.co/models/openai/clip-vit-base-patch32',
+        {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/octet-stream',
+          },
+          method: 'POST',
+          body: imageBuffer as any,
+        },
+      );
 
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Hugging Face API error: ${error}`);
+      }
+
+      const result = (await response.json()) as any;
       let vector: number[] = [];
       if (Array.isArray(result)) {
         if (Array.isArray(result[0])) {
@@ -80,7 +93,7 @@ export class VisualSearchService implements OnModuleInit {
       return vector;
     } catch (err: any) {
       console.error(
-        `❌ Hugging Face feature extraction failed for model ${this.MODEL_NAME}:`,
+        `❌ Hugging Face feature extraction failed via direct fetch:`,
         err.message || err,
       );
       throw err;
