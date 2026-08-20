@@ -156,9 +156,14 @@ export class VisualSearchService implements OnModuleInit {
         console.log(
           `🖼️ Seeding visual embedding for product ${product.id} (${product.name})...`,
         );
-        const response = await fetch(product.image);
+        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const imageUrl = product.image.startsWith('http')
+          ? product.image
+          : `${baseUrl}${product.image.startsWith('/') ? '' : '/'}${product.image}`;
+
+        const response = await fetch(imageUrl);
         if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${response.statusText}`);
+          throw new Error(`Failed to fetch image from ${imageUrl}: ${response.statusText}`);
         }
 
         const arrayBuffer = await response.arrayBuffer();

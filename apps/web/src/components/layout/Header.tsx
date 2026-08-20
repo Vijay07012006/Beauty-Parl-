@@ -227,6 +227,18 @@ export function Header() {
                         🗓 Routine Builder
                         <span className="block text-[9px] text-muted-foreground font-normal">Day & night custom routines</span>
                       </Link>
+                      <Link href={`/${locale}/try-on/ar`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        🕶️ Virtual Try-On
+                        <span className="block text-[9px] text-muted-foreground font-normal">AR lipstick filter overlay</span>
+                      </Link>
+                      <Link href={`/${locale}/my-skin/dna`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        🧬 Skin DNA Dashboard
+                        <span className="block text-[9px] text-muted-foreground font-normal">Personalized score metrics</span>
+                      </Link>
+                      <Link href={`/${locale}/search/visual`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
+                        🔍 Visual Search
+                        <span className="block text-[9px] text-muted-foreground font-normal">Reverse search via image</span>
+                      </Link>
                     </div>
                   </div>
 
@@ -431,6 +443,15 @@ export function Header() {
               </Link>
               <Link href={`/${locale}/routine-builder`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
                 Routine Builder
+              </Link>
+              <Link href={`/${locale}/try-on/ar`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                Virtual Try-On
+              </Link>
+              <Link href={`/${locale}/my-skin/dna`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                Skin DNA Dashboard
+              </Link>
+              <Link href={`/${locale}/search/visual`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
+                Visual Search
               </Link>
               <Link href={`/${locale}/beauty-box`} className="text-xs font-semibold hover:text-primary transition-colors py-2 px-3 hover:bg-secondary/40 rounded-xl" onClick={() => setIsMenuOpen(false)}>
                 Beauty Box
