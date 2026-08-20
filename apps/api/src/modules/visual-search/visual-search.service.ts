@@ -63,7 +63,8 @@ export class VisualSearchService implements OnModuleInit {
 
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(`Hugging Face API error: ${error}`);
+        console.error(`❌ HF API Error: ${response.status} - ${error}`);
+        throw new Error(`Hugging Face API error: ${response.status} - ${error}`);
       }
 
       const result = (await response.json()) as any;
@@ -141,6 +142,19 @@ export class VisualSearchService implements OnModuleInit {
     }));
   }
 
+  private getBaseUrl(): string {
+    let url = this.configService.get<string>('FRONTEND_URL') ||
+              process.env.FRONTEND_URL ||
+              process.env.VERCEL_URL ||
+              process.env.RENDER_EXTERNAL_URL ||
+              'http://localhost:3000';
+
+    if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
+    return url.replace(/\/$/, '');
+  }
+
   /**
    * Seed missing product embeddings in the background
    */
@@ -150,63 +164,70 @@ export class VisualSearchService implements OnModuleInit {
     // Wait 10 seconds after boot to let app settle
     await new Promise((resolve) => setTimeout(resolve, 10000));
 
-    const products = await this.productRepository.find();
-    console.log(
-      `ℹ️ Checking visual search embeddings for ${products.length} products...`,
-    );
+    try {
+      const products = await this.productRepository
+        .createQueryBuilder('product')
+        .leftJoin(ProductEmbedding, 'pe', 'pe.productId = product.id')
+        .where('pe.productId IS NULL')
+        .getMany();
 
-    let seededCount = 0;
-    for (const product of products) {
-      if (!product.image) continue;
+      if (products.length === 0) {
+        console.log(`ℹ️ All products already have visual search embeddings.`);
+        return;
+      }
 
-      const existing = await this.embeddingRepository.findOne({
-        where: { productId: product.id },
-      });
+      console.log(
+        `ℹ️ Checking visual search embeddings: ${products.length} products need embeddings.`,
+      );
 
-      if (existing) continue;
+      let seededCount = 0;
+      const baseUrl = this.getBaseUrl();
 
-      try {
-        console.log(
-          `🖼️ Seeding visual embedding for product ${product.id} (${product.name})...`,
-        );
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        const imageUrl = product.image.startsWith('http')
-          ? product.image
-          : `${baseUrl}${product.image.startsWith('/') ? '' : '/'}${product.image}`;
+      for (const product of products) {
+        if (!product.image) continue;
 
-        const response = await fetch(imageUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image from ${imageUrl}: ${response.statusText}`);
+        try {
+          console.log(
+            `🖼️ Seeding visual embedding for product ${product.id} (${product.name})...`,
+          );
+          const imageUrl = product.image.startsWith('http')
+            ? product.image
+            : `${baseUrl}/${product.image.replace(/^\//, '')}`;
+
+          const response = await fetch(imageUrl);
+          if (!response.ok) {
+            console.warn(`⚠️ Skipping embedding for product ${product.id}: Image not accessible`);
+            continue;
+          }
+
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+
+          const embedding = await this.generateEmbedding(buffer);
+
+          const entity = new ProductEmbedding();
+          entity.productId = product.id;
+          entity.embedding = embedding;
+
+          await this.embeddingRepository.save(entity);
+          seededCount++;
+
+          // Add 1s delay to respect Hugging Face API rate limits
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        } catch (err: any) {
+          console.warn(
+            `⚠️ Skipping embedding for product ${product.id}: Image not accessible`,
+          );
         }
+      }
 
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        const embedding = await this.generateEmbedding(buffer);
-
-        const entity = new ProductEmbedding();
-        entity.productId = product.id;
-        entity.embedding = embedding;
-
-        await this.embeddingRepository.save(entity);
-        seededCount++;
-
-        // Add 1s delay to respect Hugging Face API rate limits
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      } catch (err: any) {
-        console.warn(
-          `⚠️ Failed to generate visual embedding for product ${product.id}:`,
-          err.message || err,
+      if (seededCount > 0) {
+        console.log(
+          `✅ Visual search seeding complete. Added embeddings for ${seededCount} products.`,
         );
       }
-    }
-
-    if (seededCount > 0) {
-      console.log(
-        `✅ Visual search seeding complete. Added embeddings for ${seededCount} products.`,
-      );
-    } else {
-      console.log(`ℹ️ All products already have visual search embeddings.`);
+    } catch (err: any) {
+      console.error('❌ Error during background visual search seeding:', err.message || err);
     }
   }
 }
