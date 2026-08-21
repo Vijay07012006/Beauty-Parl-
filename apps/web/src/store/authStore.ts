@@ -5,7 +5,7 @@ interface User {
   id: number;
   email: string;
   name: string;
-  role: 'user' | 'admin' | 'super_admin';
+  role: 'user' | 'admin' | 'super_admin' | 'vendor';
   phone?: string;
   isVerified?: boolean;
   loyaltyPoints?: number;

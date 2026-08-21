@@ -44,6 +44,9 @@ export class Product {
   @Column({ nullable: true })
   brand?: string;
 
+  @Column({ name: 'vendor_id', nullable: true })
+  vendorId?: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 

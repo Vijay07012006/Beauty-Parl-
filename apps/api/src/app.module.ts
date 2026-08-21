@@ -131,6 +131,16 @@ import { ForumCategory, Thread, Reply } from './modules/forums/entities/forum.en
 import { CoShoppingModule } from './modules/co-shopping/co-shopping.module';
 import { ForumsModule } from './modules/forums/forums.module';
 
+import { Vendor } from './modules/vendor/entities/vendor.entity';
+import { WholesaleOrder } from './modules/wholesale/entities/wholesale.entity';
+import { WebhookSubscription, WebhookAttempt } from './modules/webhooks/entities/webhook.entity';
+import { ABTest } from './modules/ab-testing/entities/ab-test.entity';
+
+import { VendorModule } from './modules/vendor/vendor.module';
+import { WholesaleModule } from './modules/wholesale/wholesale.module';
+import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { ABTestingModule } from './modules/ab-testing/ab-testing.module';
+
 import configuration from './config/configuration';
 
 @Module({
@@ -214,6 +224,11 @@ import configuration from './config/configuration';
           ForumCategory,
           Thread,
           Reply,
+          Vendor,
+          WholesaleOrder,
+          WebhookSubscription,
+          WebhookAttempt,
+          ABTest,
         ],
         autoLoadEntities: true,
         // M-2: auto-schema only by default outside production; production requires explicit DB_SYNCHRONIZE=true
@@ -298,6 +313,10 @@ import configuration from './config/configuration';
     SkinDnaModule,
     CoShoppingModule,
     ForumsModule,
+    VendorModule,
+    WholesaleModule,
+    WebhooksModule,
+    ABTestingModule,
   ],
   controllers: [AppController],
   providers: [

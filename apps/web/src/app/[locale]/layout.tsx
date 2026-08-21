@@ -2,6 +2,7 @@ import '../globals.css';
 import { Toaster } from 'sonner';
 import { ErrorBoundaryProvider } from '@/components/providers/ErrorBoundaryProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { ABTestProvider } from '@/components/ab-testing/abTestContext';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -61,9 +62,11 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ErrorBoundaryProvider>
             <ThemeProvider>
-              {children}
-              <JarvisChat />
-              <SocialProof />
+              <ABTestProvider>
+                {children}
+                <JarvisChat />
+                <SocialProof />
+              </ABTestProvider>
             </ThemeProvider>
           </ErrorBoundaryProvider>
         </NextIntlClientProvider>
