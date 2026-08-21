@@ -38,9 +38,10 @@ export default function NewThreadPage() {
     async function loadCategories() {
       try {
         const res = await api.get('/forums/categories');
-        setCategories(res.data);
-        if (res.data.length > 0) {
-          setCategoryId(res.data[0].id.toString());
+        const cats = Array.isArray(res.data) ? res.data : [];
+        setCategories(cats);
+        if (cats.length > 0) {
+          setCategoryId(cats[0].id.toString());
         }
       } catch {
         toast.error('Failed to load forum categories');
@@ -117,7 +118,7 @@ export default function NewThreadPage() {
               onChange={(e) => setCategoryId(e.target.value)}
               className="w-full text-xs p-3 bg-secondary/20 border border-border/40 rounded-2xl focus:outline-none focus:border-primary/50 cursor-pointer"
             >
-              {categories.map((cat) => (
+              {(Array.isArray(categories) ? categories : []).map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
                 </option>

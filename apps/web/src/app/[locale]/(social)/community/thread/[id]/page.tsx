@@ -125,14 +125,14 @@ export default function ThreadDetailsPage() {
 
         <div className="space-y-6">
           <h3 className="text-lg font-bold font-playfair flex items-center gap-2 border-b border-border/40 pb-3">
-            <MessageSquare size={18} /> Replies ({thread.replies?.length || 0})
+            <MessageSquare size={18} /> Replies ({Array.isArray(thread.replies) ? thread.replies.length : 0})
           </h3>
 
           <div className="space-y-4">
-            {thread.replies?.length === 0 ? (
+            {(!Array.isArray(thread.replies) || thread.replies.length === 0) ? (
               <p className="text-xs text-muted-foreground italic py-4">No replies posted yet.</p>
             ) : (
-              thread.replies?.map((reply) => (
+              (Array.isArray(thread.replies) ? thread.replies : []).map((reply) => (
                 <div
                   key={reply.id}
                   className={`border rounded-3xl p-5 shadow-sm transition-all ${reply.isHidden ? 'bg-rose-50/10 border-rose-200/20' : 'bg-card border-border/40'}`}

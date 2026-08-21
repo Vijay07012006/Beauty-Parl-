@@ -265,7 +265,7 @@ export default function CoShoppingRoomPage() {
               </div>
             </div>
 
-            {participants
+            {(Array.isArray(participants) ? participants : [])
               .filter((p) => socketRef.current && p.socketId !== socketRef.current.id)
               .map((p) => {
                 const stream = streams[p.socketId];
@@ -304,7 +304,7 @@ export default function CoShoppingRoomPage() {
 
             <div className="space-y-4 overflow-y-auto max-h-[350px] pr-1">
               <AnimatePresence>
-                {cartItems.length === 0 ? (
+                {(!Array.isArray(cartItems) || cartItems.length === 0) ? (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -313,7 +313,7 @@ export default function CoShoppingRoomPage() {
                     Your collaborative cart is empty. Add products to populate it!
                   </motion.div>
                 ) : (
-                  cartItems.map((item) => (
+                  (Array.isArray(cartItems) ? cartItems : []).map((item) => (
                     <motion.div
                       key={item.productId}
                       initial={{ opacity: 0, y: 10 }}

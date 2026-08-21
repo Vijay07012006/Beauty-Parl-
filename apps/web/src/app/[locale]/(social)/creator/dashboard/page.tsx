@@ -35,8 +35,8 @@ export default function CreatorDashboardPage() {
   const fetchDashboardData = async () => {
     try {
       const res = await api.get('/ugc/creator/dashboard');
-      setStats(res.data.stats);
-      setEarnings(res.data.earnings || []);
+      setStats(res.data.stats || { looksCount: 0, totalClicks: 0, totalEarnings: 0 });
+      setEarnings(Array.isArray(res.data?.earnings) ? res.data.earnings : []);
     } catch {
       toast.error('Failed to load creator dashboard statistics');
     }
@@ -53,7 +53,7 @@ export default function CreatorDashboardPage() {
       await fetchDashboardData();
       try {
         const prodRes = await api.get('/products');
-        setProducts(prodRes.data || []);
+        setProducts(Array.isArray(prodRes.data) ? prodRes.data : []);
       } catch {
         toast.error('Failed to load store products list');
       } finally {
@@ -189,7 +189,7 @@ export default function CreatorDashboardPage() {
                   Tag Products (Tag at least one)
                 </label>
                 <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto border border-border/40 rounded-2xl p-3 bg-secondary/20">
-                  {products.map((prod) => {
+                  {(Array.isArray(products) ? products : []).map((prod) => {
                     const isSelected = selectedProductIds.includes(prod.id);
                     return (
                       <button
@@ -228,7 +228,7 @@ export default function CreatorDashboardPage() {
                     No commissions earned yet. Share looks to get referral traffic!
                   </p>
                 ) : (
-                  earnings.map((earn) => (
+                  (Array.isArray(earnings) ? earnings : []).map((earn) => (
                     <div
                       key={earn.id}
                       className="p-3 bg-secondary/15 rounded-2xl border border-border/25 flex items-center justify-between"

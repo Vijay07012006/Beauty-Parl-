@@ -20,6 +20,7 @@ export function ARCanvas({ lipstickColor, opacity, glossiness }: ARCanvasProps) 
   const [loading, setLoading] = useState(true);
   const [statusText, setStatusText] = useState('Initializing camera...');
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -189,7 +190,7 @@ export function ARCanvas({ lipstickColor, opacity, glossiness }: ARCanvasProps) 
         faceLandmarker.close();
       }
     };
-  }, [lipstickColor, opacity, glossiness]);
+  }, [lipstickColor, opacity, glossiness, retryCount]);
 
   return (
     <div className="relative w-full aspect-[4/3] max-w-2xl bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10">
@@ -225,7 +226,12 @@ export function ARCanvas({ lipstickColor, opacity, glossiness }: ARCanvasProps) 
           <h3 className="font-bold text-zinc-100">Camera Error</h3>
           <p className="text-xs text-red-400 max-w-sm mt-2">{cameraError}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              setCameraError(null);
+              setLoading(true);
+              setStatusText('Retrying camera access...');
+              setRetryCount((prev) => prev + 1);
+            }}
             className="mt-6 px-5 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-full text-xs font-bold transition shadow-lg cursor-pointer"
           >
             Retry Connection

@@ -41,10 +41,10 @@ export default function CreatorLooksFeedPage() {
     async function loadFeed() {
       try {
         const looksRes = await api.get('/ugc/looks');
-        setLooks(looksRes.data || []);
+        setLooks(Array.isArray(looksRes.data) ? looksRes.data : []);
 
         const prodRes = await api.get('/products');
-        const prods = prodRes.data as Product[];
+        const prods = Array.isArray(prodRes.data) ? prodRes.data : [];
         const pMap: { [id: number]: Product } = {};
         prods.forEach((p) => {
           pMap[p.id] = p;
@@ -107,7 +107,7 @@ export default function CreatorLooksFeedPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {looks.map((look) => (
+            {(Array.isArray(looks) ? looks : []).map((look) => (
               <div
                 key={look.id}
                 className="bg-card border border-border/40 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
@@ -147,7 +147,7 @@ export default function CreatorLooksFeedPage() {
                       <Tag size={10} /> Tagged Products
                     </p>
                     <div className="space-y-2">
-                      {look.taggedProductIds.map((prodId) => {
+                      {(Array.isArray(look.taggedProductIds) ? look.taggedProductIds : []).map((prodId) => {
                         const product = productsMap[prodId];
                         if (!product) return null;
                         return (

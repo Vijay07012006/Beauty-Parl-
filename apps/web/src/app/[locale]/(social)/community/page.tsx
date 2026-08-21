@@ -36,12 +36,12 @@ export default function ForumCategoriesPage() {
     async function loadData() {
       try {
         const catRes = await api.get('/forums/categories');
-        const cats = catRes.data as Category[];
+        const cats = Array.isArray(catRes.data) ? (catRes.data as Category[]) : [];
         setCategories(cats);
 
         const threadPromises = cats.map(async (cat) => {
           const res = await api.get(`/forums/category/${cat.id}/threads`);
-          return { catId: cat.id, threads: res.data.slice(0, 3) as Thread[] };
+          return { catId: cat.id, threads: (Array.isArray(res.data) ? res.data : []).slice(0, 3) as Thread[] };
         });
 
         const results = await Promise.all(threadPromises);
@@ -87,7 +87,7 @@ export default function ForumCategoriesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {categories.map((category) => {
+            {(Array.isArray(categories) ? categories : []).map((category) => {
               const threads = categoryThreads[category.id] || [];
               return (
                 <div
@@ -108,7 +108,7 @@ export default function ForumCategoriesPage() {
                           No threads posted yet. Be the first!
                         </p>
                       ) : (
-                        threads.map((thread) => (
+                        (Array.isArray(threads) ? threads : []).map((thread) => (
                           <Link
                             key={thread.id}
                             href={`/${locale}/community/thread/${thread.id}`}
