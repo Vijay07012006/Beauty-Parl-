@@ -11,6 +11,7 @@ import { useWishlistStore } from '@/store/wishlistStore';
 import { useTranslations } from 'next-intl';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { UserNotificationBell } from '@/components/ui/NotificationBell';
+import { NAVIGATION_ITEMS } from '@/config/navigation';
 
 const languages = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
@@ -141,96 +142,25 @@ export function Header() {
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 15 }}
-                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-card/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-border/50 p-6 w-screen max-w-4xl z-50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-card/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-border/50 p-6 w-screen max-w-2xl z-50 grid grid-cols-1 sm:grid-cols-2 gap-6"
                 >
-                  {/* Column 1: AI Features */}
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest">AI Assistants</p>
-                    <div className="flex flex-col gap-1">
-                      <Link href={`/${locale}/quiz`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        ✨ Beauty Quiz
-                        <span className="block text-[9px] text-muted-foreground font-normal">Personalized skin routine finder</span>
-                      </Link>
-                      <Link href={`/${locale}/skin-analysis`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        📸 Skin Analysis
-                        <span className="block text-[9px] text-muted-foreground font-normal">AI scan from camera selfie</span>
-                      </Link>
-                      <Link href={`/${locale}/routine-builder`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        🗓 Routine Builder
-                        <span className="block text-[9px] text-muted-foreground font-normal">Day & night custom routines</span>
-                      </Link>
-                      <Link href={`/${locale}/try-on/ar`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        🕶️ Virtual Try-On
-                        <span className="block text-[9px] text-muted-foreground font-normal">AR lipstick filter overlay</span>
-                      </Link>
-                      <Link href={`/${locale}/my-skin/dna`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        🧬 Skin DNA Dashboard
-                        <span className="block text-[9px] text-muted-foreground font-normal">Personalized score metrics</span>
-                      </Link>
-                      <Link href={`/${locale}/search/visual`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        🔍 Visual Search
-                        <span className="block text-[9px] text-muted-foreground font-normal">Reverse search via image</span>
-                      </Link>
+                  {NAVIGATION_ITEMS.user.map((section: any, sIdx: number) => (
+                    <div key={sIdx} className="space-y-3">
+                      <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{section.section}</p>
+                      <div className="flex flex-col gap-1">
+                        {section.items.map((item: any, iIdx: number) => (
+                          <Link
+                            key={iIdx}
+                            href={`/${locale}${item.href}`}
+                            onClick={() => setIsExploreOpen(false)}
+                            className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors"
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Column 2: Curation */}
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold text-accent uppercase tracking-widest">Special Curation</p>
-                    <div className="flex flex-col gap-1">
-                      <Link href={`/${locale}/looks`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold text-primary hover:bg-secondary/70 transition-colors">
-                        💄 Shop by Look
-                        <span className="block text-[9px] text-muted-foreground font-normal">Get inspired by premium grids</span>
-                      </Link>
-                      <Link href={`/${locale}/clean-beauty`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold text-emerald-600 hover:bg-secondary/70 transition-colors">
-                        🌱 Clean Beauty
-                        <span className="block text-[9px] text-muted-foreground font-normal">100% natural, toxic-free</span>
-                      </Link>
-                      <Link href={`/${locale}/beauty-box`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        📦 Beauty Box
-                        <span className="block text-[9px] text-muted-foreground font-normal">Custom curated monthly boxes</span>
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Column 3: Perks & Info */}
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Rewards & Info</p>
-                    <div className="flex flex-col gap-1">
-                      <Link href={`/${locale}/gamification`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        🏆 Achievements
-                      </Link>
-                      <Link href={`/${locale}/referral`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        🤝 Referrals
-                      </Link>
-                      <Link href={`/${locale}/about`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        🌸 {t('about')}
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Column 4: Social & Community */}
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Social & Community</p>
-                    <div className="flex flex-col gap-1">
-                      <Link href={`/${locale}/live/room/CS-LOBBY`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        👥 Live Co-Shopping
-                        <span className="block text-[9px] text-muted-foreground font-normal">Shop together with video stream</span>
-                      </Link>
-                      <Link href={`/${locale}/community`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        🗣️ Community Forum
-                        <span className="block text-[9px] text-muted-foreground font-normal">Skincare advice & discussions</span>
-                      </Link>
-                      <Link href={`/${locale}/creator/dashboard`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        ✨ Creator Dashboard
-                        <span className="block text-[9px] text-muted-foreground font-normal">Track looks, clicks & earnings</span>
-                      </Link>
-                      <Link href={`/${locale}/creator/looks`} onClick={() => setIsExploreOpen(false)} className="block p-2 rounded-xl text-xs font-semibold hover:bg-secondary/70 transition-colors">
-                        📸 Creator Feed
-                        <span className="block text-[9px] text-muted-foreground font-normal">Explore looks & shop creations</span>
-                      </Link>
-                    </div>
-                  </div>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
