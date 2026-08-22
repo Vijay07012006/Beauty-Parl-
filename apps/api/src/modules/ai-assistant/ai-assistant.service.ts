@@ -75,6 +75,16 @@ export class AiAssistantService implements OnModuleInit {
     'admin/chat',
     'admin/live-shopping',
     'admin/tickets',
+    'admin/ab-tests',
+    'admin/webhooks',
+    'admin/vendors',
+    'admin/audit-logs',
+    'admin/active-sessions',
+    'vendor/dashboard',
+    'vendor/register',
+    'wholesale/dashboard',
+    'wholesale/login',
+    'wholesale/order',
   ]);
 
   private sanitizeRoute(page: string | undefined): string | null {

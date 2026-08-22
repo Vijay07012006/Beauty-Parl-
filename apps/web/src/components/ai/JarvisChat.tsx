@@ -130,17 +130,49 @@ export function JarvisChat() {
   // ── Init session + welcome message ────────────────────────────────────────
   useEffect(() => {
     setSessionId(`sess_jarvis_${Date.now()}`);
+    
+    let welcomeText = `🌸 Hello **${user?.name || 'there'}**! I am **JARVIS**, your personal Beauty Expert AI.
+
+Here is what I can do for you:
+1. 💄 **Product Finder** — "show me skincare under ₹500"
+2. 📸 **Skin Scan** — "explain skin analysis results"
+3. 🕶️ **AR Try-On** & **DNA** — "navigate try-on" or "show skin dna score"
+4. 🗣️ **Community** — "show latest forum threads"
+5. 📦 **My Orders** — "check my order #12"`;
+
+    if (user?.role === 'super_admin') {
+      welcomeText = `🌸 Welcome Master, **${user.name}**! I am **JARVIS**, your Enterprise Command AI.
+
+Here is what you can do (Enterprise Access):
+1. 📊 **Audit Logs** — "show audit logs" or "explain last log"
+2. 🔌 **Webhooks** — "check webhook attempts status"
+3. 🧪 **A/B Experiments** — "list active ab tests"
+4. 🏢 **Vendor Approvals** — "list pending vendors"
+5. 🛡️ **Session Observability** — "show active sessions"`;
+    } else if (user?.role === 'admin') {
+      welcomeText = `🌸 Hello Administrator, **${user.name}**! I am **JARVIS**, your Store Operations AI.
+
+Here is what you can do (Operations Access):
+1. 📊 **Sales Stats** — "show revenue this week" or "show sales chart"
+2. 📦 **Orders** — "list pending orders"
+3. 🛍️ **Inventory** — "check low stock items"
+4. 🎟️ **Coupons** — "show active coupons list"
+5. 💄 **UGC Reviews** — "list pending review approvals"`;
+    } else if (user?.role === 'vendor') {
+      welcomeText = `🌸 Hello Partner Brand, **${user.name}**! I am **JARVIS**, your Merchant Business Assistant.
+
+Here is what you can do (Vendor Access):
+1. 📈 **Dashboard** — "show my listed products"
+2. 📦 **Stock Control** — "manage inventory stock level"
+3. 🔮 **Replenishment** — "show wholesale suggestions"
+4. 🛍️ **Wholesale Orders** — "create wholesale bulk order"
+5. 📝 **Export** — "download conversation"`;
+    }
+
     setMessages([{
       id: 'welcome',
       role: 'assistant',
-      text: `🌸 Hello ${user?.name || 'there'}! I am **JARVIS**, your Beauty Parlé AI.
-
-How can I help?
-- 💄 **Show products** — "show me skincare under ₹500"
-- 📊 **Sales stats** — "show revenue this week" *(admin)*
-- 📦 **Order details** — "check my order #12"
-- 🧭 **Navigate** — "navigate cart", "go to wishlist"
-- 📝 **Export** — "download this conversation"`,
+      text: welcomeText,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }]);
   }, [user]);
