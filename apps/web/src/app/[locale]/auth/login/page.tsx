@@ -47,6 +47,8 @@ export default function LoginPage() {
       const user = result.user;
       if (user.role === 'admin' || user.role === 'super_admin') {
         router.push(`/${locale}/admin/dashboard`);
+      } else if (user.role === 'vendor') {
+        router.push(`/${locale}/vendor/dashboard`);
       } else {
         router.push(`/${locale}`);
       }
@@ -60,6 +62,8 @@ export default function LoginPage() {
       const user = result.user;
       if (user.role === 'admin' || user.role === 'super_admin') {
         router.push(`/${locale}/admin/dashboard`);
+      } else if (user.role === 'vendor') {
+        router.push(`/${locale}/vendor/dashboard`);
       } else {
         router.push(`/${locale}`);
       }
@@ -76,6 +80,8 @@ export default function LoginPage() {
     if (user) {
       if (user.role === 'admin' || user.role === 'super_admin') {
         router.push(`/${locale}/admin/dashboard`);
+      } else if (user.role === 'vendor') {
+        router.push(`/${locale}/vendor/dashboard`);
       } else {
         router.push(`/${locale}`);
       }
@@ -148,6 +154,24 @@ export default function LoginPage() {
                 Sign Up
               </Link>
             </p>
+
+            <div className="mt-6 pt-6 border-t border-border/80 text-center space-y-3">
+              <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Business Partner Portals</p>
+              <div className="flex gap-2 justify-center">
+                <Link
+                  href={`/${locale}/wholesale/login`}
+                  className="px-4 py-2 border border-zinc-800 hover:border-primary/50 bg-secondary/10 hover:bg-secondary/20 rounded-xl text-xs font-semibold transition"
+                >
+                  💼 B2B Wholesale Login
+                </Link>
+                <Link
+                  href={`/${locale}/vendor/register`}
+                  className="px-4 py-2 border border-zinc-800 hover:border-primary/50 bg-secondary/10 hover:bg-secondary/20 rounded-xl text-xs font-semibold transition"
+                >
+                  🤝 Join as Vendor
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </main>

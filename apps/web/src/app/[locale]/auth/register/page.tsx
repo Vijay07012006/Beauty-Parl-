@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -155,10 +156,28 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Already have an account?{' '}
-              <a href={`/${locale}/auth/login`} className="text-primary hover:underline">
+              <Link href={`/${locale}/auth/login`} className="text-primary hover:underline">
                 Sign In
-              </a>
+              </Link>
             </p>
+
+            <div className="mt-6 pt-6 border-t border-border/80 text-center space-y-3">
+              <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Business Partner Portals</p>
+              <div className="flex gap-2 justify-center">
+                <Link
+                  href={`/${locale}/wholesale/login`}
+                  className="px-4 py-2 border border-zinc-800 hover:border-primary/50 bg-secondary/10 hover:bg-secondary/20 rounded-xl text-xs font-semibold transition"
+                >
+                  💼 B2B Wholesale Login
+                </Link>
+                <Link
+                  href={`/${locale}/vendor/register`}
+                  className="px-4 py-2 border border-zinc-800 hover:border-primary/50 bg-secondary/10 hover:bg-secondary/20 rounded-xl text-xs font-semibold transition"
+                >
+                  🤝 Join as Vendor
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </main>
