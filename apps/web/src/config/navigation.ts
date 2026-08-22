@@ -29,11 +29,10 @@ export const NAVIGATION_ITEMS = {
   ],
   vendor: [
     { section: 'Vendor Portal', items: [
-      { label: 'Dashboard', href: '/vendor/dashboard' },
-      { label: 'List Product', href: '/vendor/products/add' },
-      { label: 'Manage Stock', href: '/vendor/inventory' },
-      { label: 'Wholesale Suggestions', href: '/wholesale/dashboard' },
-      { label: 'Bulk Orders', href: '/wholesale/order' },
+      { label: 'Merchant Console', href: '/vendor/dashboard' },
+      { label: 'Register Partner', href: '/vendor/register' },
+      { label: 'Wholesale Panel', href: '/wholesale/dashboard' },
+      { label: 'Bulk Replenish', href: '/wholesale/order' },
     ]}
   ],
   user: [
