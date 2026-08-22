@@ -82,11 +82,11 @@ export function RoleSidebar() {
       {/* User Info Badge */}
       <div className={`p-4 border-b border-zinc-800/50 flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
         <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-200 font-bold shrink-0 uppercase select-none">
-          {user.name.slice(0, 2)}
+          {(user?.name || user?.email || 'User').slice(0, 2)}
         </div>
         {!isCollapsed && (
           <div className="overflow-hidden">
-            <h4 className="text-xs font-semibold text-zinc-200 truncate">{user.name}</h4>
+            <h4 className="text-xs font-semibold text-zinc-200 truncate">{user?.name || user?.email || 'User'}</h4>
             <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-primary/10 rounded-full text-[9px] font-bold text-primary tracking-wider uppercase border border-primary/20">
               {role === 'super_admin' ? <ShieldCheck size={8} /> : null}
               {role === 'vendor' ? <Building size={8} /> : null}

@@ -81,7 +81,9 @@ export default function UserDetailsPage() {
     );
   }
 
-  const { user: u, orders, totalSpent } = data;
+  const u = data.user;
+  const orders = data.orders || [];
+  const totalSpent = data.totalSpent || 0;
 
   return (
     <AdminLayout>

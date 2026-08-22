@@ -158,7 +158,7 @@ export default function OrderTrackingPage() {
               </div>
             ) : (
               <div className="relative pl-6 border-l border-border space-y-8 ml-3">
-                {trackingData.history.slice().reverse().map((step: any, index: number) => (
+                {(trackingData?.history || []).slice().reverse().map((step: any, index: number) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, x: -10 }}

@@ -49,9 +49,10 @@ interface JarvisSplitLayoutProps {
 // ─── Simple markdown-lite renderer ───────────────────────────────────────────
 
 function MsgText({ text }: { text: string }) {
+  const safeText = text || '';
   return (
     <div className="whitespace-pre-line space-y-1 text-xs leading-relaxed">
-      {text.split('\n').map((line, idx) => {
+      {safeText.split('\n').map((line, idx) => {
         if (line.includes('**')) {
           const parts = line.split('**');
           const content = parts.map((part, i) =>
